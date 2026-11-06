@@ -1,0 +1,37 @@
+Headings come from a CommonMark parser: lines that only look like headings inside fenced code
+(``` or ~~~), indented code, and HTML blocks are skipped, and underlined (setext) headings count.
+The TypeScript build's line scanner got this file wrong: a ``` line inside a ~~~ fence flipped
+its fence tracking.
+== args
+input/guide.md
+== file input/guide.md
+# Guide
+
+Intro.
+
+Setup
+-----
+
+~~~
+```
+# not a heading
+~~~
+
+    # indented code
+
+<!--
+# commented out
+-->
+
+## Usage ##
+
+Appendix
+========
+== stdout
+input/guide.md
+[L1-L19] # Guide
+[L5-L17] ## Setup
+[L19-L19] ## Usage
+[L21-L22] # Appendix
+== stderr
+== exit 0

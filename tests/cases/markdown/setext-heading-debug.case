@@ -1,0 +1,16 @@
+Debug mode highlights both lines of an underlined (setext) heading.
+== args
+--debug
+input/doc.md
+== file input/doc.md
+Title
+=====
+
+Body.
+== stdout
+\x1b[32mTitle\x1b[0m
+\x1b[32m=====\x1b[0m
+
+Body.
+== stderr
+== exit 0

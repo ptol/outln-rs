@@ -1,0 +1,4 @@
+# Normalize line endings to LF in the repo; hooks and shell scripts break on CRLF.
+* text=auto eol=lf
+# Casefiles are exact bytes: write CR and other odd bytes as escapes (tests/support/casefile.rs).
+tests/cases/** -text

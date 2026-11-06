@@ -1,0 +1,33 @@
+Ported from ../outln/__tests__/cases/walker/032-explicit-ignored-directory-is-walked.case.yaml; output differs from the TypeScript build's: TypeScript dropped ancestor rules for an ignored root; git semantics keep them.
+Its source-code inputs were rewritten as Markdown files.
+== args
+repo/dist
+== file repo/.git/HEAD
+ref: refs/heads/main
+== file repo/.gitignore
+dist/
+*.map.md
+== file repo/dist/bundle.md
+---
+description: Explicitly requested, so walked.
+---
+# bundle
+== file repo/dist/bundle.map.md
+---
+description: Ignored by the ancestor *.map.md rule, which still applies inside an ignored root.
+---
+# map
+== file repo/dist/.gitignore
+skip.md
+== file repo/dist/skip.md
+---
+description: Ignored by the root's own .gitignore.
+---
+# skip
+== stdout
+glob view: repo/dist
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+repo/dist/bundle.md: description: "Explicitly requested, so walked."
+== stderr
+== exit 0

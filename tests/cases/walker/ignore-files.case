@@ -1,0 +1,20 @@
+.ignore files apply like .gitignore files, also outside git repositories, as in ripgrep.
+== args
+input
+== file input/.ignore
+drafts/
+== file input/guide.md
+---
+description: Kept.
+---
+== file input/drafts/wip.md
+---
+description: Ignored by .ignore.
+---
+== stdout
+glob view: input
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/guide.md: description: "Kept."
+== stderr
+== exit 0

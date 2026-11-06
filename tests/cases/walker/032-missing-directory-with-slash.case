@@ -1,0 +1,18 @@
+Ported from ../outln/__tests__/cases/walker/032-missing-directory-with-slash.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/missing/
+input/src
+== file input/src/a.md
+---
+description: Source a.
+---
+# a
+== stdout
+glob view: input/missing/ input/src
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/src/a.md: description: "Source a."
+== stderr
+Directory input/missing/ does not exist
+== exit 1

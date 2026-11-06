@@ -1,0 +1,10 @@
+Ported from ../outln/__tests__/cases/cli/030-version-long-flag.case.yaml; output differs from the TypeScript build's: clap prints the program name before the version.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--version
+== file input/unused.md
+# unused
+== stdout
+outln 0.0.0-test
+== stderr
+== exit 0

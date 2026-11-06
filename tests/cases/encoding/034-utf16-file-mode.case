@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/encoding/034-utf16-file-mode.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/utf16.md
+input/ok.md
+== file input/utf16.md escaped
+\xff\xfec\x00o\x00n\x00s\x00t\x00 \x00a\x00 \x00=\x00 \x001\x00;\x00\
+== file input/ok.md
+# ok
+== stdout
+input/ok.md
+[L1-L1] # ok
+== stderr
+FILE input/utf16.md IS NOT UTF-8 TEXT
+== exit 1

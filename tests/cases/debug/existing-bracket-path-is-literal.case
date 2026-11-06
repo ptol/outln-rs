@@ -1,0 +1,11 @@
+An existing path with glob characters is literal in debug mode too, as in the other modes; the
+TypeScript build rejected it as a glob.
+== args
+--debug
+app/[id]/page.md
+== file app/[id]/page.md
+# Page
+== stdout
+\x1b[32m# Page\x1b[0m
+== stderr
+== exit 0

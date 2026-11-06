@@ -1,0 +1,13 @@
+Ported from ../outln/__tests__/cases/debug/013-debug-mode-highlighting.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--debug
+input/sample.md
+== file input/sample.md
+# version
+# run
+== stdout
+\x1b[32m# version\x1b[0m
+\x1b[32m# run\x1b[0m
+== stderr
+== exit 0

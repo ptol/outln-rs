@@ -1,0 +1,23 @@
+Ported from ../outln/__tests__/cases/debug/027-debug-dir-nested-deep.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--debug
+input/deep
+== file input/deep/a.md
+# a
+== file input/deep/level1/b.md
+# b
+== file input/deep/level1/level2/c.md
+# c
+== file input/deep/level1/level2/level3/d.md
+# d
+== stdout
+\x1b[32m# a\x1b[0m
+
+\x1b[32m# b\x1b[0m
+
+\x1b[32m# c\x1b[0m
+
+\x1b[32m# d\x1b[0m
+== stderr
+== exit 0

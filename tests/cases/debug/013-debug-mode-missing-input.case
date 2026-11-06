@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/debug/013-debug-mode-missing-input.case.yaml; output differs from the TypeScript build's: clap reports the missing path and exits 2.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--debug
+== file input/fixture.md
+# fixture
+== stdout
+== stderr
+error: the following required arguments were not provided:
+  <PATH>...
+
+Usage: outln --debug <PATH>...
+
+For more information, try '--help'.
+== exit 2

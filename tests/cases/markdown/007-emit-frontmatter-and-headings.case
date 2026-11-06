@@ -1,0 +1,23 @@
+Ported from ../outln/__tests__/cases/typescript/007-emit-frontmatter-and-headings.case.yaml; expected output is the TypeScript build's.
+== args
+input/sample.md
+== file input/sample.md
+---
+title: 'Sample doc'
+owner: 'docs-team'
+---
+
+# Overview
+
+## Scope
+
+### Notes
+== stdout
+input/sample.md
+title: "Sample doc"
+owner: "docs-team"
+[L6-L10] # Overview
+[L8-L10] ## Scope
+[L10-L10] ### Notes
+== stderr
+== exit 0

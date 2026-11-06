@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/markdown/038-markdown-section-range-debug.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/doc.md
+== file input/doc.md
+## Closed ##
+text
+== stdout
+\x1b[32m## Closed ##\x1b[0m
+text
+== stderr
+== exit 0

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://dprint.dev/schemas/v0.json",
+  "lineWidth": 100,
+  "markdown": {
+    "textWrap": "maintain"
+  },
+  "yaml": {
+    "quotes": "preferSingle"
+  },
+  "excludes": ["target", "Cargo.lock", "mise.lock"],
+  "plugins": [
+    "https://plugins.dprint.dev/json-0.26.0.wasm",
+    "https://plugins.dprint.dev/markdown-0.29.0.wasm",
+    "https://plugins.dprint.dev/toml-0.10.0.wasm",
+    "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm"
+  ]
+}

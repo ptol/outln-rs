@@ -1,0 +1,19 @@
+Only top-level `key: value` lines are frontmatter fields: list items and comments are skipped,
+even unindented; the TypeScript build printed them as fields.
+== args
+input/doc.md
+== file input/doc.md
+---
+# owner: docs
+title: Doc
+authors:
+- name: Alice
+---
+# Doc
+== stdout
+input/doc.md
+title: "Doc"
+authors: null
+[L7-L7] # Doc
+== stderr
+== exit 0

@@ -1,0 +1,17 @@
+An empty file adds one empty part between the blank lines that separate files, as in the
+TypeScript build.
+== args
+--debug
+docs
+== file docs/a.md
+# A
+== file docs/b.md
+== file docs/c.md
+# C
+== stdout
+\x1b[32m# A\x1b[0m
+
+
+\x1b[32m# C\x1b[0m
+== stderr
+== exit 0

@@ -1,0 +1,18 @@
+Headings inside block quotes and list items aren't document sections, so they're left out and
+don't end the enclosing section.
+== args
+input/notes.md
+== file input/notes.md
+# Notes
+
+> # Quoted
+
+- # Listed
+
+## Next
+== stdout
+input/notes.md
+[L1-L7] # Notes
+[L7-L7] ## Next
+== stderr
+== exit 0

@@ -1,0 +1,11 @@
+Ported from ../outln/__tests__/cases/debug/013-debug-mode-directory.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--debug
+input/src
+== file input/src/file.md
+# a
+== stdout
+\x1b[32m# a\x1b[0m
+== stderr
+== exit 0

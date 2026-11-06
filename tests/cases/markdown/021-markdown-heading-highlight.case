@@ -1,0 +1,24 @@
+Ported from ../outln/__tests__/cases/markdown/021-markdown-heading-highlight.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/sample.md
+== file input/sample.md
+---
+title: Guide
+owner: docs
+---
+
+# Intro
+
+## Details
+== stdout
+---
+\x1b[32mtitle: Guide\x1b[0m
+\x1b[32mowner: docs\x1b[0m
+---
+
+\x1b[32m# Intro\x1b[0m
+
+\x1b[32m## Details\x1b[0m
+== stderr
+== exit 0

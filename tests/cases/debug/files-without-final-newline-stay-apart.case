@@ -1,0 +1,14 @@
+Debug mode separates files with a blank line even when one doesn't end with a newline.
+== args
+--debug
+docs
+== file docs/a.md escaped
+# A\
+== file docs/b.md
+# B
+== stdout
+\x1b[32m# A\x1b[0m
+
+\x1b[32m# B\x1b[0m
+== stderr
+== exit 0

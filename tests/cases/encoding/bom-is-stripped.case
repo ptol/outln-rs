@@ -1,0 +1,14 @@
+A UTF-8 byte order mark doesn't hide frontmatter on the first line.
+== args
+input/bom.md
+== file input/bom.md escaped
+\xef\xbb\xbf---
+title: With BOM
+---
+# Heading
+== stdout
+input/bom.md
+title: "With BOM"
+[L4-L4] # Heading
+== stderr
+== exit 0

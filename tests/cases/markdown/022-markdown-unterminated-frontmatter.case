@@ -1,0 +1,18 @@
+Ported from ../outln/__tests__/cases/markdown/022-markdown-unterminated-frontmatter.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/unterminated.md
+== file input/unterminated.md
+---
+title: Guide
+owner: docs
+
+Body text.
+== stdout
+---
+title: Guide
+owner: docs
+
+Body text.
+== stderr
+== exit 0

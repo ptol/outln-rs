@@ -1,0 +1,12 @@
+Debug mode takes one path; a `{a,b}` alternation is a glob pattern, so it is rejected like `*`.
+== args
+--debug
+docs/{a,b}.md
+== file docs/a.md
+# A
+== file docs/b.md
+# B
+== stdout
+== stderr
+--debug requires exactly one input file path.
+== exit 1

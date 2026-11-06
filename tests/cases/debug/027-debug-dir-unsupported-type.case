@@ -1,0 +1,17 @@
+Ported from ../outln/__tests__/cases/debug/027-debug-dir-unsupported-type.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--debug
+input/mixed
+== file input/mixed/c.md
+# c
+== file input/mixed/a.md
+# a
+== file input/mixed/raw.txt
+plain text
+== stdout
+\x1b[32m# a\x1b[0m
+
+\x1b[32m# c\x1b[0m
+== stderr
+== exit 0

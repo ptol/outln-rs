@@ -1,0 +1,22 @@
+Ported from ../outln/__tests__/cases/cli/033-mixed-directory-and-markdown-file.case.yaml; expected output is the TypeScript build's.
+== args
+input/docs
+input/AGENTS.md
+== file input/docs/guide.md
+---
+description: How to use the tool.
+---
+# Guide
+== file input/AGENTS.md
+---
+description: Agent instructions.
+---
+# Agents
+== stdout
+glob view: input/docs input/AGENTS.md
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/AGENTS.md: description: "Agent instructions."
+input/docs/guide.md: description: "How to use the tool."
+== stderr
+== exit 0

@@ -1,0 +1,23 @@
+Ported from ../outln/__tests__/cases/typescript/009-directory-mixed-with-file.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/src
+input/direct.md
+== file input/src/a.md
+---
+description: A summary.
+---
+# a
+== file input/direct.md
+---
+description: Direct file.
+---
+# direct
+== stdout
+glob view: input/src input/direct.md
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/direct.md: description: "Direct file."
+input/src/a.md: description: "A summary."
+== stderr
+== exit 0

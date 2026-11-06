@@ -1,0 +1,10 @@
+Ported from ../outln/__tests__/cases/debug/013-debug-mode-unsupported-type.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/raw.txt
+== file input/raw.txt
+plain text
+== stdout
+== stderr
+FILE input/raw.txt HAS UNSUPPORTED FILE TYPE
+== exit 1

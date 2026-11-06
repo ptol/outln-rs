@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/debug/013-debug-mode-multiple-files.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--debug
+input/a.md
+input/b.md
+== file input/a.md
+# a
+== file input/b.md
+# b
+== stdout
+== stderr
+--debug requires exactly one input file path.
+== exit 1

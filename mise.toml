@@ -1,0 +1,9 @@
+# Dev tools for this repo, pinned for reproducible hooks and checks.
+[tools]
+dprint = "0.64.3"
+hk = "2.11.1"
+just = "1.59.0"
+# Must equal rust-toolchain.toml's channel: mise exports RUSTUP_TOOLCHAIN for
+# the active rust, which overrides rust-toolchain.toml (a global `rust = "latest"`
+# would otherwise win inside this repo).
+rust = "1.99.1"

@@ -1,0 +1,10 @@
+Ported from ../outln/__tests__/cases/cli/031-bracket-missing-path.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/[slug].md
+== file input/other.md
+# other
+== stdout
+== stderr
+No supported files matched: input/[slug].md
+== exit 1

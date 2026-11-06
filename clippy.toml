@@ -1,0 +1,31 @@
+# Tests may unwrap/expect: a panic there is a test failure with a clear message.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+
+# Side effects are injected through parameters; only the imperative shell (src/main.rs) opens
+# the process streams or reads the environment or the clock, and there each use needs
+# `#[expect(clippy::disallowed_methods, reason = "...")]`. The one other exception is the
+# casefile runner's function that reads its own switches (tests/casefiles.rs).
+disallowed-methods = [
+  { path = "std::io::stdout", reason = "write to an injected `impl Write`; src/main.rs passes stdout in" },
+  { path = "std::io::stderr", reason = "write to an injected `impl Write`; src/main.rs passes stderr in" },
+  { path = "std::io::stdin", reason = "read from an injected `impl Read`; src/main.rs passes stdin in" },
+  { path = "std::env::args", reason = "parse arguments in src/main.rs and pass them in" },
+  { path = "std::env::args_os", reason = "parse arguments in src/main.rs and pass them in" },
+  { path = "std::env::var", reason = "read the environment in src/main.rs and pass values in" },
+  { path = "std::env::var_os", reason = "read the environment in src/main.rs and pass values in" },
+  { path = "std::env::vars", reason = "read the environment in src/main.rs and pass values in" },
+  { path = "std::env::vars_os", reason = "read the environment in src/main.rs and pass values in" },
+  { path = "std::env::current_dir", reason = "resolve the working directory in src/main.rs and pass it in" },
+  { path = "std::time::SystemTime::now", reason = "inject a clock instead of reading time directly" },
+  { path = "std::time::Instant::now", reason = "inject a clock instead of reading time directly" },
+  { path = "std::process::exit", reason = "return an `ExitStatus`; src/main.rs turns it into the exit code" },
+  # clap reads the process arguments, prints, or exits in these; clippy can't see inside clap.
+  { path = "clap::Parser::parse", reason = "use `try_parse_from` and render the error (src/cli.rs)" },
+  { path = "clap::Parser::try_parse", reason = "reads the process arguments; use `try_parse_from`" },
+  { path = "clap::Command::get_matches", reason = "use `try_get_matches_from` and render the error (src/cli.rs)" },
+  { path = "clap::Command::try_get_matches", reason = "reads the process arguments; use `try_get_matches_from`" },
+  { path = "clap::error::Error::exit", reason = "exits the process; render the error and return an `ExitStatus`" },
+  { path = "clap::error::Error::print", reason = "prints to the process streams; write `render()` to the injected writer" },
+]

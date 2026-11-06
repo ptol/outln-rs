@@ -1,0 +1,6 @@
+# Pins the exact Rust toolchain; rustup installs it automatically on first use.
+# Bump deliberately (and fix any new lints in the same change).
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

@@ -1,0 +1,9 @@
+Ported from ../outln/__tests__/cases/walker/032-only-unsupported-files.case.yaml; expected output is the TypeScript build's.
+== args
+input
+== file input/data.json
+{"a": 1}
+== stdout
+== stderr
+No supported files matched: input
+== exit 1

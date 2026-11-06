@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/cli/030-no-arguments-usage.case.yaml; output differs from the TypeScript build's: usage errors now come from clap and exit 2.
+Its source-code inputs were rewritten as Markdown files.
+== args
+== file input/unused.md
+# unused
+== stdout
+== stderr
+error: the following required arguments were not provided:
+  <PATH>...
+
+Usage: outln <PATH>...
+
+For more information, try '--help'.
+== exit 2

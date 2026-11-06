@@ -1,0 +1,13 @@
+A heading's text is printed as written, inline markup included.
+== args
+input/api.md
+== file input/api.md
+# The `run` *function*
+
+## C# ##
+== stdout
+input/api.md
+[L1-L3] # The `run` *function*
+[L3-L3] ## C#
+== stderr
+== exit 0

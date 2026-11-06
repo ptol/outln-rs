@@ -1,0 +1,21 @@
+Ported from ../outln/__tests__/cases/typescript/009-directory-as-input-happy-path.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/src
+== file input/src/has-comment.md
+---
+description: Has summary.
+---
+# one
+== file input/src/nested/no-summary.md
+# two
+== file input/src/raw.txt
+plain text
+== stdout
+glob view: input/src
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/src/has-comment.md: description: "Has summary."
+input/src/nested/no-summary.md: (no header comment available)
+== stderr
+== exit 0

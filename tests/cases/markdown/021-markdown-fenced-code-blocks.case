@@ -1,0 +1,22 @@
+Ported from ../outln/__tests__/cases/markdown/021-markdown-fenced-code-blocks.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/fences.md
+== file input/fences.md
+# Overview
+
+```md
+## Not a heading
+```
+
+## Real heading
+== stdout
+\x1b[32m# Overview\x1b[0m
+
+```md
+## Not a heading
+```
+
+\x1b[32m## Real heading\x1b[0m
+== stderr
+== exit 0

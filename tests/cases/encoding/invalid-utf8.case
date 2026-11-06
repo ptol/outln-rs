@@ -1,0 +1,15 @@
+A file that isn't valid UTF-8 is reported; the TypeScript build decoded it with replacement
+characters instead.
+== args
+input/latin1.md
+input/ok.md
+== file input/latin1.md escaped
+# Caf\xe9
+== file input/ok.md
+# Ok
+== stdout
+input/ok.md
+[L1-L1] # Ok
+== stderr
+FILE input/latin1.md IS NOT UTF-8 TEXT
+== exit 1

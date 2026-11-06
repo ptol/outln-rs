@@ -1,0 +1,2 @@
+# rustfmt run directly (editors, by hand) ignores Cargo.toml's edition; keep this equal to it.
+edition = "2024"

@@ -1,0 +1,12 @@
+The last section ends on the last line even without a final newline.
+== args
+input/short.md
+== file input/short.md escaped
+# Title
+
+text\
+== stdout
+input/short.md
+[L1-L3] # Title
+== stderr
+== exit 0

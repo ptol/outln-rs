@@ -1,0 +1,27 @@
+Ported from ../outln/__tests__/cases/cli/031-bracket-glob-still-works.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/[ab].md
+== file input/a.md
+---
+description: File a.
+---
+# a
+== file input/b.md
+---
+description: File b.
+---
+# b
+== file input/c.md
+---
+description: File c.
+---
+# c
+== stdout
+glob view: input/[ab].md
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/a.md: description: "File a."
+input/b.md: description: "File b."
+== stderr
+== exit 0

@@ -1,0 +1,17 @@
+Ported from ../outln/__tests__/cases/typescript/008-glob-view-mixed-args.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/**/*.md
+input/direct.md
+== file input/direct.md
+---
+description: Direct file.
+---
+# direct
+== stdout
+glob view: input/**/*.md input/direct.md
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/direct.md: description: "Direct file."
+== stderr
+== exit 0

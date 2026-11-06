@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/cli/031-bracket-file-path.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/app/[id]/page.md
+== file input/app/[id]/page.md
+---
+description: Product detail page.
+---
+# Page
+== stdout
+input/app/[id]/page.md
+description: "Product detail page."
+[L4-L4] # Page
+== stderr
+== exit 0

@@ -1,0 +1,13 @@
+Ported from ../outln/__tests__/cases/typescript/009-directory-empty.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/empty/
+== file input/reference.md
+---
+description: Reference file.
+---
+# ref
+== stdout
+== stderr
+Directory input/empty/ does not exist
+== exit 1

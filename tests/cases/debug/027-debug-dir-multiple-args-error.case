@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/debug/027-debug-dir-multiple-args-error.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+--debug
+input/pkg
+input/extra.md
+== file input/pkg/a.md
+# a
+== file input/extra.md
+# extra
+== stdout
+== stderr
+--debug requires exactly one input file path.
+== exit 1

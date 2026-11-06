@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/typescript/007-unterminated-frontmatter.case.yaml; expected output is the TypeScript build's.
+== args
+input/bad-frontmatter.md
+== file input/bad-frontmatter.md
+---
+title: Broken
+# Visible heading
+## Also visible
+== stdout
+input/bad-frontmatter.md
+[L3-L4] # Visible heading
+[L4-L4] ## Also visible
+== stderr
+== exit 0

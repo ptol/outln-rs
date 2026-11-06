@@ -1,0 +1,17 @@
+Ported from ../outln/__tests__/cases/encoding/034-crlf-markdown-frontmatter.case.yaml; expected output is the TypeScript build's.
+== args
+input/crlf.md
+== file input/crlf.md escaped
+---\r
+description: CRLF doc\r
+---\r
+# Title\r
+\r
+## Section\r
+== stdout
+input/crlf.md
+description: "CRLF doc"
+[L4-L6] # Title
+[L6-L6] ## Section
+== stderr
+== exit 0

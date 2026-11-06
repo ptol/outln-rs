@@ -1,0 +1,34 @@
+Ported from ../outln/__tests__/cases/walker/032-ancestor-gitignore-up-to-git-root.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+repo/packages/web
+== file outer/.gitignore
+*.md
+== file repo/.git/HEAD
+ref: refs/heads/main
+== file repo/.gitignore
+generated/
+== file repo/packages/.gitignore
+*.tmp.md
+== file repo/packages/web/index.md
+---
+description: Web entry.
+---
+# web
+== file repo/packages/web/generated/api.md
+---
+description: Ignored by repo root .gitignore.
+---
+# api
+== file repo/packages/web/scratch.tmp.md
+---
+description: Ignored by packages/.gitignore.
+---
+# scratch
+== stdout
+glob view: repo/packages/web
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+repo/packages/web/index.md: description: "Web entry."
+== stderr
+== exit 0

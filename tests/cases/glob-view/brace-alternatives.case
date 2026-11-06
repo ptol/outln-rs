@@ -1,0 +1,30 @@
+Every `{a,b}` group counts as glob syntax, and alternatives may contain `/`.
+== args
+docs/{v1}/{a,b}.md
+{docs/x,docs/y}/*.md
+== file docs/v1/a.md
+---
+description: A.
+---
+== file docs/v1/b.md
+---
+description: B.
+---
+== file docs/x/x.md
+---
+description: X.
+---
+== file docs/y/y.md
+---
+description: Y.
+---
+== stdout
+glob view: docs/{v1}/{a,b}.md {docs/x,docs/y}/*.md
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+docs/v1/a.md: description: "A."
+docs/v1/b.md: description: "B."
+docs/x/x.md: description: "X."
+docs/y/y.md: description: "Y."
+== stderr
+== exit 0

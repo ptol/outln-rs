@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/typescript/007-fenced-code-blocks.case.yaml; expected output is the TypeScript build's.
+== args
+input/fenced.md
+== file input/fenced.md
+# Top
+```md
+## Not a heading
+```
+## Real
+== stdout
+input/fenced.md
+[L1-L5] # Top
+[L5-L5] ## Real
+== stderr
+== exit 0

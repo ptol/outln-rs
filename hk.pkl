@@ -1,0 +1,78 @@
+// Git hook and check configuration for hk (https://hk.jdx.dev).
+// The pre-commit hook works like lint-staged: it hides unstaged edits, fixes staged files,
+// re-stages the fixes, then runs the checks on exactly what will be committed.
+amends "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Builtins.pkl"
+
+local rustFiles = List("**/*.rs", "**/Cargo.toml", "Cargo.lock", "clippy.toml", "rust-toolchain.toml")
+// Casefiles hold exact input and output bytes (trailing spaces, missing final newlines), so the
+// hygiene fixers must not touch them, but a changed casefile must run the tests.
+local casefiles = "tests/cases/**"
+
+local sharedSteps = new Mapping<String, Step> {
+  // Formatters and hygiene fixers: auto-fix in pre-commit and `hk fix`, report in `hk check`.
+  ["rustfmt"] = (Builtins.rustfmt) {
+    // Given a path, rustfmt also formats the out-of-line modules that file declares (`mod x;`),
+    // which can rewrite files that aren't staged. Through stdin it formats exactly one file.
+    // `$(...)` drops the trailing newline rustfmt always ends with, so printf adds it back.
+    fix = new CommandSpec {
+      command = #"for f in {{files}}; do out=$(rustfmt --edition 2024 < "$f") && printf '%s\n' "$out" > "$f" || exit 1; done"#
+      // Declared so hk's file locks keep other fixers off these files while it runs.
+      effect = "write"
+    }
+  }
+  ["dprint"] = (Builtins.dprint) {
+    // The builtin selects every text file; dprint only formats these.
+    types = null
+    glob = List("**/*.md", "**/*.toml", "**/*.json", "**/*.jsonc", "**/*.yaml", "**/*.yml")
+    exclude = List("Cargo.lock", "mise.lock")
+  }
+  ["trailing_whitespace"] = (Builtins.trailing_whitespace) {
+    exclude = List(casefiles)
+  }
+  ["newlines"] = (Builtins.newlines) {
+    exclude = List(casefiles)
+  }
+  ["check_merge_conflict"] = Builtins.check_merge_conflict
+  ["check_added_large_files"] = Builtins.check_added_large_files
+
+  // Check-only: clippy fixes change logic, so they are applied deliberately with `just fix`
+  // (the builtin `cargo_clippy` would run `--fix` and re-stage the result).
+  ["clippy"] {
+    glob = rustFiles
+    depends = List("rustfmt")
+    check = "cargo clippy --all-targets --locked --quiet -- -D warnings"
+    env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
+  }
+  // Every test, doc examples included: the hook is the only automatic gate, so broken behaviour
+  // must not be committable.
+  ["tests"] {
+    glob = rustFiles + List(casefiles)
+    depends = List("clippy")
+    check = "cargo test --locked --quiet"
+    env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
+  }
+  // Header comments, frontmatter, links, and version pins (tests/repo_conventions.rs).
+  // No glob: renaming any file can break a link, and any pinned file can drift.
+  ["repo_conventions"] {
+    // After the cargo steps: they share target/, and cargo serializes on its lock anyway.
+    depends = List("rustfmt", "dprint", "clippy", "tests")
+    check = "cargo test --locked --quiet --test repo_conventions"
+    env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = sharedSteps
+  }
+  ["fix"] {
+    fix = true
+    steps = sharedSteps
+  }
+  ["check"] {
+    steps = sharedSteps
+  }
+}

@@ -1,0 +1,21 @@
+Ported from ../outln/__tests__/cases/cli/031-bracket-directory-path.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input/app/[id]
+== file input/app/[id]/page.md
+---
+description: Product detail page.
+---
+# Page
+== file input/app/i/other.md
+---
+description: Must not match the [id] character class.
+---
+# other
+== stdout
+glob view: input/app/[id]
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/app/[id]/page.md: description: "Product detail page."
+== stderr
+== exit 0

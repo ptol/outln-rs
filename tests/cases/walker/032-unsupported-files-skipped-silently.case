@@ -1,0 +1,22 @@
+Ported from ../outln/__tests__/cases/walker/032-unsupported-files-skipped-silently.case.yaml; expected output is the TypeScript build's.
+Its source-code inputs were rewritten as Markdown files.
+== args
+input
+== file input/a.md
+---
+description: Source a.
+---
+# a
+== file input/data.json
+{"a": 1}
+== file input/styles.css
+body {}
+== file input/logo.png
+not really a png
+== stdout
+glob view: input
+Includes only header comments per file.
+For file-level outlines, use `outln [FILE]...`.
+input/a.md: description: "Source a."
+== stderr
+== exit 0

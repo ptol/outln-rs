@@ -1,0 +1,18 @@
+Ported from ../outln/__tests__/cases/markdown/038-markdown-closing-hashes.case.yaml; expected output is the TypeScript build's.
+== args
+input/doc.md
+== file input/doc.md
+# Title #
+## Closed heading ##
+### C# is kept
+#### Trailing hashes###
+## ##
+== stdout
+input/doc.md
+[L1-L5] # Title
+[L2-L4] ## Closed heading
+[L3-L4] ### C# is kept
+[L4-L4] #### Trailing hashes###
+[L5-L5] ##
+== stderr
+== exit 0
