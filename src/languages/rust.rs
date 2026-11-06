@@ -50,7 +50,7 @@ impl LanguageEngine for Rust {
 
     fn file_summary(&self, text: &str) -> FileSummary {
         // The header is found line by line, so the glob view never parses a file.
-        FileSummary(header(text))
+        FileSummary::from(header(text))
     }
 }
 
@@ -62,7 +62,7 @@ fn header(text: &str) -> Option<Header> {
 }
 
 /// Rust's doc comments say what they document, and its block comments nest.
-const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax::CFamily {
     doc_markers: DocMarkers::InnerAndOuter,
     block_comments: BlockComments::Nested,
 };

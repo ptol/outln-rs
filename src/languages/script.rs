@@ -97,7 +97,7 @@ impl LanguageEngine for Script {
 
     fn file_summary(&self, text: &str) -> FileSummary {
         // The header is found line by line, so the glob view never parses a file.
-        FileSummary(header(text))
+        FileSummary::from(header(text))
     }
 }
 
@@ -114,7 +114,7 @@ fn header(text: &str) -> Option<Header> {
 
 /// `///` is a directive in TypeScript, and doc comments don't say whether they document the
 /// file, so the header is the first comment; block comments don't nest.
-const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax::CFamily {
     doc_markers: DocMarkers::Ignored,
     block_comments: BlockComments::Flat,
 };

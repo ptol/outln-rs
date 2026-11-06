@@ -1,5 +1,5 @@
 Ported from ../outln/__tests__/cases/typescript/012-rust-glob-view.case.yaml; expected output is the TypeScript build's, except:
-- The glob view's wording is this build's (`Includes only headers per file.`, `(no header available)`).
+- The glob view's wording is this build's (`Includes only a header or summary per file.`, `(no header available)`).
 == args
 input/**/*
 == file input/src/with-header.rs
@@ -13,7 +13,7 @@ fn ping() {}
 plain text
 == stdout
 glob view: input/**/*
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/src/no-header.rs: (no header available)
 input/src/with-header.rs: Rust service worker. Handles background jobs.

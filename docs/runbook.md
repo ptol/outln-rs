@@ -20,7 +20,7 @@ just setup
 
 Building needs a C compiler (`cc` on `PATH`), because the tree-sitter grammars are C code.
 
-Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. The static binary: `just build-static` writes `target/x86_64-unknown-linux-musl/release/outln`, compiling the grammars with the zig that `mise install` pins, and fails unless the binary is static and outlines a sample `.ts`, `.tsx`, `.js`, and `.rs` file ([ADR-009](adr.md), [ADR-011](adr.md)). The `outln` on `PATH` is the latest crates.io release, not this build ([ADR-014](adr.md)).
+Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. The static binary: `just build-static` writes `target/x86_64-unknown-linux-musl/release/outln`, compiling the grammars with the zig that `mise install` pins, and fails unless the binary is static and outlines a sample `.ts`, `.tsx`, `.js`, `.rs`, `.json`, `.toml`, and `.yaml` file ([ADR-009](adr.md), [ADR-011](adr.md), [ADR-016](adr.md)). The `outln` on `PATH` is the latest crates.io release, not this build ([ADR-014](adr.md)).
 
 ## Release
 

@@ -1,4 +1,4 @@
-//! Shared tree-sitter helpers for the code-language engines: parsing text, and reading nodes as byte ranges and printed text.
+//! Shared tree-sitter helpers for the code-language and data file engines: parsing text, and reading nodes as byte ranges and printed text.
 
 use tree_sitter::{Language, Node, Parser, Tree};
 

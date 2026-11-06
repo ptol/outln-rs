@@ -1,7 +1,7 @@
 Ported from ../outln/__tests__/cases/walker/032-glob-respects-gitignore.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
 input/.git/HEAD makes input a git repository: outln applies .gitignore files only inside one.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 input/**/*.md
 == file input/.git/HEAD
@@ -37,7 +37,7 @@ description: Dependency.
 # dep
 == stdout
 glob view: input/**/*.md
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/src/a.md: description: "Source a."
 == stderr

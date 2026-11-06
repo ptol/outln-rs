@@ -1,5 +1,5 @@
 Ported from ../outln/__tests__/cases/typescript/012-javascript-glob-view.case.yaml; expected output is the TypeScript build's.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 input/**/*
 == file input/alpha.js
@@ -16,7 +16,7 @@ export const charlie = 3;
 plain text
 == stdout
 glob view: input/**/*
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/alpha.js: Alpha summary
 input/bravo.jsx: Bravo summary

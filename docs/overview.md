@@ -17,9 +17,10 @@ The TypeScript implementation in `../outln` (commit `ee514b1`, released as 0.2.1
 
 ## Current status
 
-- Markdown files work in every mode: file mode (frontmatter and headings with section line ranges), glob view (gitignore-aware directory walking and glob patterns), and debug mode.
+- Markdown files work in every mode: file mode (frontmatter and headings with section line ranges), glob view (gitignore-aware directory walking and glob patterns; the first heading when there is no frontmatter), and debug mode.
 - TypeScript and JavaScript files (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`) work in every mode: header comments, top-level declarations with class members, function-valued variables, default-exported expressions, and test blocks. Their ported casefiles are in `tests/cases/typescript/`.
 - Rust files (`.rs`) work in every mode: `//!` and `/*!` header comments (or else plain `//` and `/* */` ones), top-level declarations with their signatures as written, `pub use` re-exports, and line ranges that include doc comments and attributes. Their ported casefiles are in `tests/cases/rust/`.
+- Data files (`.toml`, `.yaml`, `.yml`, `.json`) work in every mode: `#` header comments (`//` and `/* */` in JSON), top-level keys with scalar values (TOML table headers as written), line ranges that include the comment above a key, and in glob view a field summary of the first scalar keys when there is no header comment ([ADR-016](adr.md)). The TypeScript build had no data file support, so their casefiles in `tests/cases/{toml,yaml,json}/` are hand-written.
 - `just build-static` builds the single static binary (musl).
 - Releases go to crates.io from a version tag ([ADR-010](adr.md)); `cargo install outln` builds from source, and no prebuilt binaries are released yet.
 - `tests/cases` holds the TypeScript build's Markdown, TypeScript/JavaScript, Rust, header, CLI, glob view, walker, debug, and encoding cases (CLI, glob view, and walker inputs rewritten as Markdown), plus new ones for behaviour the TypeScript build lacked.

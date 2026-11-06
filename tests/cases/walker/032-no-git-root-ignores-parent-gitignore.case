@@ -1,6 +1,6 @@
 Ported from ../outln/__tests__/cases/walker/032-no-git-root-ignores-parent-gitignore.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 input/pkg
 == file input/.gitignore
@@ -12,7 +12,7 @@ description: Parent .gitignore does not apply outside a git repo.
 # a
 == stdout
 glob view: input/pkg
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/pkg/a.md: description: "Parent .gitignore does not apply outside a git repo."
 == stderr

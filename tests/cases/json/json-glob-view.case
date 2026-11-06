@@ -1,0 +1,32 @@
+A glob view prints a JSON file's first three scalar keys as a field summary, with `...` when more follow; a file with only objects and arrays, or a root array, has nothing to summarize, and a leading comment is the header.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input
+== file input/package.json
+{
+  "name": "demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {},
+  "license": "MIT"
+}
+== file input/small.json
+{"a": 1, "b": [2]}
+== file input/objects.json
+{"a": {}, "b": []}
+== file input/list.json
+[1, 2]
+== file input/commented.json
+/* Editor settings. */
+{"a": 1}
+== stdout
+glob view: input
+Includes only a header or summary per file.
+For file-level outlines, use `outln [FILE]...`.
+input/commented.json: Editor settings.
+input/list.json: (no header available)
+input/objects.json: (no header available)
+input/package.json: {name: "demo", version: "0.1.0", private: true, ...}
+input/small.json: {a: 1}
+== stderr
+== exit 0

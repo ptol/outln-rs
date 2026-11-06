@@ -4,7 +4,7 @@ description: 'Agent workflow for the outln Rust rewrite: setup, code navigation,
 
 # outln
 
-`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. This repo is a Rust rewrite of the TypeScript implementation in `../outln`; so far it supports Markdown, TypeScript, JavaScript, and Rust files. [docs/overview.md](docs/overview.md) has the goals and current status.
+`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. This repo is a Rust rewrite of the TypeScript implementation in `../outln`; so far it supports Markdown, TypeScript, JavaScript, and Rust files, and TOML, YAML, and JSON data files. [docs/overview.md](docs/overview.md) has the goals and current status.
 
 The maintainer is learning Rust. In your final summary, briefly explain each non-obvious Rust concept your change relies on (an ownership or borrowing choice, a lifetime, a trait, a macro, why a crate was added), a sentence or two each. Prefer simple, readable idioms over clever ones.
 
@@ -19,10 +19,10 @@ Default sequence, cheapest first. Each step is its own tool call, because its ou
 1. **Find the docs for the task**: run `outln docs` and read every doc whose `readWhen` matches your task. [docs/codestyle.md](docs/codestyle.md) applies to every source change.
 2. **Learn the structure**: read [docs/architecture.md](docs/architecture.md) for modules and data flow.
 3. **Learn the API**: read `tests/usage.rs`, which is executable documentation of the public library API, and the doc examples in `src/lib.rs`.
-4. **Find the file**: `outln <dir>` prints one line per file, taken from its header (header comment or frontmatter).
+4. **Find the file**: `outln <dir>` prints one line per file, taken from its header (header comment or frontmatter), or else a data file's first scalar keys or a Markdown file's first heading.
 5. **Find the section**: `outln <file>...` prints declarations with line ranges like `[L1-L10]`; read only those ranges with `Read` `offset`/`limit`.
 
-The `outln` on `PATH` is this crate's latest crates.io release ([ADR-014](docs/adr.md)), which can lag the code here; run the working copy with `just run <args>`. It rejects `.toml` files.
+The `outln` on `PATH` is this crate's latest crates.io release ([ADR-014](docs/adr.md)), which can lag the code here; run the working copy with `just run <args>`. Releases up to 0.2.0 reject `.toml`, `.yaml`, and `.json` files; use `just run` for those until the next release.
 
 `outln` prints its own error for a missing path, so read its full output and stderr. When the output is too long, narrow the path or glob.
 

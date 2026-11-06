@@ -1,4 +1,4 @@
-//! Leading annotations, shared by the tree-sitter engines: the doc comments, attributes, and decorators directly above a declaration, where its line range starts.
+//! Leading annotations, shared by the code-language engines: the doc comments, attributes, and decorators directly above a declaration, where its line range starts.
 //!
 //! Grammars parse these as siblings before the declaration (tree-sitter-rust's attributes and
 //! comments, the TypeScript grammar's class member decorators, every grammar's comments), so the

@@ -1,0 +1,27 @@
+A JSON outline lists the keys of the root object without their quotes: scalar values print after the key as written, escapes included; objects and arrays print only the key, and the empty key keeps its quotes.
+tree-sitter-json parses comments, as `tsconfig.json` files use them: a leading comment is the header, and one directly above a key starts its line range.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input/tsconfig.json
+== file input/tsconfig.json
+// TypeScript settings for the demo.
+{
+  // Compiler settings.
+  "compilerOptions": {
+    "strict": true
+  },
+  "include": ["src"],
+  "name": "line\nbreak",
+  "": 0,
+  "count": 3
+}
+== stdout
+input/tsconfig.json
+TypeScript settings for the demo.
+[L3-L6] compilerOptions
+[L7-L7] include
+[L8-L8] name: "line\nbreak"
+[L9-L9] "": 0
+[L10-L10] count: 3
+== stderr
+== exit 0

@@ -1,0 +1,20 @@
+Directives (`%YAML`), the language server's modeline, and the `---` document start marker come before a YAML header comment without being part of it.
+Only the first document is outlined; the keys of documents after another `---` aren't listed.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input/a.yaml
+== file input/a.yaml
+# yaml-language-server: $schema=https://example.com/schema.json
+%YAML 1.2
+---
+# Deployment settings.
+
+replicas: 2
+---
+other: 1
+== stdout
+input/a.yaml
+Deployment settings.
+[L6-L6] replicas: 2
+== stderr
+== exit 0

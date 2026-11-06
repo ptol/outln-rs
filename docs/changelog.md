@@ -9,6 +9,14 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+- TOML, YAML, and JSON support in every mode (`.toml`, `.yaml`, `.yml`, `.json`), which the TypeScript build lacked ([ADR-016](adr.md)):
+  - **Outline lines** are top-level keys: a scalar value prints after its key as written, cut after its first line or 40 characters (`name: CI`, `edition = "2024"`); tables, mappings, objects, and lists print only the key. TOML lists its root keys, then every `[table]` and `[[array]]` header as written; YAML outlines only its first document.
+  - **Line ranges** start at the comment lines directly above a key, and end before the blank and comment lines after its value.
+  - **Header comments** are the first `#` comment (`//` or `/* */` in JSON) after directives such as `#:schema`, `%YAML`, `---`, and `# yaml-language-server:`.
+  - **Glob view**: a data file without a header comment prints a field summary of its first three scalar keys, `{name: "outln", version: "0.2.0", private: true, ...}`, or the first TOML table's (`[package] {name = "outln", ...}`), read from the file's first 64 KiB.
+- Markdown: a glob view prints a file's first heading, as its outline line prints it (`# User Guide`), when the file has no frontmatter fields; the TypeScript build printed `(no header available)`. File mode is unchanged.
+- Glob view: the line after `glob view:` says `Includes only a header or summary per file.` instead of `Includes only headers per file.`, and `--help` says "one line per file with its header or summary".
+- Every engine: preamble (a shebang, directives) is now checked before a comment when looking for the header comment; no TypeScript, JavaScript, or Rust preamble looks like a comment, so their output is unchanged.
 - Agents in this repo navigate with the published Rust build instead of the TypeScript one, which is now run only as the reference (`npx --yes outln@0.2.1`, [ADR-014](adr.md)).
 
 ## 0.2.0 (2026-11-06)

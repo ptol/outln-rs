@@ -1,6 +1,6 @@
 Ported from ../outln/__tests__/cases/typescript/009-directory-as-input-happy-path.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments", and a Markdown file without frontmatter prints its first heading instead of `(no header available)` (docs/changelog.md).
 == args
 input/src
 == file input/src/has-comment.md
@@ -14,9 +14,9 @@ description: Has summary.
 plain text
 == stdout
 glob view: input/src
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/src/has-comment.md: description: "Has summary."
-input/src/nested/no-summary.md: (no header available)
+input/src/nested/no-summary.md: # two
 == stderr
 == exit 0

@@ -4,7 +4,7 @@ description: 'What outln is, how to install, build, and run it, and where the pr
 
 # outln
 
-A CLI that prints compact structural outlines of source files (a header, then top-level declarations with line ranges) for coding agents. This is a Rust rewrite of the TypeScript implementation in `../outln`; so far it outlines Markdown, TypeScript, JavaScript, and Rust files.
+A CLI that prints compact structural outlines of source files (a header, then top-level declarations with line ranges) for coding agents. This is a Rust rewrite of the TypeScript implementation in `../outln`; so far it outlines Markdown, TypeScript, JavaScript, and Rust files, and TOML, YAML, and JSON data files.
 
 ## Install
 
@@ -16,7 +16,7 @@ It builds from source, so it needs a recent Rust (see `rust-version` in `Cargo.t
 
 ```sh
 outln src/app.ts README.md # an outline of each file: header, declarations, line ranges
-outln docs "src/**/*.ts"   # a glob view: one line per file with its header
+outln docs "src/**/*.ts"   # a glob view: one line per file with its header or summary
 outln --help               # every mode and option
 ```
 

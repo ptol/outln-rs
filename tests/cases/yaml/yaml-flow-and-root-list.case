@@ -1,0 +1,20 @@
+A root flow mapping lists its keys like a block mapping; a file whose root is a list (or a scalar) has no keys to list.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input/flow.yaml
+input/list.yaml
+== file input/flow.yaml
+{a: 1, b: [2, 3],
+ c: {d: 4}}
+== file input/list.yaml
+- a: 1
+- b: 2
+== stdout
+input/flow.yaml
+[L1-L1] a: 1
+[L1-L1] b
+[L2-L2] c
+
+input/list.yaml
+== stderr
+== exit 0

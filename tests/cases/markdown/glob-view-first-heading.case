@@ -1,0 +1,32 @@
+A glob view prints a Markdown file's frontmatter, or else its first heading as its outline line prints it; frontmatter without fields counts as none, headings in block quotes and lists are skipped, and a file without either has no header.
+File mode doesn't print the heading as a header, because it is already the outline's first line.
+Expected output is hand-written: the TypeScript build printed `(no header available)` without frontmatter.
+== args
+input
+== file input/empty-frontmatter.md
+---
+---
+Setext title
+============
+== file input/fields.md
+---
+title: Fields
+---
+# Not the summary
+== file input/plain.md
+Just text.
+== file input/quoted.md
+> # Quoted
+- # Listed
+
+## Usage ##
+== stdout
+glob view: input
+Includes only a header or summary per file.
+For file-level outlines, use `outln [FILE]...`.
+input/empty-frontmatter.md: # Setext title
+input/fields.md: title: "Fields"
+input/plain.md: (no header available)
+input/quoted.md: ## Usage
+== stderr
+== exit 0

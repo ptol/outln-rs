@@ -1,0 +1,44 @@
+A TOML outline lists the keys before the first table, then every table header as written, in file order: dotted tables and repeated arrays of tables stay separate lines.
+A scalar value prints after its key, cut after its first line or 40 characters; inline tables and arrays print only the key.
+A comment directly above a table starts its line range; a table's trailing comment and blank lines don't end it.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input/Cargo.toml
+== file input/Cargo.toml
+# Build settings for the demo crate.
+
+edition = "2024"
+description = "A very long description that goes on past the cut"
+notes = """
+two lines"""
+features = ["a", "b"]
+point = { x = 1, y = 2 }
+# The package itself.
+[package]
+name = "demo"
+# Unused for now.
+
+[lints.rust]
+unsafe_code = "forbid"
+[lints.clippy]
+all = "warn"
+
+[[bin]]
+name = "one"
+[[bin]]
+name = "two"
+== stdout
+input/Cargo.toml
+Build settings for the demo crate.
+[L3-L3] edition = "2024"
+[L4-L4] description = "A very long description that goes on pa…
+[L5-L6] notes = """…
+[L7-L7] features
+[L8-L8] point
+[L9-L11] [package]
+[L14-L15] [lints.rust]
+[L16-L17] [lints.clippy]
+[L19-L20] [[bin]]
+[L21-L22] [[bin]]
+== stderr
+== exit 0

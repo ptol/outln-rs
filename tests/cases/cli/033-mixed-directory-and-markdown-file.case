@@ -1,5 +1,5 @@
 Ported from ../outln/__tests__/cases/cli/033-mixed-directory-and-markdown-file.case.yaml; expected output is the TypeScript build's.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 input/docs
 input/AGENTS.md
@@ -15,7 +15,7 @@ description: Agent instructions.
 # Agents
 == stdout
 glob view: input/docs input/AGENTS.md
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/AGENTS.md: description: "Agent instructions."
 input/docs/guide.md: description: "How to use the tool."

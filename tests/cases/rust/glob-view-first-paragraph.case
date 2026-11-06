@@ -16,7 +16,7 @@ pub fn run() {}
 fn main() {}
 == stdout
 glob view: input
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/lib.rs: Library core: parses arguments and runs a mode.
 input/plain.rs: Small helper script. Kept for local runs.

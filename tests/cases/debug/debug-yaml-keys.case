@@ -1,0 +1,17 @@
+Debug mode highlights a YAML file's header comment (here its first comment, so not the key's) and each top-level key, not values or nested keys.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+--debug
+input/a.yaml
+== file input/a.yaml
+# The key.
+key: value
+list:
+  - nested: 1
+== stdout
+\x1b[32m# The key.\x1b[0m
+\x1b[32mkey\x1b[0m: value
+\x1b[32mlist\x1b[0m:
+  - nested: 1
+== stderr
+== exit 0

@@ -1,4 +1,4 @@
-//! Markdown language engine: frontmatter fields and headings with the line ranges of their sections.
+//! Markdown language engine: frontmatter fields and headings with the line ranges of their sections, and the first heading as the glob view's summary without frontmatter fields.
 
 use std::fmt::Write as _;
 
@@ -25,8 +25,24 @@ impl LanguageEngine for Markdown {
         }
     }
 
+    /// The frontmatter, or else the first heading, which a file without frontmatter fields usually
+    /// opens with as its title.
     fn file_summary(&self, text: &str) -> FileSummary {
-        FileSummary(parse_frontmatter(text).and_then(Frontmatter::into_header))
+        let frontmatter = parse_frontmatter(text);
+        let body_start = frontmatter.as_ref().map_or(0, |found| found.body_start);
+        if let Some(header) = frontmatter.and_then(Frontmatter::into_header) {
+            return FileSummary::Header(header);
+        }
+        // Only the first heading is needed, so events after it aren't read (pulldown-cmark
+        // still scans the whole body's block structure when the parser is created).
+        top_level_headings(&text[body_start..], body_start)
+            .next()
+            .map_or(FileSummary::Empty, |heading| {
+                FileSummary::FirstHeading(heading_text(
+                    &text[heading.range.as_range()],
+                    heading.level,
+                ))
+            })
     }
 }
 
@@ -165,7 +181,7 @@ struct Heading {
 /// blank lines. Headings inside block quotes and lists aren't document sections, so they're
 /// skipped.
 fn heading_lines(text: &str, body_start: usize) -> Vec<OutlineLine> {
-    let headings = find_headings(&text[body_start..], body_start);
+    let headings: Vec<Heading> = top_level_headings(&text[body_start..], body_start).collect();
     headings
         .iter()
         .enumerate()
@@ -186,24 +202,26 @@ fn heading_lines(text: &str, body_start: usize) -> Vec<OutlineLine> {
 }
 
 /// Top-level headings of `body`, with ranges shifted by `offset` into the whole text.
-fn find_headings(body: &str, offset: usize) -> Vec<Heading> {
-    let mut headings = Vec::new();
+///
+/// An iterator, so a caller that needs only the first heading reads no events after it.
+fn top_level_headings(body: &str, offset: usize) -> impl Iterator<Item = Heading> {
     let mut container_depth: usize = 0;
-    for (event, range) in Parser::new_ext(body, Options::empty()).into_offset_iter() {
-        if let Event::Start(Tag::Heading { level, .. }) = event {
-            if container_depth == 0 {
-                headings.push(Heading {
+    Parser::new_ext(body, Options::empty())
+        .into_offset_iter()
+        .filter_map(move |(event, range)| {
+            if let Event::Start(Tag::Heading { level, .. }) = event {
+                return (container_depth == 0).then(|| Heading {
                     level: level as usize,
                     range: ByteRange::new(range.start, range.end).shifted(offset),
                 });
             }
-        } else if matches!(event, Event::Start(Tag::BlockQuote(_) | Tag::List(_))) {
-            container_depth += 1;
-        } else if matches!(event, Event::End(TagEnd::BlockQuote(_) | TagEnd::List(_))) {
-            container_depth = container_depth.saturating_sub(1);
-        }
-    }
-    headings
+            if matches!(event, Event::Start(Tag::BlockQuote(_) | Tag::List(_))) {
+                container_depth += 1;
+            } else if matches!(event, Event::End(TagEnd::BlockQuote(_) | TagEnd::List(_))) {
+                container_depth = container_depth.saturating_sub(1);
+            }
+            None
+        })
 }
 
 /// The heading as printed: `#` repeated for its level, then its text without markup syntax.
@@ -291,13 +309,11 @@ mod tests {
 
     #[test]
     fn frontmatter_keeps_top_level_fields_only() {
-        let header = Markdown
-            .file_summary(
-                "---\ntitle: Guide\n  nested: x\nno colon\n: no key\n- item: x\n-\n# note: x\n-flag: on\n---\n# Body\n",
-            )
-            .0;
-        let Some(Header::Frontmatter(fields)) = header else {
-            panic!("expected frontmatter, got {header:?}");
+        let summary = Markdown.file_summary(
+            "---\ntitle: Guide\n  nested: x\nno colon\n: no key\n- item: x\n-\n# note: x\n-flag: on\n---\n# Body\n",
+        );
+        let FileSummary::Header(Header::Frontmatter(fields)) = summary else {
+            panic!("expected frontmatter, got {summary:?}");
         };
         let keys: Vec<&str> = fields.iter().map(|field| field.key.as_str()).collect();
         assert_eq!(keys, ["title", "-flag"]);
@@ -308,8 +324,27 @@ mod tests {
     fn unterminated_frontmatter_is_body_text() {
         assert_eq!(
             Markdown.file_summary("---\ntitle: x\n# Body\n"),
-            FileSummary(None)
+            FileSummary::FirstHeading("# Body".to_owned())
         );
+    }
+
+    #[test]
+    fn without_frontmatter_fields_the_first_section_heading_is_the_summary() {
+        let first_heading = |text: &str| {
+            let FileSummary::FirstHeading(heading) = Markdown.file_summary(text) else {
+                return None;
+            };
+            Some(heading)
+        };
+        assert_eq!(
+            first_heading("> # Quoted\n\nGuide\n=====\n# Later\n"),
+            Some("# Guide".to_owned())
+        );
+        assert_eq!(
+            first_heading("---\n---\n## Usage ##\n"),
+            Some("## Usage".to_owned())
+        );
+        assert_eq!(Markdown.file_summary("Just text.\n"), FileSummary::Empty);
     }
 
     #[test]

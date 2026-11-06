@@ -26,7 +26,7 @@ _Avoid_: Span, location
 
 ### Declaration
 
-A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a class member, or a test block.
+A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a class member, a test block, or a data file's key.
 Code says declaration even where a grammar's node kinds say item (tree-sitter-rust's `function_item`).
 _Avoid_: Symbol, definition, item
 
@@ -37,7 +37,7 @@ _Avoid_: Head, prototype
 
 ### Leading annotation
 
-A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration.
+A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration. Data files have no doc comments, so the comment lines directly above a key are its leading annotation.
 _Avoid_: Preamble, prefix, trivia
 
 ### Class member
@@ -49,6 +49,11 @@ _Avoid_: Child, nested declaration
 
 A top-level call that opens a group of tests or one test, such as `describe('parser', …)`, listed by its title.
 _Avoid_: Test case, spec, suite
+
+### Key
+
+A top-level key of a data file, or a TOML table header (`[package]`, `[[bin]]`): the data file's kind of declaration. Its outline line prints a scalar value after the key (`name: CI`, `edition = "2024"`), and only the key for a table, mapping, object, or list.
+_Avoid_: Property, entry
 
 ### Header
 
@@ -67,8 +72,13 @@ _Avoid_: Metadata block, YAML header
 
 ### File summary
 
-The single line a file contributes to a glob view: its path and its header.
+The single line a file contributes to a glob view: its path and its header, or, for a data file without a header comment, its field summary, and for a Markdown file without frontmatter fields, its first heading.
 _Avoid_: Outline, description
+
+### Field summary
+
+What a glob view prints for a data file without a header comment: its first top-level keys with scalar values, as their outline lines print them, such as `{name: "outln", version: "0.2.0", private: true, ...}` (for a TOML file whose scalar keys are all in tables, the first table's, as `[package] {name = "outln", ...}`).
+_Avoid_: Preview, metadata
 
 ## Positions
 
@@ -105,6 +115,11 @@ _Avoid_: Highlight mode, verbose mode
 
 The component that produces outlines and file summaries for one language.
 _Avoid_: Parser, plugin, handler
+
+### Data file
+
+A TOML, YAML, or JSON file: its declarations are its keys, and its file summary is its header comment or else its field summary.
+_Avoid_: Config file (not every one configures something)
 
 ## Testing
 

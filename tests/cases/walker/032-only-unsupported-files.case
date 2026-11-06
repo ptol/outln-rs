@@ -1,7 +1,8 @@
 Ported from ../outln/__tests__/cases/walker/032-only-unsupported-files.case.yaml; expected output is the TypeScript build's.
+Its unsupported input was `data.json`, renamed to `data.txt` now that JSON is supported.
 == args
 input
-== file input/data.json
+== file input/data.txt
 {"a": 1}
 == stdout
 == stderr

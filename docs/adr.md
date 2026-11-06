@@ -52,7 +52,7 @@ Rewrite the TypeScript CLI (`../outln`) in Rust, in this repo, as a single Cargo
 
 ## ADR-003: Language engines return data with byte ranges into normalized text
 
-**Status**: Accepted (2026-11-06); amended by ADR-008 (one engine type may serve several grammars, and `Header` has a header comment variant)
+**Status**: Accepted (2026-11-06); amended by ADR-008 (one engine type may serve several grammars, and `Header` has a header comment variant) and ADR-016 (`file_summary` returns a `FileSummary` enum, and a data file's engine parses a prefix of the file for it)
 
 ### Decision
 
@@ -242,7 +242,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-012: Doc-aware header comments, first paragraphs, and leading annotations
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-016 (`CommentSyntax` gains `#` comments, preamble is checked before comments, and a data file's key takes the comment lines directly above it)
 
 ### Decision
 
@@ -324,6 +324,32 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - A dependency under a license not on the allow list, or one that pulls in a second version of a crate, fails until the maintainer approves an entry in `deny.toml`; every exception there carries a `reason`.
 - With `--document-private-items`, rustdoc doesn't warn about public docs that link to private items (`private_intra_doc_links`), which would render as plain text on docs.rs.
 
+## ADR-016: Outline TOML, YAML, and JSON data files with tree-sitter
+
+**Status**: Accepted (2026-11-06); amends ADR-003 and ADR-012
+
+### Decision
+
+- One `DataFile` engine type (`src/languages/data_file.rs`), with the format as a field like `Script`, outlines `.toml`, `.yaml`, `.yml`, and `.json` files, parsed with `tree-sitter-toml-ng` 0.7.0, `tree-sitter-yaml` 0.7.2, and `tree-sitter-json` 0.24.8. Each format's child module only finds its keys in the tree; printing, line ranges, and the field summary are shared.
+- Outline lines are top-level keys only, never nested: a scalar value prints after the key as written, on one line and cut at 40 characters with `…`; a table, mapping, object, or list prints only the key. TOML lists the keys before the first table, then each `[table]` and `[[array]]` header as written, in file order and unmerged. YAML outlines only the first document. A root array or scalar has no keys.
+- A key's line range starts at the comment lines directly above it, indented no deeper than the key, and ends before the blank and comment lines its value ends with, which the grammars put inside the key before (a TOML table runs to the next one). Comments that run on from the header comment, and preamble such as `#:schema`, are never a key's.
+- The header is the first comment, after preamble: `#` comments for TOML and YAML (`CommentSyntax::Hash`), `//` and `/* */` for JSON, which tree-sitter-json parses although JSON has none. Preamble (YAML's `%` directives, `---`, and `# yaml-language-server:` modeline; TOML's `#:` directives) is now checked before a comment, so a directive written as a comment is skipped.
+- `file_summary` returns a `FileSummary` enum: a header, a field summary, a Markdown file's first heading (without frontmatter fields; pulldown-cmark still scans the body's block structure, but no events after the heading are read), or nothing. Like a field summary, the first heading is glob view only, because file mode already prints it as the first outline line. A data file without a header comment gets a field summary in the glob view only (file mode would repeat its outline lines): its first three scalar top-level keys, `{a: 1, b: 2, ...}`, or the first TOML table's (`[package] {name = "outln", ...}`) when none come before it. It parses only the first 64 KiB, up to the last line break in them (or a character boundary, for a file on one line); after a cut, keys running to the cut don't count and `...` always follows.
+- A JSON root object that never closes parses as an `ERROR` node, which flattens nested objects' pairs among its own, so only its pairs before the first other child are keys.
+
+### Rationale
+
+- Agents open configuration and data files as often as code; a glob view of a repo root now summarizes `Cargo.toml`, `package.json`, and CI workflows instead of skipping them.
+- The three grammars are maintained by the tree-sitter organizations, are MIT-licensed, and depend only on `tree-sitter-language`, which the other grammars already pull in; cargo deny passes. Hand-written line scanners would get YAML block scalars and flow collections, and JSON strings containing braces, wrong.
+- Top-level keys alone keep outlines short: nested keys of a lockfile or a Kubernetes manifest would make the outline as long as the file.
+- A field summary needs a parse, unlike every other glob view header; a 6 MB `package-lock.json` takes about 0.25 s to parse whole, while its first fields are in its first lines.
+
+### Consequences
+
+- The YAML and TOML grammars compile C scanners, which `just build-static` now covers with a sample per format; the static binary grew from 7.52 MB to 7.78 MB.
+- The glob view's preamble says "Includes only a header or summary per file.", since a line may be a field summary or a Markdown file's first heading.
+- Format-specific extras are left out: `.jsonc` and `.json5` aren't recognized, later YAML documents aren't outlined, and lockfiles get no special handling.
+
 ## Dependencies
 
 One line per crate: why std was not enough.
@@ -332,6 +358,7 @@ One line per crate: why std was not enough.
 - `ignore` (no default features to turn off): gitignore-aware directory walking with git's rules (ADR-006).
 - `globset` (default features off): glob patterns with `**`, classes, and `{a,b}` alternatives; already a dependency of `ignore`.
 - `pulldown-cmark` (default features off): CommonMark parsing for the Markdown engine (ADR-007).
-- `tree-sitter` (default features off: no query regex engine): the parser runtime of the code-language engines (ADR-008).
+- `tree-sitter` (default features off: no query regex engine): the parser runtime of the code-language and data file engines (ADR-008, ADR-016).
 - `tree-sitter-typescript`, `tree-sitter-javascript` (no features): the TypeScript, TSX, and JavaScript grammars (ADR-008).
 - `tree-sitter-rust` (no features): the Rust grammar (ADR-011).
+- `tree-sitter-json`, `tree-sitter-toml-ng`, `tree-sitter-yaml` (no features): the data file grammars (ADR-016).

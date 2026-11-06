@@ -1,6 +1,6 @@
 Ported from ../outln/__tests__/cases/walker/032-explicit-ignored-directory-is-walked.case.yaml; output differs from the TypeScript build's: TypeScript dropped ancestor rules for an ignored root; git semantics keep them.
 Its source-code inputs were rewritten as Markdown files.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 repo/dist
 == file repo/.git/HEAD
@@ -27,7 +27,7 @@ description: Ignored by the root's own .gitignore.
 # skip
 == stdout
 glob view: repo/dist
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 repo/dist/bundle.md: description: "Explicitly requested, so walked."
 == stderr

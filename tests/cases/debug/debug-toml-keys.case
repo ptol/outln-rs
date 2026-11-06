@@ -1,0 +1,21 @@
+Debug mode highlights a TOML file's header comment, each root key, and each table's whole header, not values or the comments above keys.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+--debug
+input/a.toml
+== file input/a.toml
+# Settings.
+
+# The root key.
+key = 1
+[table.name]
+x = 2
+== stdout
+\x1b[32m# Settings.\x1b[0m
+
+# The root key.
+\x1b[32mkey\x1b[0m = 1
+\x1b[32m[table.name]\x1b[0m
+x = 2
+== stderr
+== exit 0

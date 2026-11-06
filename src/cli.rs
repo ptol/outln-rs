@@ -8,7 +8,7 @@ use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
 const MODES_AND_EXAMPLES: &str = "\
 Modes:
   outln <file>...            Full outline for each file (header, declarations, line ranges).
-  outln <dir|glob>...        Glob view: one line per file with its header.
+  outln <dir|glob>...        Glob view: one line per file with its header or summary.
                              Explicit files may be mixed in; they use the same one-line format.
                              Respects .gitignore and .git/info/exclude inside git repositories,
                              .ignore files, and git's global excludes file;

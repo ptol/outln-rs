@@ -1,0 +1,30 @@
+A glob view prints a YAML file's header comment, or else a field summary of its first three scalar keys, with `...` when more follow; a file with only mappings and lists has nothing to summarize.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input
+== file input/commented.yaml
+# Commented settings.
+a: 1
+== file input/compose.yml
+version: "3"
+services:
+  web: {}
+name: demo
+== file input/many.yaml
+a: 1
+b: two
+c: true
+d: null
+== file input/nested.yaml
+a:
+  b: 1
+== stdout
+glob view: input
+Includes only a header or summary per file.
+For file-level outlines, use `outln [FILE]...`.
+input/commented.yaml: Commented settings.
+input/compose.yml: {version: "3", name: demo}
+input/many.yaml: {a: 1, b: two, c: true, ...}
+input/nested.yaml: (no header available)
+== stderr
+== exit 0

@@ -1,0 +1,26 @@
+A taplo `#:schema` directive before the header comment is skipped, and is never a key's comment either.
+A comment block that runs on from the header comment (its later paragraphs) belongs to the header, so the first key's line range starts at the key.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input/a.toml
+input/b.toml
+== file input/a.toml
+#:schema https://example.com/schema.json
+# Tool configuration.
+#
+# Second paragraph, still part of the header comment.
+[tool]
+name = "x"
+== file input/b.toml
+#:schema https://example.com/schema.json
+[tool]
+name = "x"
+== stdout
+input/a.toml
+Tool configuration.
+[L5-L6] [tool]
+
+input/b.toml
+[L2-L3] [tool]
+== stderr
+== exit 0

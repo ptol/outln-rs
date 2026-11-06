@@ -1,6 +1,6 @@
 Ported from ../outln/__tests__/cases/cli/031-bracket-directory-path.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 input/app/[id]
 == file input/app/[id]/page.md
@@ -15,7 +15,7 @@ description: Must not match the [id] character class.
 # other
 == stdout
 glob view: input/app/[id]
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/app/[id]/page.md: description: "Product detail page."
 == stderr

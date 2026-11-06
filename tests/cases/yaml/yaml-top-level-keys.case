@@ -1,0 +1,39 @@
+A YAML outline lists the keys of the root mapping: scalar values print after the key as written (quotes, anchors, aliases), cut after their first line; mappings and lists print only the key, and a key without a value prints as `key:`.
+A comment at the key's indentation directly above it starts its line range; one indented deeper belongs to the value above, and trailing comments and blank lines don't end a key's range.
+Expected output is hand-written: the TypeScript build has no data file support.
+== args
+input/ci.yml
+== file input/ci.yml
+name: CI
+on:
+  push:
+    branches: [main]
+# The jobs to run.
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # The steps.
+
+"quoted key": 'single'
+script: |
+  echo one
+  echo two
+defaults: &defaults
+  shell: bash
+copy: *defaults
+empty:
+? complex
+: value
+== stdout
+input/ci.yml
+[L1-L1] name: CI
+[L2-L4] on
+[L5-L8] jobs
+[L11-L11] "quoted key": 'single'
+[L12-L14] script: |…
+[L15-L16] defaults
+[L17-L17] copy: *defaults
+[L18-L18] empty:
+[L19-L20] complex: value
+== stderr
+== exit 0

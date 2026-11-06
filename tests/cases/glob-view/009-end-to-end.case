@@ -1,6 +1,6 @@
 Ported from ../outln/__tests__/cases/typescript/009-end-to-end.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
-Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+Except: the glob view says "a header or summary" instead of "header comments", and a Markdown file without frontmatter prints its first heading instead of `(no header available)` (docs/changelog.md).
 == args
 input/src
 input/docs/
@@ -28,10 +28,10 @@ description: Config settings.
 # settings
 == stdout
 glob view: input/src input/docs/ input/config/*.md
-Includes only headers per file.
+Includes only a header or summary per file.
 For file-level outlines, use `outln [FILE]...`.
 input/config/settings.md: description: "Config settings."
-input/docs/guide.md: (no header available)
+input/docs/guide.md: # User Guide
 input/docs/readme.md: title: "Documentation"
 input/src/helpers/nested.md: description: "Helper functions."
 input/src/utils.md: description: "Utility functions."
