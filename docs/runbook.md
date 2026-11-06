@@ -12,23 +12,13 @@ mise install   # the pinned tools, including just itself
 just setup
 ```
 
-`just setup` runs `mise install` (Rust 1.99.1, hk, dprint, just from `mise.toml`) and `hk install --mise` (the git pre-commit hook, run through mise so it finds the pinned tools even outside an activated shell).
+`just setup` runs `mise install` and `hk install --mise`; `--mise` makes the hook run through mise, so it finds the pinned tools even outside an activated shell.
 
 ## Commands
 
-| Command                 | What it does                                                                       |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| `just run ...`          | Builds and runs the CLI with the given arguments.                                  |
-| `just fmt`              | Formats every file (rustfmt, dprint).                                              |
-| `just lint`             | clippy over all targets; any warning fails.                                        |
-| `just test`             | All tests, including doc examples and the conventions test.                        |
-| `just case x`           | Only the casefiles whose path contains `x` ([testing.md](testing.md)).             |
-| `just update-cases [x]` | Rewrites the expected output of failing casefiles; review with `git diff`.         |
-| `just fix`              | clippy `--fix`, then formatting and whitespace fixes over all files.               |
-| `just check`            | `fix`, then `verify`, then lists changed files. Run before reporting work as done. |
-| `just verify`           | Every check without changing files.                                                |
+`just` lists every recipe with what it does; the `justfile` comment above each recipe is its documentation. Casefile recipes (`just case`, `just update-cases`) are explained in [testing.md](testing.md).
 
-Release build: `cargo build --release` (fat LTO, one codegen unit, stripped) writes `target/release/outln`. Don't `cargo install` it yet: the binary is also named `outln` and would shadow the TypeScript build agents navigate with.
+Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. Keep it off `PATH` (no `cargo install`) until it reaches parity: the binary is also named `outln` and would shadow the TypeScript build agents navigate with.
 
 ## Pre-commit hook
 
@@ -42,6 +32,6 @@ Run it without committing: `hk run pre-commit`. Preview what it would run: `hk r
 
 ## Troubleshooting
 
-- **Wrong Rust version** (`rustc --version` isn't 1.99.1): mise isn't active in this shell. Run `mise install`, or prefix commands with `mise exec --`.
+- **Wrong Rust version** (`rustc --version` differs from `rust-toolchain.toml`): mise isn't active in this shell. Run `mise install`, or prefix commands with `mise exec --`.
 - **Hook can't find a tool**: rerun `hk install --mise`.
 - **Stash restore failed after a hook run**: check `git status`, `git diff`, `git diff --cached`, and `git stash list` before changing anything; hk also keeps patch backups (see `hk --help`).

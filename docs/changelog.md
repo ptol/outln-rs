@@ -16,4 +16,3 @@ readWhen: 'finishing a change that users or agents would notice'
   - **Directory walking**: git semantics through the `ignore` crate. A `.gitignore` outside a git repository is ignored, `.ignore` files and `.git/info/exclude` are honoured, git's global excludes file applies, and ancestor rules still apply to an explicitly named directory they ignore. Files are sorted by byte order instead of locale order.
   - **Encoding**: a file that isn't valid UTF-8 is reported as `FILE <path> IS NOT UTF-8 TEXT` instead of being decoded with replacement characters, and an unreadable file as `FILE <path> COULD NOT BE READ`.
   - **Unsupported files**: an unsupported file is reported as unsupported without being read.
-- Scaffold: Cargo package with a CLI that prints `ok`, strict lints, hk pre-commit hook, just commands, agent docs.

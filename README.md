@@ -19,7 +19,7 @@ just check    # auto-fix, then every check and test
 
 - [AGENTS.md](AGENTS.md): how agents (and people) work in this repo.
 - [docs/overview.md](docs/overview.md): goals, status, and scope.
-- [docs/runbook.md](docs/runbook.md): commands, tooling, and troubleshooting.
+- [docs/runbook.md](docs/runbook.md): setup, the pre-commit hook, and troubleshooting.
 
 ## License
 

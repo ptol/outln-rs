@@ -8,11 +8,11 @@ description: 'Agent workflow for the outln Rust rewrite: setup, code navigation,
 
 The maintainer is learning Rust. In your final summary, briefly explain each non-obvious Rust concept your change relies on (an ownership or borrowing choice, a lifetime, a trait, a macro, why a crate was added), a sentence or two each. Prefer simple, readable idioms over clever ones.
 
-# Setup
+## Setup
 
-On a fresh clone, run `mise install` (it installs the tools pinned in `mise.toml`: Rust toolchain, hk, dprint, just), then `just setup` (it installs the git pre-commit hook). `just` lists every project command; [docs/runbook.md](docs/runbook.md) explains them.
+On a fresh clone, run `mise install` (it installs the tools pinned in `mise.toml`: Rust toolchain, hk, dprint, just), then `just setup` (it installs the git pre-commit hook). `just` lists every project command with what it does; [docs/runbook.md](docs/runbook.md) covers setup, the hook, and troubleshooting.
 
-# Navigate code
+## Navigate code
 
 Default sequence, cheapest first. Each step is its own tool call, because its output picks the target of the next one:
 
@@ -28,42 +28,42 @@ The `outln` on `PATH` is the installed TypeScript build, not this repo's binary 
 
 Run `outln` in its own command: the outline exists to pick what you read next, and a command that also reads files (`cat`, `sed`, `head`, `tail`, a pager) reads before seeing it. Don't pipe its output into `head`, `tail`, `sed` or a pager either; filter it with `grep` or narrow the path.
 
-## Keep outln output useful
+### Keep outln output useful
 
 - Every `.rs` file starts with a `//!` header comment on its first line saying what the file is for; update it when the file's purpose changes.
 - Keep top-level definitions focused, with descriptive names; avoid large unstructured blocks.
-- Every Markdown file needs YAML frontmatter with a `description` and clear `#`/`##`/`###` headers. Docs in `docs/` also need `readWhen`: the tasks that call for reading the doc, phrased to follow "Read when" (`readWhen: 'writing or changing tests'`).
+- Every Markdown file needs YAML frontmatter with a `description`, and docs in `docs/` a `readWhen`; [docs/docs-rules.md](docs/docs-rules.md) has the rules for writing docs.
 - `tests/repo_conventions.rs` fails on a missing header comment or frontmatter field, an inline relative link to a missing file, an inner `#![allow(...)]`, or tool versions that disagree between files; the pre-commit hook runs it on every commit.
 
-# Domain terms
+## Domain terms
 
 Name domain concepts in code, docs, and CLI output only with terms from [docs/GLOSSARY.md](docs/GLOSSARY.md) (find them with `outln docs/GLOSSARY.md` and read only their entries). When a concept has no term, don't invent a name: propose one with the `domain-modeling` skill (or, without it, in the format of the existing entries, and tell the maintainer) and add it to the glossary before using it. Words under _Avoid_ are known wrong names; leaving a word off that list doesn't make it acceptable.
 
-# Dependencies
+## Dependencies
 
 Prefer the standard library. Add a well-established crate when std falls clearly short (tree-sitter grammars, `ignore` for gitignore-aware walking, `clap`, `thiserror`): turn off default features you don't need, and record why in [docs/adr.md](docs/adr.md). Stop and ask the maintainer before adding a crate that is unmaintained, large (many transitive dependencies), or brings `unsafe`-heavy native code beyond tree-sitter grammars. `Cargo.lock` is committed; change it only through `cargo`.
 
-# Editing
+## Editing
 
 Edit source and docs with a tool that fails when the old text isn't there (`Edit`, `apply_patch`), not a shell `sed` or Python `str.replace`, which silently change nothing.
 
-# Formatting
+## Formatting
 
 Don't reformat code you didn't change; the pre-commit hook formats staged files (rustfmt for `.rs`, dprint for Markdown, TOML, JSON, and YAML) and re-stages them. `just check` formats the whole repo, but since every commit is formatted, that only changes files you touched.
 
-# Lint
+## Lint
 
 Fix the code instead of silencing a lint. If a lint is wrong for a whole pattern, change `[lints]` in `Cargo.toml` (or `clippy.toml`) with a comment explaining why. A single exception is `#[expect(clippy::lint_name, reason = "why")]` on the narrowest item; `#[allow]` and attributes without a `reason` are themselves lint errors, and the conventions test rejects inner `#![allow(...)]`, which clippy can't see. `unsafe` code is forbidden and can't be re-enabled inline.
 
 Side effects belong to `src/main.rs`, the imperative shell, and library code receives them as parameters. Lints reject printing (`print_stdout`, `print_stderr`) and opening the process streams, reading the environment or clock, exiting the process, or calling clap's methods that do these (`disallowed-methods` in `clippy.toml`); in `src/main.rs`, the code that does these things carries `#[expect(clippy::disallowed_methods, reason = "...")]`, and so does the casefile runner's one function that reads its environment switches. The exception is the filesystem: library code reads files directly, resolving every path against `Context::cwd`, never the process's working directory ([ADR-004](docs/adr.md)).
 
-# Verify changes
+## Verify changes
 
 - Run `just check` before reporting work as done, and fix every failure until it passes. It applies automatic fixes first (clippy suggestions, formatting, whitespace), then runs every check and test, and ends by listing the files that changed; review those changes as your own.
 - `just verify` runs the same checks without changing any file.
 - There is no CI: the pre-commit hook is the only automatic gate. It checks formatting and conventions on every commit, runs clippy and every test when Rust or Cargo files are staged, and runs every test when casefiles are. Never bypass the hook (`git commit --no-verify`, `-n`, `HK=0`); when it fails, fix the cause.
 
-# Priorities
+## Priorities
 
 Coding agents write most of this codebase and are its main readers. Optimize for the next agent's session: prefer designs an agent can understand from the fewest files, and back conventions with types, lints, and tests that catch mistakes mechanically. When an agent stumbles (reads the wrong file, misses a convention, repeats a mistake), fix the cause in code, tooling, or docs so the next agent gets it right.
 

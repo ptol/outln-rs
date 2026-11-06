@@ -52,7 +52,6 @@ readWhen: 'changing source code'
 
 ## Comments
 
-- Every `.rs` file starts with a `//!` header comment saying what the file is for.
 - Public items get `///` doc comments; examples in them run as tests, so prefer an example over prose.
 - Names carry the _what_; comments carry the _why_.
 - Comment the _why_ wherever a reader of the surrounding code alone would ask "why this way?": a constraint enforced in another file or crate, an assumption the code relies on but does not check, a deliberate trade-off against the obvious alternative, or a technique from a known algorithm or paper (name it). State the reason in a line or two and, when it lives elsewhere, point to where.

@@ -39,7 +39,10 @@ New modules go under `src/` as `src/<name>.rs` (with `src/<name>/` for its child
 3. Return data, not text: an `Outline` whose `OutlineLine`s carry the printed text plus byte ranges (`range` for the line range, `highlight` for debug mode). `file_summary` returns only the header and should stop parsing once it has it, because the glob view calls it for every file.
 4. If the language has header comments, add a `Header` variant for them; the compiler then points at every `match` that must render it.
 5. Port its TypeScript casefiles to `tests/cases/<language>/` ([testing.md](testing.md)).
+6. Record the parser choice as an ADR and the new language in [overview.md](overview.md) and [changelog.md](changelog.md).
+
+Done when `just case <language>` passes, `just run` on a file of the language prints its outline, and `just check` passes.
 
 ## Decisions
 
-Recorded in [adr.md](adr.md): engines return byte ranges into normalized text (ADR-003), casefiles run in process on a temp directory (ADR-004), the CLI is parsed with clap inside the library (ADR-005), directories are walked with git semantics through the `ignore` crate (ADR-006), and Markdown is parsed with pulldown-cmark (ADR-007).
+The reasons behind this design are in [adr.md](adr.md); `outln docs/adr.md` lists the records.
