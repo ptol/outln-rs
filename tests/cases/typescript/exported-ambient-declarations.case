@@ -1,5 +1,5 @@
-`export declare` statements print with both prefixes. The TypeScript build listed nothing for them.
-`declare const enum` keeps its `const`, which the TypeScript build dropped.
+`export declare` statements print with both prefixes.
+`declare const enum` keeps its `const`.
 == args
 input/types.d.ts
 == file input/types.d.ts

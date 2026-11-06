@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/debug/017-debug-export-const-multiline.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/export-const-multi-line.ts

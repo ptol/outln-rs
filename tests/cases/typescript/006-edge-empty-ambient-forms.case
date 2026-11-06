@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/typescript/006-edge-empty-ambient-forms.case.yaml; expected output is the TypeScript build's.
 == args
 input/empty-ambient.ts
 == file input/empty-ambient.ts

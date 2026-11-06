@@ -56,7 +56,7 @@ pub(crate) fn run(
 }
 
 /// The supported files the arguments name, plus errors for directories and explicit files
-/// that can't be used (directory errors first, as the TypeScript build reports them).
+/// that can't be used (directory errors first).
 fn discover(
     arguments: &[(String, ArgumentKind)],
     walker: &FileWalker<'_>,

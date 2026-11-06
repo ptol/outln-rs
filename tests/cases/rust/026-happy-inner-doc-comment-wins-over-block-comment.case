@@ -1,5 +1,4 @@
-Ported from the TypeScript build's __tests__/cases/rust/026-happy-exclude-doc-and-block-comments-from-header.case.yaml; expected output is the TypeScript build's, except:
-- The `//!` comment is the header comment even with other comments after it, and the `///` comment is a leading annotation of the struct; the TypeScript build gave no header here.
+- The `//!` comment is the header comment even with other comments after it, and the `///` comment is a leading annotation of the struct.
 == args
 input/not-header-comments.rs
 == file input/not-header-comments.rs

@@ -1,5 +1,4 @@
 Debug mode highlights each top-level JSON key with its quotes, not nested keys.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 --debug
 input/a.json

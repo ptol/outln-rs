@@ -1,6 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/cli/031-bracket-directory-path.case.yaml; expected output is the TypeScript build's.
-Its source-code inputs were rewritten as Markdown files.
-Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 input/app/[id]
 == file input/app/[id]/page.md

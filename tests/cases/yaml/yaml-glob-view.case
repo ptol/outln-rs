@@ -1,5 +1,4 @@
 A glob view prints a YAML file's header comment, or else a field summary of its first three scalar keys, with `...` when more follow; a file with only mappings and lists has nothing to summarize.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 input
 == file input/commented.yaml

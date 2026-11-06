@@ -1,5 +1,5 @@
 ---
-description: 'Notable changes to outln by release, including deliberate divergences from the TypeScript build.'
+description: 'Notable changes to outln by release.'
 readWhen: 'finishing a change that users or agents would notice'
 ---
 
@@ -9,22 +9,22 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
-- TOML, YAML, and JSON support in every mode (`.toml`, `.yaml`, `.yml`, `.json`), which the TypeScript build lacked ([ADR-016](adr.md)):
+- TOML, YAML, and JSON support in every mode (`.toml`, `.yaml`, `.yml`, `.json`) ([ADR-016](adr.md)):
   - **Outline lines** are top-level keys: a scalar value prints after its key as written, cut after its first line or 40 characters (`name: CI`, `edition = "2024"`); tables, mappings, objects, and lists print only the key. TOML lists its root keys, then every `[table]` and `[[array]]` header as written; YAML outlines only its first document.
   - **Line ranges** start at the comment lines directly above a key, and end before the blank and comment lines after its value.
   - **Header comments** are the first `#` comment (`//` or `/* */` in JSON) after directives such as `#:schema`, `%YAML`, `---`, and `# yaml-language-server:`.
   - **Glob view**: a data file without a header comment prints a field summary of its first three scalar keys, `{name: "outln", version: "0.2.0", private: true, ...}`, or the first TOML table's (`[package] {name = "outln", ...}`), read from the file's first 64 KiB.
-- Markdown: a glob view prints a file's first heading, as its outline line prints it (`# User Guide`), when the file has no frontmatter fields; the TypeScript build printed `(no header available)`. File mode is unchanged.
+- Markdown: a glob view prints a file's first heading, as its outline line prints it (`# User Guide`), when the file has no frontmatter fields, instead of `(no header available)`. File mode is unchanged.
 - Glob view: the line after `glob view:` says `Includes only a header or summary per file.` instead of `Includes only headers per file.`, and `--help` says "one line per file with its header or summary".
 - Every engine: preamble (a shebang, directives) is now checked before a comment when looking for the header comment; no TypeScript, JavaScript, or Rust preamble looks like a comment, so their output is unchanged.
-- Agents in this repo navigate with the published Rust build instead of the TypeScript one, which is now run only as the reference (`npx --yes outln@0.2.1`, [ADR-014](adr.md)).
+- Agents in this repo navigate with the published build ([ADR-014](adr.md)).
 
 ## 0.2.0 (2026-11-06)
 
-- Rust support in every mode (`.rs`), ported from the TypeScript build with its casefiles in `tests/cases/rust/`. Deliberate differences from the TypeScript build:
-  - **Header comments**: the first `//!` or `/*!` comment before the first code is the header, even after a `//` license comment or `#![...]` inner attributes (nested `/* */` comments included); without one, the first plain `//` or `/* */` comment is. `///` and `/**` comments are never the header. The TypeScript build read only plain `//` lines, so this repo's own files had no header.
-  - **Signatures** print the source as written on one line (`pub(crate) fn parse<'a>(text: &'a str) -> Tree where T: Clone`, `impl<T: Display> Render for Wrapper<T>`, `const MAX: usize`, `type Id = u64`) instead of keyword and name with spaces (`fn main ()`, `impl Render for Wrapper`, `const MAX`, `type Id`).
-  - **`use`**: only re-exports (`pub use`, `pub(crate) use`, and other visibilities) are listed, like TypeScript's `export { … } from`; the TypeScript build listed every `use`.
+- Rust support in every mode (`.rs`), with casefiles in `tests/cases/rust/`:
+  - **Header comments**: the first `//!` or `/*!` comment before the first code is the header, even after a `//` license comment or `#![...]` inner attributes (nested `/* */` comments included); without one, the first plain `//` or `/* */` comment is. `///` and `/**` comments are never the header.
+  - **Signatures** print the source as written on one line (`pub(crate) fn parse<'a>(text: &'a str) -> Tree where T: Clone`, `impl<T: Display> Render for Wrapper<T>`, `const MAX: usize`, `type Id = u64`).
+  - **`use`**: only re-exports (`pub use`, `pub(crate) use`, and other visibilities) are listed, like TypeScript's `export { … } from`.
   - **Line ranges** start at the declaration's `///` doc comments and `#[...]` attributes.
   - **Debug mode** highlights a signature up to its body, a `where` clause on its own lines included.
 - Every engine: a header comment prints only its first paragraph, up to the first comment line without text when more text follows (a ` *` or `//` line, or a blank line inside a block comment).
@@ -33,20 +33,20 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 ## 0.1.0 (2026-11-06)
 
 - Releases are published to crates.io as `outln` (`cargo install outln --locked`) by a GitHub Actions workflow when a `v<version>` tag is pushed ([ADR-010](adr.md)).
-- TypeScript and JavaScript support in every mode (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`), ported from the TypeScript build with its casefiles in `tests/cases/typescript/`. Deliberate differences from the TypeScript build:
+- TypeScript and JavaScript support in every mode (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`), with casefiles in `tests/cases/typescript/`:
   - **New declarations**: a variable holding an arrow function or function expression prints its signature (`export const parse = (input: string): Ast`); `export default <expression>` prints as `export default defineConfig(…)`, `{…}`, `[…]`, an arrow function's signature, or `…`; top-level `describe`/`it`/`test`/`suite` test blocks (with `.only`, `.skip`, `.each`) print as `describe('parser')`; `export declare` statements are listed; JavaScript `using` declarations are listed like `const`.
-  - **One-line signatures**: a signature wrapped over several lines prints on one line instead of copying its line breaks, comments inside it are left out, and a line break inside a template literal prints as `\n`. Debug mode highlights it on every line up to its body, not only the first.
-  - **Highlights** cover the declaration's source as written (from `export` or the first keyword to the end of its signature) instead of as many columns as the printed text has.
+  - **One-line signatures**: a signature wrapped over several lines prints on one line, comments inside it are left out, and a line break inside a template literal prints as `\n`. Debug mode highlights it on every line up to its body.
+  - **Highlights** cover the declaration's source as written (from `export` or the first keyword to the end of its signature).
   - **Class members**: a member's line range includes its decorators, as a class's does. `declare const enum` keeps its `const`.
-  - **Header comments**: the glob view strips `///` and `//!` markers and drops marker-only lines, as file mode does (it printed `/ Triple.` and double spaces), debug mode highlights a block comment only up to its `*/`, and an empty `/**/` header prints nothing instead of `/`.
+  - **Header comments**: the glob view strips `///` and `//!` markers and drops marker-only lines, as file mode does, debug mode highlights a block comment only up to its `*/`, and an empty `/**/` header prints nothing.
   - **Wording**: the glob view says `Includes only headers per file.` and `(no header available)`, since a Markdown file's header is its frontmatter.
 - `just build-static` builds a static musl binary, compiling the C grammars with zig.
-- Markdown support in file mode, glob view, and debug mode, ported from the TypeScript build, with a casefile runner (`tests/casefiles.rs`) and 81 casefiles. Deliberate differences from the TypeScript build:
-  - **Markdown parsing**: headings come from a CommonMark parser (pulldown-cmark). Lines inside `~~~` fences, indented code, and HTML blocks are no longer reported as headings, a ` ``` ` line inside a `~~~` fence no longer breaks fence tracking, underlined (setext) headings and `#` headings indented up to three spaces are reported, a lone `#` is an empty heading, and headings inside block quotes and lists are skipped. Frontmatter list items (`- x`) and comments (`# x`) are no longer printed as fields.
-  - **Debug mode**: an existing path containing glob characters (`app/[id]/page.md`) is outlined instead of rejected, and a `{a,b}` pattern is rejected as a glob. Files are separated by a blank line even when one has no final newline.
-  - **Glob patterns**: every `{...}` group counts as glob syntax (not only the first), alternatives may contain `/`, and a pattern without `**` walks only as deep as it can match.
+- Markdown support in file mode, glob view, and debug mode, with a casefile runner (`tests/casefiles.rs`) and 81 casefiles:
+  - **Markdown parsing**: headings come from a CommonMark parser (pulldown-cmark). Lines inside `~~~` fences, indented code, and HTML blocks aren't headings, a ` ``` ` line inside a `~~~` fence doesn't close it, underlined (setext) headings and `#` headings indented up to three spaces are reported, a lone `#` is an empty heading, and headings inside block quotes and lists are skipped. Frontmatter list items (`- x`) and comments (`# x`) aren't printed as fields.
+  - **Debug mode**: an existing path containing glob characters (`app/[id]/page.md`) is outlined, and a `{a,b}` pattern is rejected as a glob. Files are separated by a blank line even when one has no final newline.
+  - **Glob patterns**: every `{...}` group counts as glob syntax, alternatives may contain `/`, and a pattern without `**` walks only as deep as it can match.
   - **Unreadable directories**: a directory below a directory argument that can't be listed is reported (`Directory <path> could not be read: ...`) and fails the run; the other files are still printed. Glob walks skip such directories silently.
-  - **CLI**: help, version, and usage-error texts come from clap. The version prints as `outln <version>`, usage errors (unknown option, no paths, `--debug` without a path) exit 2 instead of 1, and errors use clap's wording.
-  - **Directory walking**: git semantics through the `ignore` crate. A `.gitignore` outside a git repository is ignored, `.ignore` files and `.git/info/exclude` are honoured, git's global excludes file applies, and ancestor rules still apply to an explicitly named directory they ignore. Files are sorted by byte order instead of locale order.
-  - **Encoding**: a file that isn't valid UTF-8 is reported as `FILE <path> IS NOT UTF-8 TEXT` instead of being decoded with replacement characters, and an unreadable file as `FILE <path> COULD NOT BE READ`.
+  - **CLI**: help, version, and usage-error texts come from clap. The version prints as `outln <version>`, usage errors (unknown option, no paths, `--debug` without a path) exit 2, and errors use clap's wording.
+  - **Directory walking**: git semantics through the `ignore` crate. A `.gitignore` outside a git repository is ignored, `.ignore` files and `.git/info/exclude` are honoured, git's global excludes file applies, and ancestor rules still apply to an explicitly named directory they ignore. Files are sorted by byte order.
+  - **Encoding**: a file that isn't valid UTF-8 is reported as `FILE <path> IS NOT UTF-8 TEXT`, and an unreadable file as `FILE <path> COULD NOT BE READ`.
   - **Unsupported files**: an unsupported file is reported as unsupported without being read.

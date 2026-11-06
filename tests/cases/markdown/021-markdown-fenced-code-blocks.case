@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/markdown/021-markdown-fenced-code-blocks.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/fences.md

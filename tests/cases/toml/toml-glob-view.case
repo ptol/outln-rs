@@ -1,6 +1,5 @@
 A glob view prints a TOML file's header comment, or else a field summary: its first three scalar keys before the first table, then `...` if it has more.
 Without scalar keys before the first table, the summary takes the first table's keys and names the table; without any scalar keys there is nothing to summarize.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 input
 == file input/commented.toml

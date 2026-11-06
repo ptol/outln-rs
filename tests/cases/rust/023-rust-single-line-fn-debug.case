@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/rust/023-rust-single-line-fn-debug.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/rust-single-line-fn.rs

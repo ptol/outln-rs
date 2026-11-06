@@ -38,10 +38,6 @@ The format, with an example, is the `//!` header of `tests/support/casefile.rs`;
 - **Change output on purpose**: change the code, run `just update-cases`, review every changed casefile with `git diff`, and note the change in [changelog.md](changelog.md).
 - A failure prints the casefile as expected and as it would be with the actual output.
 
-### Ported casefiles
+### Expected output
 
-Casefiles whose description starts with `Ported from the TypeScript build's __tests__/cases/...` came from the TypeScript build's `.case.yaml` cases. Their expected output is what the TypeScript build printed, unless the description says why it differs. Cases for other languages are ported with their engines: write each as a casefile in this format, and get its expected output from the TypeScript build on the same inputs (`npx --yes outln@0.2.1`, [ADR-014](adr.md)).
-
-### Hand-written casefiles
-
-For behaviour the TypeScript build lacks (data files, [ADR-016](adr.md)), there is nothing to port: the description says `Expected output is hand-written`, and `just update-cases` writes the output, which you check line by line against the behaviour the description states.
+`just update-cases` writes the expected output; check it line by line against the behaviour the description states before committing.

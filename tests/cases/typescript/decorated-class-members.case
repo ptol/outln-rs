@@ -1,5 +1,4 @@
 A class member's line range includes its decorators, like a class's, in both grammars: the TypeScript grammar parses member decorators as siblings of the member, the JavaScript grammar as part of it.
-The TypeScript build started a member's range at the member itself.
 == args
 input/controller.ts
 input/controller.js

@@ -1,5 +1,4 @@
-An existing path with glob characters is literal in debug mode too, as in the other modes; the
-TypeScript build rejected it as a glob.
+An existing path with glob characters is literal in debug mode too, as in the other modes.
 == args
 --debug
 app/[id]/page.md

@@ -1,5 +1,4 @@
-An empty file adds one empty part between the blank lines that separate files, as in the
-TypeScript build.
+An empty file adds one empty part between the blank lines that separate files.
 == args
 --debug
 docs

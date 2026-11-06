@@ -8,23 +8,19 @@ readWhen: 'starting any task, to learn what the project is for and how far it is
 ## Goal
 
 - A small CLI that prints an outline of source files: the header (header comment, or frontmatter for Markdown) and one line per top-level declaration, with line ranges, so coding agents can read only what they need.
-- Ship it as a single static binary with no runtime to install (the TypeScript build needs Node).
+- Ship it as a single static binary with no runtime to install.
 - Make it fast enough that agents never hesitate to run it, even over large trees.
-
-## Reference implementation
-
-The TypeScript build (commit `ee514b1`, released as 0.2.1) is the behavioural reference: run it with `npx --yes outln@0.2.1` ([ADR-014](adr.md)). How far to follow it is in the Priorities section of `AGENTS.md`.
 
 ## Current status
 
 - Markdown files work in every mode: file mode (frontmatter and headings with section line ranges), glob view (gitignore-aware directory walking and glob patterns; the first heading when there is no frontmatter), and debug mode.
-- TypeScript and JavaScript files (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`) work in every mode: header comments, top-level declarations with class members, function-valued variables, default-exported expressions, and test blocks. Their ported casefiles are in `tests/cases/typescript/`.
-- Rust files (`.rs`) work in every mode: `//!` and `/*!` header comments (or else plain `//` and `/* */` ones), top-level declarations with their signatures as written, `pub use` re-exports, and line ranges that include doc comments and attributes. Their ported casefiles are in `tests/cases/rust/`.
-- Data files (`.toml`, `.yaml`, `.yml`, `.json`) work in every mode: `#` header comments (`//` and `/* */` in JSON), top-level keys with scalar values (TOML table headers as written), line ranges that include the comment above a key, and in glob view a field summary of the first scalar keys when there is no header comment ([ADR-016](adr.md)). The TypeScript build had no data file support, so their casefiles in `tests/cases/{toml,yaml,json}/` are hand-written.
+- TypeScript and JavaScript files (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`) work in every mode: header comments, top-level declarations with class members, function-valued variables, default-exported expressions, and test blocks. Their casefiles are in `tests/cases/typescript/`.
+- Rust files (`.rs`) work in every mode: `//!` and `/*!` header comments (or else plain `//` and `/* */` ones), top-level declarations with their signatures as written, `pub use` re-exports, and line ranges that include doc comments and attributes. Their casefiles are in `tests/cases/rust/`.
+- Data files (`.toml`, `.yaml`, `.yml`, `.json`) work in every mode: `#` header comments (`//` and `/* */` in JSON), top-level keys with scalar values (TOML table headers as written), line ranges that include the comment above a key, and in glob view a field summary of the first scalar keys when there is no header comment ([ADR-016](adr.md)). Their casefiles are in `tests/cases/{toml,yaml,json}/`.
 - `just build-static` builds the single static binary (musl).
 - Releases go to crates.io from a version tag ([ADR-010](adr.md)); `cargo install outln` builds from source, and no prebuilt binaries are released yet.
-- `tests/cases` holds the TypeScript build's Markdown, TypeScript/JavaScript, Rust, header, CLI, glob view, walker, debug, and encoding cases (CLI, glob view, and walker inputs rewritten as Markdown), plus new ones for behaviour the TypeScript build lacked.
-- Not yet: the Go, Java, Kotlin, and C# engines (each comes with header comments and its ported casefiles); `.go` and other such files are reported as unsupported.
+- `tests/cases` holds casefiles for every engine and for the CLI, glob view, directory walking, debug mode, and encoding.
+- Not yet: the Go, Java, Kotlin, and C# engines (each comes with header comments and its casefiles); `.go` and other such files are reported as unsupported.
 
 ## Non-goals
 

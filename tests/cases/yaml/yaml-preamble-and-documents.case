@@ -1,6 +1,5 @@
 Directives (`%YAML`), the language server's modeline, and the `---` document start marker come before a YAML header comment without being part of it.
 Only the first document is outlined; the keys of documents after another `---` aren't listed.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 input/a.yaml
 == file input/a.yaml

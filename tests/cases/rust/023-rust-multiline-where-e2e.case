@@ -1,6 +1,5 @@
-Ported from the TypeScript build's __tests__/cases/rust/023-rust-multiline-where-e2e.case.yaml; expected output is the TypeScript build's, except:
-- A private `use` is no longer highlighted, since it isn't listed.
-- The highlight runs to the end of the signature, a `where` clause on its own lines included; the TypeScript build stopped before `where`.
+- A private `use` isn't highlighted, since it isn't listed.
+- The highlight runs to the end of the signature, a `where` clause on its own lines included.
 == args
 --debug
 input/rust-multiline-where-e2e.rs

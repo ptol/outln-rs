@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/typescript/004-exported-cases.case.yaml; expected output is the TypeScript build's.
 == args
 input/exported-cases.ts
 == file input/exported-cases.ts

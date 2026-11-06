@@ -1,5 +1,4 @@
-Ported from the TypeScript build's __tests__/cases/debug/013-debug-mode-missing-input.case.yaml; output differs from the TypeScript build's: clap reports the missing path and exits 2.
-Its source-code inputs were rewritten as Markdown files.
+clap reports the missing path and exits 2.
 == args
 --debug
 == file input/fixture.md

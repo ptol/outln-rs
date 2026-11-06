@@ -1,7 +1,6 @@
 A TOML outline lists the keys before the first table, then every table header as written, in file order: dotted tables and repeated arrays of tables stay separate lines.
 A scalar value prints after its key, cut after its first line or 40 characters; inline tables and arrays print only the key.
 A comment directly above a table starts its line range; a table's trailing comment and blank lines don't end it.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 input/Cargo.toml
 == file input/Cargo.toml

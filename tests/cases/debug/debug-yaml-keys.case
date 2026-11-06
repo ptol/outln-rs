@@ -1,5 +1,4 @@
 Debug mode highlights a YAML file's header comment (here its first comment, so not the key's) and each top-level key, not values or nested keys.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 --debug
 input/a.yaml

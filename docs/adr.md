@@ -9,7 +9,7 @@ Each record states the decision, why, and what it costs. Add a new ADR rather th
 
 ## ADR-001: Build outln in Rust
 
-**Status**: Accepted (2026-11-06); amended by ADR-014 (the published Rust build replaces the installed TypeScript build before full parity)
+**Status**: Accepted (2026-11-06); amended by ADR-014 (agents navigate with the published build)
 
 ### Decision
 
@@ -17,14 +17,13 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ### Rationale
 
-- A single static binary removes the Node runtime from every machine that runs outln.
-- Performance: native code and tree-sitter's Rust bindings with no JavaScript bridge.
-- tree-sitter, the parsing library the TypeScript build already uses, is native and has first-class Rust crates.
+- A single static binary needs no runtime on the machines that run outln.
+- Performance: native code and tree-sitter's Rust bindings.
+- tree-sitter is native and has first-class Rust crates.
 
 ### Consequences
 
-- The TypeScript build stays the installed `outln` until the Rust build reaches feature parity.
-- Behaviour may diverge from the TypeScript build on purpose (no backward compatibility); [changelog.md](changelog.md) records each divergence.
+- Behaviour changes freely (no backward compatibility); [changelog.md](changelog.md) records each change users or agents would notice.
 
 ## ADR-002: Local-only tooling with strict lints and an auto-fixing pre-commit hook
 
@@ -41,7 +40,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 ### Rationale
 
 - Agents write most of the code with permission prompts off, so mechanical checks are the only reliable gate.
-- hk is the hook manager that re-stages fixes with unstaged edits hidden, like lint-staged did in the TypeScript repo; prek and pre-commit abort the commit after a fix by design.
+- hk is the hook manager that re-stages fixes with unstaged edits hidden; prek and pre-commit abort the commit after a fix by design.
 - dprint formats Markdown, TOML, JSON, and YAML without Node.
 
 ### Consequences
@@ -70,7 +69,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 ### Consequences
 
 - Engines never see `\r\n` or a BOM; debug mode prints the normalized text.
-- Invalid UTF-8 is an error instead of being decoded with replacement characters (the TypeScript build did that).
+- Invalid UTF-8 is an error instead of being decoded with replacement characters.
 - `Header` has only a frontmatter variant until the first code-language engine adds header comments.
 
 ## ADR-004: Casefiles in a plain-text format, run in process on a temp directory
@@ -85,7 +84,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ### Rationale
 
-- The TypeScript build's YAML casefiles worked, but its update mode re-serialized whole files and mangled block scalars, and ANSI escapes needed quoted strings; `serde_yaml` is also archived. A sectioned text format fixes both, and update mode leaves inputs byte-for-byte untouched.
+- YAML casefiles would need an update mode that re-serializes whole files, which mangles block scalars, and ANSI escapes would need quoted strings; `serde_yaml` is also archived. A sectioned text format avoids both, and update mode leaves inputs byte-for-byte untouched.
 - The `ignore` crate walks only the real filesystem, so an in-memory filesystem would have meant reimplementing gitignore-aware walking.
 - No Rust crate reads one-file-per-case CLI tests with inline input files: `trycmd` uses folders of several files per case and runs the binary as a subprocess, `insta` keeps snapshots apart from inputs, and `libtest-mimic`/`datatest-stable` (19 and 30 dependencies) would only add per-case test names.
 
@@ -110,7 +109,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ### Consequences
 
-- Help, version (`outln <version>`), and usage-error text are clap's, and usage errors exit 2; the TypeScript build's own texts and exit code 1 are gone ([changelog.md](changelog.md)).
+- Help, version (`outln <version>`), and usage-error text are clap's, and usage errors exit 2.
 - clap is built without `color`, `suggestions`, and `wrap_help` (which reads the terminal width), so its output doesn't depend on the terminal.
 
 ## ADR-006: Walk directories with the `ignore` crate and git semantics
@@ -128,7 +127,7 @@ The glob view and debug mode walk directories with `ignore::WalkBuilder` default
 
 ### Consequences
 
-- Unlike the TypeScript build, a `.gitignore` outside a git repository is ignored, and ancestor rules still apply to an explicitly named directory they ignore ([changelog.md](changelog.md)).
+- A `.gitignore` outside a git repository is ignored, and ancestor rules still apply to an explicitly named directory they ignore.
 - The global gitignore is added as an explicit ignore file, so it also applies outside git repositories.
 - Results are sorted by byte order, not by locale.
 
@@ -142,7 +141,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ### Rationale
 
-- The TypeScript build's line scanner misread fences, indented code, HTML blocks, and setext headings; a CommonMark parser gets them right.
+- A line scanner misreads fences, indented code, HTML blocks, and setext headings; a CommonMark parser gets them right.
 - pulldown-cmark is pure Rust with three dependencies, aims at full CommonMark compliance, and parsed a 124 KB file in 0.7 ms, 25 times faster than `tree-sitter-md`, whose README says it is "not recommended ... where correctness is important".
 - pulldown-cmark's own metadata option also accepts a `---` block in the middle of a document, so frontmatter is found before parsing.
 
@@ -161,11 +160,11 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - Shared by every future code engine: `src/syntax_tree.rs` (parsing, node byte ranges, a node's source on one line) and `src/header_comment.rs` (`//` and `/* */` header comments). An engine decides only where its header comment may start.
 - `Header::Comment` holds header comment lines; `OutlineLine::depth` indents class members.
 - The header is found by scanning lines, so `file_summary` never parses.
-- Versions: `tree-sitter` 0.27.1 (default features off), `tree-sitter-typescript` 0.23.2 (the reference's version; no release since November 2024), `tree-sitter-javascript` 0.25.0 (the latest).
+- Versions: `tree-sitter` 0.27.1 (default features off), `tree-sitter-typescript` 0.23.2 (the latest; no release since November 2024), `tree-sitter-javascript` 0.25.0 (the latest).
 
 ### Rationale
 
-- tree-sitter is the reference's parser, so the ported casefiles pass with few deliberate changes, and it parses broken files by recovering instead of failing.
+- tree-sitter has maintained grammars for every planned language, and it parses broken files by recovering instead of failing.
 - One engine type keeps the TypeScript and JavaScript rules in one place; the grammar is a field because `LanguageEngine::outline` receives only the text, so each grammar needs its own registry entry.
 - The two grammar crates disagree on a few shapes (the TypeScript grammar parses a member's decorators as siblings in the class body, the JavaScript grammar as part of the member). The engine handles both, and `tests/cases/typescript/extensions-and-grammars.case` outlines one source with every grammar.
 
@@ -196,7 +195,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-010: Publish to crates.io from a tag-triggered GitHub Actions workflow
 
-**Status**: Accepted (2026-11-06); amended by ADR-014 (agents' machines install this crate instead of keeping the TypeScript build) and ADR-017 (the package also includes the engine samples)
+**Status**: Accepted (2026-11-06); amended by ADR-014 (agents' machines install this crate) and ADR-017 (the package also includes the engine samples)
 
 ### Decision
 
@@ -215,7 +214,6 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - `cargo install` builds from source: users need Rust at least `rust-version` and a C compiler for the grammars. Prebuilt binaries (`just build-static`) aren't released yet.
 - The crate page has no README; it shows the description and links to the repository.
-- The binary is named `outln`, like the TypeScript build: whichever comes first on `PATH` wins. On a machine where agents work in this repo, keep the TypeScript build installed (runbook).
 - The published crate can't run its integration tests (`cargo package` warns that it drops each one); unit tests and doctests in `src/` stay.
 - The workflow's clippy and test commands copy `just lint` and `just test`, so CI needs no tools beyond rustup; change them together.
 - crates.io's trusted publishing (OIDC, no stored token) needs the crate to exist first; switching to it after the first release removes the secret.
@@ -232,8 +230,8 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ### Rationale
 
-- tree-sitter is the TypeScript build's parser for Rust too, and the grammar crate needs no dependencies beyond `tree-sitter-language`, which the other grammars already pull in.
-- Source-as-written signatures carry types, generics, and `where` clauses, so agents need not open a file to see them; the TypeScript build printed keyword and name only.
+- The grammar crate needs no dependencies beyond `tree-sitter-language`, which the other grammars already pull in.
+- Source-as-written signatures carry types, generics, and `where` clauses, so agents need not open a file to see them.
 
 ### Consequences
 
@@ -252,7 +250,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ### Rationale
 
-- Rust files document themselves with `//!` comments, often after a `//` license comment, and this repo's own files start with one; the TypeScript build read only `//` lines.
+- Rust files document themselves with `//!` comments, often after a `//` license comment, and this repo's own files start with one.
 - Well-documented files have multi-paragraph headers (a summary, then details and examples); a glob view line should carry the summary.
 - An agent reading a declaration's line range should get its docs and attributes (`#[cfg(test)]`, `#[derive]`) in the same read; TypeScript decorators were already in the range, so one rule covers both engines.
 
@@ -275,7 +273,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - Tag `v0.2.0` was pushed with `Cargo.toml` still at 0.1.0, and the workflow refused it: the manual steps (bump, lock, changelog, commit, tag, push) were easy to get out of order. One command derives the tag from the version it just wrote.
 - cargo-release is the established Rust tool for this and ships as a single binary, so mise installs it like the other dev tools; the crate gains no dependency.
-- release-plz was rejected: it generates changelogs from Conventional Commits, and this changelog is hand-written (deliberate divergences from the TypeScript build), and it would replace the publish workflow.
+- release-plz was rejected: it generates changelogs from Conventional Commits, and this changelog is hand-written, and it would replace the publish workflow.
 
 ### Consequences
 
@@ -288,19 +286,16 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ### Decision
 
-- The `outln` on agents' `PATH` is this crate's latest crates.io release, installed by the maintainer's machine setup (mise's `cargo` backend), in place of the TypeScript build.
-- The TypeScript build is run only as the behavioural reference, without installing it: `npx --yes outln@0.2.1`, the release `docs/overview.md` names.
+- The `outln` on agents' `PATH` is this crate's latest crates.io release, installed by the maintainer's machine setup (mise's `cargo` backend).
 
 ### Rationale
 
-- Release 0.2.0 outlines Markdown, TypeScript, JavaScript, and Rust, every language this repo is written in, and it reads `//!` headers, which the TypeScript build couldn't (the paid-off "Installed outln can't show `//!` headers" debt).
-- The maintainer chose to replace the TypeScript build before full parity: the Go, Java, Kotlin, and C# engines don't matter for navigating this repo.
+- Release 0.2.0 outlines Markdown, TypeScript, JavaScript, and Rust, every language this repo is written in, and it reads `//!` headers.
+- The Go, Java, Kotlin, and C# engines don't matter for navigating this repo, so agents needn't wait for them.
 
 ### Consequences
 
-- Supersedes ADR-001's "The TypeScript build stays the installed `outln` until the Rust build reaches feature parity" and ADR-010's advice to keep the TypeScript build installed.
 - The installed build can lag this repo's code by a release; `just run <args>` runs the working copy.
-- Porting an engine's cases takes the expected output from `npx --yes outln@0.2.1`, which needs Node and network access on first use.
 
 ## ADR-015: Gate rustdoc warnings and the dependency policy in the hook
 

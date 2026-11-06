@@ -1,6 +1,5 @@
 A YAML outline lists the keys of the root mapping: scalar values print after the key as written (quotes, anchors, aliases), cut after their first line; mappings and lists print only the key, and a key without a value prints as `key:`.
 A comment at the key's indentation directly above it starts its line range; one indented deeper belongs to the value above, and trailing comments and blank lines don't end a key's range.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 input/ci.yml
 == file input/ci.yml

@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/typescript/007-headings-only.case.yaml; expected output is the TypeScript build's.
 == args
 input/headings-only.md
 == file input/headings-only.md

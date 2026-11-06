@@ -1,5 +1,4 @@
-Ported from the TypeScript build's __tests__/cases/typescript/018-debug-class-multi-line-members.case.yaml; expected output is the TypeScript build's.
-Except: a multi-line signature is highlighted on every line up to its body; the TypeScript build highlighted only its first line (docs/changelog.md).
+A multi-line signature is highlighted on every line up to its body.
 == args
 --debug
 input/multi-line-members.ts

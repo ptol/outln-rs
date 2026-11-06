@@ -1,5 +1,5 @@
 Only top-level `key: value` lines are frontmatter fields: list items and comments are skipped,
-even unindented; the TypeScript build printed them as fields.
+even unindented.
 == args
 input/doc.md
 == file input/doc.md

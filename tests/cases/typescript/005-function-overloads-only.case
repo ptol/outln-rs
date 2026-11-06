@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/typescript/005-function-overloads-only.case.yaml; expected output is the TypeScript build's.
 == args
 input/overloads-only.ts
 == file input/overloads-only.ts

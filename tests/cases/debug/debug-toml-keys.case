@@ -1,5 +1,4 @@
 Debug mode highlights a TOML file's header comment, each root key, and each table's whole header, not values or the comments above keys.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 --debug
 input/a.toml

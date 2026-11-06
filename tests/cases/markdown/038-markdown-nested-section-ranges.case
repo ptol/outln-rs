@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/markdown/038-markdown-nested-section-ranges.case.yaml; expected output is the TypeScript build's.
 == args
 input/guide.md
 == file input/guide.md

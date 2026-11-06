@@ -1,6 +1,5 @@
 A file whose root is an array has no keys to list.
 An object that never closes still lists the keys the parser recovers before the break (here `b`, whose own object is cut off); in a broken root object the parser flattens nested objects' keys among the root's, so listing stops at the first part that isn't a key.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 input/list.json
 input/broken.json

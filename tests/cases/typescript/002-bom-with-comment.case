@@ -1,4 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/typescript/002-bom-with-comment.case.yaml; expected output is the TypeScript build's.
 == args
 input/bom-with-comment.ts
 == file input/bom-with-comment.ts escaped

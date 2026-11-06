@@ -1,5 +1,4 @@
-Ported from the TypeScript build's __tests__/cases/cli/030-no-arguments-usage.case.yaml; output differs from the TypeScript build's: usage errors now come from clap and exit 2.
-Its source-code inputs were rewritten as Markdown files.
+Usage errors come from clap and exit 2.
 == args
 == file input/unused.md
 # unused

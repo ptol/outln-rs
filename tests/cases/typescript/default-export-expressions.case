@@ -1,6 +1,5 @@
 `export default <expression>` lines: a call prints its callee with `(…)`, objects and arrays print as `{…}` and `[…]` (`{}` and `[]` when empty), an arrow function prints its signature, and parentheses and `as`/`satisfies` don't change what is exported.
 Any other expression prints as `export default …`. An identifier is a re-export and prints as written.
-The TypeScript build listed none of these except the identifier.
 == args
 input/config.ts
 input/empty.ts

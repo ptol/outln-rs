@@ -1,5 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/cli/030-end-of-options-dash-file.case.yaml; expected output is the TypeScript build's.
-Its source-code inputs were rewritten as Markdown files.
 == args
 --
 input/-dash.md

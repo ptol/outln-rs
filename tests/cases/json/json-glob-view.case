@@ -1,5 +1,4 @@
 A glob view prints a JSON file's first three scalar keys as a field summary, with `...` when more follow; a file with only objects and arrays, or a root array, has nothing to summarize, and a leading comment is the header.
-Expected output is hand-written: the TypeScript build has no data file support.
 == args
 input
 == file input/package.json

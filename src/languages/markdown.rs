@@ -113,7 +113,7 @@ fn is_list_item(line: &str) -> bool {
 /// Turns a YAML scalar into a JSON literal: quoted text and plain text become JSON strings,
 /// numbers and `true`/`false`/`null` stay as they are, and an empty value or `~` is `null`.
 ///
-/// Quoted text is not unescaped: this mirrors the TypeScript build, not full YAML.
+/// Quoted text is not unescaped: frontmatter fields print as written, not as full YAML reads them.
 fn yaml_scalar_as_json(value: &str) -> String {
     let value = value.trim();
     if value.is_empty() {

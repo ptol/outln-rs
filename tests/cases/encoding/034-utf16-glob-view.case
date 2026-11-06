@@ -1,6 +1,3 @@
-Ported from the TypeScript build's __tests__/cases/encoding/034-utf16-glob-view.case.yaml; expected output is the TypeScript build's.
-Its source-code inputs were rewritten as Markdown files.
-Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).
 == args
 input
 == file input/utf16.md escaped
