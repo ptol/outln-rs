@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-doc-comments-not-header.case.yaml; expected output is the TypeScript build's, except:
+- The `//!` comment is the header comment, and the `///` comment is a leading annotation of the struct, so its line range starts there; the TypeScript build skipped both.
+== args
+input/doc-comments.rs
+== file input/doc-comments.rs
+//! This is a module doc comment
+
+/// This is a struct doc comment
+struct Item {}
+== stdout
+input/doc-comments.rs
+This is a module doc comment
+[L3-L4] struct Item
+== stderr
+== exit 0

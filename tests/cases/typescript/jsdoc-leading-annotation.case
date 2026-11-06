@@ -1,0 +1,32 @@
+A `/** */` comment directly above a declaration or class member is a leading annotation, so the line range starts there.
+- A plain comment between it and the declaration is stepped over; a plain comment alone doesn't start the range.
+- The header comment is never part of a declaration's range, even right above it.
+== args
+input/service.ts
+== file input/service.ts
+/** Session service. */
+export function start() {}
+
+/**
+ * Stops the service.
+ */
+// TODO: drain first.
+export function stop() {}
+
+// A plain comment.
+export const limit = 3;
+
+export class Store {
+  /** Loads an entry. */
+  load(id: string) {}
+}
+== stdout
+input/service.ts
+Session service.
+[L2-L2] export function start()
+[L4-L8] export function stop()
+[L11-L11] export const limit
+[L13-L16] export class Store
+  [L14-L15] load(id: string)
+== stderr
+== exit 0

@@ -72,7 +72,29 @@ pub(crate) fn first_syntax_child(node: Node<'_>) -> Option<Node<'_>> {
 /// `verbatim_kinds` (string literals, for example) are kept as written, so whitespace inside
 /// them is never changed, except that a line break inside any token prints as `\n`.
 pub(crate) fn one_line_source(node: Node<'_>, text: &str, verbatim_kinds: &[&str]) -> String {
-    let source = source(node, text);
+    one_line_tokens(node, node.end_byte(), text, verbatim_kinds)
+}
+
+/// The source of the node's tokens that start before byte `end` (such as where its body
+/// starts), on one line by the rules of [`one_line_source`], without a final comma: a `where`
+/// clause wrapped over several lines ends with one before the body.
+pub(crate) fn one_line_source_before(
+    node: Node<'_>,
+    end: usize,
+    text: &str,
+    verbatim_kinds: &[&str],
+) -> String {
+    let mut line = one_line_tokens(node, end, text, verbatim_kinds);
+    // A verbatim token ends with its closing quote, so a final `,` is always a comma token.
+    if line.ends_with(',') {
+        line.pop();
+    }
+    line
+}
+
+/// The node's tokens that start before byte `end`, joined on one line.
+fn one_line_tokens(node: Node<'_>, end: usize, text: &str, verbatim_kinds: &[&str]) -> String {
+    let source = text[node.start_byte()..end].trim_end();
     let is_plain_line = !source.contains(['\n', '\t'])
         && !source.contains("  ")
         && !source.contains("/*")
@@ -81,14 +103,19 @@ pub(crate) fn one_line_source(node: Node<'_>, text: &str, verbatim_kinds: &[&str
         return source.to_owned();
     }
     let mut tokens = Vec::new();
-    collect_tokens(node, verbatim_kinds, &mut tokens);
+    collect_tokens(node, end, verbatim_kinds, &mut tokens);
     join_tokens(&tokens, text)
 }
 
-/// The byte ranges of the node's leaves, treating nodes of the `verbatim_kinds` as leaves and
-/// skipping comments.
-fn collect_tokens(node: Node<'_>, verbatim_kinds: &[&str], tokens: &mut Vec<ByteRange>) {
-    if node.is_extra() {
+/// The byte ranges of the node's leaves that start before byte `end`, treating nodes of the
+/// `verbatim_kinds` as leaves and skipping comments.
+fn collect_tokens(
+    node: Node<'_>,
+    end: usize,
+    verbatim_kinds: &[&str],
+    tokens: &mut Vec<ByteRange>,
+) {
+    if node.is_extra() || node.start_byte() >= end {
         return;
     }
     if node.child_count() == 0 || verbatim_kinds.contains(&node.kind()) {
@@ -98,7 +125,7 @@ fn collect_tokens(node: Node<'_>, verbatim_kinds: &[&str], tokens: &mut Vec<Byte
         return;
     }
     for child in children(node) {
-        collect_tokens(child, verbatim_kinds, tokens);
+        collect_tokens(child, end, verbatim_kinds, tokens);
     }
 }
 

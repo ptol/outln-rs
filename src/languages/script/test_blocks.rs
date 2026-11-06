@@ -3,9 +3,9 @@
 use tree_sitter::Node;
 
 use super::one_line;
-use super::signatures::Signature;
 use super::statement_line;
 use crate::outline::OutlineLine;
+use crate::signature::Signature;
 use crate::syntax_tree::{first_syntax_child, source};
 
 /// Functions that open a test block.

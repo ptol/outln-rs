@@ -1,0 +1,46 @@
+Ported from ../outln/__tests__/cases/rust/023-rust-multiline-where-e2e.case.yaml; expected output is the TypeScript build's, except:
+- A private `use` is no longer highlighted, since it isn't listed.
+- The highlight runs to the end of the signature, a `where` clause on its own lines included; the TypeScript build stopped before `where`.
+== args
+--debug
+input/rust-multiline-where-e2e.rs
+== file input/rust-multiline-where-e2e.rs
+use std::collections::{HashMap, HashSet};
+
+fn single_line() -> i32 { 42 }
+
+pub(crate) fn generic_where<T>(value: T) -> T
+where
+    T: Clone,
+{
+    value.clone()
+}
+
+fn multi_param<T, U>(x: T, y: U) -> U
+where
+    T: Display,
+    U: Clone,
+{
+    y
+}
+== stdout
+use std::collections::{HashMap, HashSet};
+
+\x1b[32mfn single_line() -> i32\x1b[0m { 42 }
+
+\x1b[32mpub(crate) fn generic_where<T>(value: T) -> T\x1b[0m
+\x1b[32mwhere\x1b[0m
+\x1b[32m    T: Clone,\x1b[0m
+{
+    value.clone()
+}
+
+\x1b[32mfn multi_param<T, U>(x: T, y: U) -> U\x1b[0m
+\x1b[32mwhere\x1b[0m
+\x1b[32m    T: Display,\x1b[0m
+\x1b[32m    U: Clone,\x1b[0m
+{
+    y
+}
+== stderr
+== exit 0

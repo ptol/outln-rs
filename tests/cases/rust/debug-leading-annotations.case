@@ -1,0 +1,26 @@
+Debug mode highlights a declaration from its first keyword, after its leading annotations, to the end of its signature.
+== args
+--debug
+input/lib.rs
+== file input/lib.rs
+/// Configuration.
+#[derive(Debug)]
+pub struct Config {
+    pub verbose: bool,
+}
+
+pub const LIMIT: usize = 3;
+
+pub type Id = u64;
+== stdout
+/// Configuration.
+#[derive(Debug)]
+\x1b[32mpub struct Config\x1b[0m {
+    pub verbose: bool,
+}
+
+\x1b[32mpub const LIMIT: usize\x1b[0m = 3;
+
+\x1b[32mpub type Id = u64\x1b[0m;
+== stderr
+== exit 0

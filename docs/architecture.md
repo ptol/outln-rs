@@ -19,8 +19,8 @@ One Cargo package, `outln`, with a library and a binary:
 - `src/source_text.rs`: normalization (UTF-8 only, BOM stripped, CRLF to LF), `ByteRange`, and `LineIndex`, which turns byte ranges into line ranges.
 - `src/outline.rs`: the data engines return (`Outline`, `Header`, `OutlineLine`, `FileSummary`) and its rendering.
 - `src/language_engine.rs`: the `LanguageEngine` trait and the `ENGINES` registry.
-- `src/languages/<language>.rs`: one engine per language: `src/languages/markdown.rs`, and `src/languages/script.rs` for TypeScript and JavaScript (with its children in `src/languages/script/`).
-- Shared by the code-language engines: `src/syntax_tree.rs` (tree-sitter parsing, node byte ranges, a node's source on one line) and `src/header_comment.rs` (`//` and `/* */` header comments).
+- `src/languages/<language>.rs`: one engine per language: `src/languages/markdown.rs`, `src/languages/script.rs` for TypeScript and JavaScript (with its children in `src/languages/script/`), and `src/languages/rust.rs`.
+- Shared by the code-language engines: `src/syntax_tree.rs` (tree-sitter parsing, node byte ranges, a node's source on one line), `src/header_comment.rs` (`//` and `/* */` header comments, with doc markers), `src/signature.rs` (`Signature` and the outline line it makes), and `src/leading_annotations.rs` (where a declaration's line range starts).
 - `src/input_error.rs`: `InputError`, every per-input failure with its stderr message.
 - `tests/`: see [testing.md](testing.md).
 
@@ -38,7 +38,7 @@ New modules go under `src/` as `src/<name>.rs` (with `src/<name>/` for its child
 1. Add `src/languages/<language>.rs` with a struct implementing `LanguageEngine`, and declare it in `src/languages.rs`. A language with several grammars (TypeScript, TSX, JavaScript) gets one engine type with the grammar as a field, like `Script`.
 2. Add it to `ENGINES` in `src/language_engine.rs`, once per grammar.
 3. Return data, not text: an `Outline` whose `OutlineLine`s carry the printed text plus byte ranges (`range` for the line range, `highlight` for debug mode) and a `depth` for nested declarations. `file_summary` returns only the header and should stop parsing once it has it, because the glob view calls it for every file.
-4. A tree-sitter engine parses with `syntax_tree::parse` and prints signatures with `syntax_tree::one_line_source`. For `//` and `/* */` header comments, call `header_comment::find_header_comment` with the lines the language allows before the comment (a shebang, directives). Another comment syntax needs its own reader returning `Header::Comment`; only a header that isn't a comment needs a new `Header` variant, and the compiler then points at every `match` that must render it.
+4. A tree-sitter engine parses with `syntax_tree::parse`, prints signatures with `syntax_tree::one_line_source` (or `one_line_source_before`, up to the body) into a `signature::Signature`, and starts each line range at `leading_annotations::leading_annotations_start`, classifying the nodes before a declaration as doc comments, attributes, or plain comments. For `//` and `/* */` header comments, call `header_comment::find_header_comment` with the language's `CommentSyntax` (what its doc markers mean, whether its block comments nest) and the lines it allows before the comment (a shebang, directives, inner attributes). Another comment syntax needs its own reader returning `Header::Comment`; only a header that isn't a comment needs a new `Header` variant, and the compiler then points at every `match` that must render it.
 5. Port its TypeScript casefiles to `tests/cases/<language>/` ([testing.md](testing.md)).
 6. Record the parser choice as an ADR and the new language in [overview.md](overview.md) and [changelog.md](changelog.md).
 

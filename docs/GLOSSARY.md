@@ -21,18 +21,24 @@ _Avoid_: Entry, row
 
 ### Line range
 
-The first and last line a declaration spans, 1-based and inclusive, written `[L<first>-L<last>]`.
+The first and last line a declaration spans, from its first leading annotation, 1-based and inclusive, written `[L<first>-L<last>]`.
 _Avoid_: Span, location
 
 ### Declaration
 
-A part of a file worth listing in an outline: a top-level definition such as a function, type, default export, or Markdown heading, a class member, or a test block.
+A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a class member, or a test block.
+Code says declaration even where a grammar's node kinds say item (tree-sitter-rust's `function_item`).
 _Avoid_: Symbol, definition, item
 
 ### Signature
 
-The text an outline line prints for a code declaration: its keywords, name, type parameters, parameters, and return type, on one line and without its body.
+The text an outline line prints for a code declaration: its keywords and visibility, name, type parameters, parameters, return type, and `where` clause (for an `impl` block, its trait and type; for a constant, its type), on one line and without its body or value.
 _Avoid_: Head, prototype
+
+### Leading annotation
+
+A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration.
+_Avoid_: Preamble, prefix, trivia
 
 ### Class member
 
@@ -51,7 +57,7 @@ _Avoid_: Preamble, file metadata
 
 ### Header comment
 
-The comment at the top of a source file that says what the file is for.
+The comment at the top of a source file that says what the file is for, such as a Rust file's `//!` comment; outlines print only its first paragraph.
 _Avoid_: Top comment, file doc, banner
 
 ### Frontmatter

@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-empty-file.case.yaml; expected output is the TypeScript build's.
+== args
+input/empty.rs
+== file input/empty.rs
+// Just a comment
+
+// Another comment
+== stdout
+input/empty.rs
+Just a comment
+== stderr
+== exit 0

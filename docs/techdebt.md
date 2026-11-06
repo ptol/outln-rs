@@ -11,13 +11,19 @@ Each entry: what, impact, and the way out. Remove an entry when it's paid off.
 
 - **What**: the TypeScript `outln` on `PATH` reads only plain `//` header comments, so `outln <dir>` shows no header for this repo's `.rs` files.
 - **Impact**: agents read the first lines of Rust files by hand instead of navigating by header.
-- **Way out**: the Rust outln's shared header comment reader strips `//!` markers, so once its Rust engine exists, install it in place of the TypeScript build.
+- **Way out**: this build's Rust engine reads `//!` headers ([ADR-012](adr.md)); install it in place of the TypeScript build once it also covers the TypeScript build's Go, Java, Kotlin, and C# engines.
 
 ## The TypeScript grammar is frozen at 0.23.2
 
 - **What**: `tree-sitter-typescript` has had no crates.io release since November 2024 ([ADR-008](adr.md)), so newer syntax such as `using` declarations parses as errors in `.ts`, `.mts`, `.cts`, and `.tsx` files.
 - **Impact**: declarations written with such syntax are missing from TypeScript outlines; the same code in a JavaScript file is listed.
 - **Way out**: move to a newer release when one ships, or pin a git commit of the grammar, and rerun `just case typescript`.
+
+## Declarations inside syntax errors are dropped
+
+- **What**: tree-sitter wraps code it can't parse in `ERROR` nodes, and the Script and Rust engines list only the top-level nodes they recognize, so a declaration caught inside an `ERROR` node isn't listed.
+- **Impact**: outlines of half-edited files can miss declarations around the broken spot.
+- **Way out**: a shared dispatch that applies the engine's rules to an `ERROR` node's children, with a broken-file casefile per engine.
 
 ## The static build isn't checked automatically
 

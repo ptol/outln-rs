@@ -1,0 +1,26 @@
+Ported from ../outln/__tests__/cases/rust/020-rust-debug-header-comments.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/sample.rs
+== file input/sample.rs
+// Domain model.
+
+struct User {
+  id: u64,
+}
+
+fn load(id: u64) -> User {
+  User { id }
+}
+== stdout
+\x1b[32m// Domain model.\x1b[0m
+
+\x1b[32mstruct User\x1b[0m {
+  id: u64,
+}
+
+\x1b[32mfn load(id: u64) -> User\x1b[0m {
+  User { id }
+}
+== stderr
+== exit 0

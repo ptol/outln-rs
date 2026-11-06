@@ -1,0 +1,48 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-basic-outline.case.yaml; expected output is the TypeScript build's, except:
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+- Private `use` declarations aren't listed; the TypeScript build listed every `use`.
+== args
+input/sample.rs
+== file input/sample.rs
+// Core account domain types.
+// Shared by CLI and API.
+
+mod storage;
+mod net {}
+extern crate alloc;
+use crate::domain::User;
+type UserId = u64;
+struct Account { id: UserId }
+enum Role { Admin, User }
+union Bits { n: u32 }
+const MAX_RETRIES: u8 = 3;
+static BUILD_ID: &str = "dev";
+static mut GLOBAL_COUNT: u64 = 0;
+trait Runner { fn run(&self); }
+impl Runner for Account { fn run(&self) {} }
+impl Account { fn new(id: UserId) -> Self { Self { id } } }
+extern "C" { fn c_log(code: i32); }
+macro_rules! make_id { ($x:expr) => { $x as UserId }; }
+async fn load_user(id: UserId) -> Result<Account, ()> { Ok(Account { id }) }
+== stdout
+input/sample.rs
+Core account domain types.
+Shared by CLI and API.
+[L4-L4] mod storage
+[L5-L5] mod net
+[L6-L6] extern crate alloc
+[L8-L8] type UserId = u64
+[L9-L9] struct Account
+[L10-L10] enum Role
+[L11-L11] union Bits
+[L12-L12] const MAX_RETRIES: u8
+[L13-L13] static BUILD_ID: &str
+[L14-L14] static mut GLOBAL_COUNT: u64
+[L15-L15] trait Runner
+[L16-L16] impl Runner for Account
+[L17-L17] impl Account
+[L18-L18] extern "C"
+[L19-L19] macro_rules! make_id
+[L20-L20] async fn load_user(id: UserId) -> Result<Account, ()>
+== stderr
+== exit 0

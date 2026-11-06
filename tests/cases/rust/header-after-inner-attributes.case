@@ -1,0 +1,18 @@
+Inner attributes (`#![...]`) may come before the header comment, even when one spans several lines or has a `]` inside a string.
+== args
+input/lib.rs
+== file input/lib.rs
+#![expect(
+    clippy::needless_pass_by_value,
+    reason = "a ] inside a string"
+)]
+#![forbid(unsafe_code)]
+//! Library entry point.
+
+pub fn run() {}
+== stdout
+input/lib.rs
+Library entry point.
+[L8-L8] pub fn run()
+== stderr
+== exit 0

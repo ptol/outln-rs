@@ -1,0 +1,37 @@
+A declaration's line range starts at its leading annotations: the `///` doc comments and `#[...]` attributes directly above it.
+- A plain `//` comment between them is stepped over but never starts the range.
+- Attributes stay attached across blank lines; a doc comment separated by a blank line doesn't.
+- A comment after code on its line belongs to that code, and a `//!` comment to the module.
+== args
+input/lib.rs
+== file input/lib.rs
+//! Library.
+
+/// Configuration.
+#[derive(Debug, Clone)]
+// Kept in sync with docs/config.md.
+pub struct Config {
+    pub verbose: bool,
+}
+
+const LIMIT: usize = 3; // per file
+// Not attached: plain comments don't start a range.
+fn helper() {}
+
+/// Detached: a blank line follows.
+
+#[cfg(test)]
+
+mod tests {
+    #[test]
+    fn works() {}
+}
+== stdout
+input/lib.rs
+Library.
+[L3-L8] pub struct Config
+[L10-L10] const LIMIT: usize
+[L12-L12] fn helper()
+[L16-L21] mod tests
+== stderr
+== exit 0

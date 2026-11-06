@@ -1,0 +1,23 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-impl-generics.case.yaml; expected output is the TypeScript build's, except:
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+== args
+input/impls.rs
+== file input/impls.rs
+// Impl blocks
+
+struct Container<T> { value: T }
+trait Printable { fn print(&self); }
+
+impl<T> Container<T> { fn new(v: T) -> Self { Self { value: v } } }
+impl<T: Display> Printable for Container<T> { fn print(&self) {} }
+impl String { fn len(&self) -> usize { 0 } }
+== stdout
+input/impls.rs
+Impl blocks
+[L3-L3] struct Container<T>
+[L4-L4] trait Printable
+[L6-L6] impl<T> Container<T>
+[L7-L7] impl<T: Display> Printable for Container<T>
+[L8-L8] impl String
+== stderr
+== exit 0

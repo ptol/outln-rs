@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/rust/026-happy-do-not-scan-past-leading-doc-comment.case.yaml; expected output is the TypeScript build's, except:
+- The `//!` comment is the header comment; the TypeScript build read only `//` lines and gave no header here.
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+== args
+input/doc-comment-before-regular-comment.rs
+== file input/doc-comment-before-regular-comment.rs
+//! Module docs stay excluded.
+// Regular comment should not be treated as file header in this case.
+fn main() {}
+== stdout
+input/doc-comment-before-regular-comment.rs
+Module docs stay excluded.
+[L3-L3] fn main()
+== stderr
+== exit 0

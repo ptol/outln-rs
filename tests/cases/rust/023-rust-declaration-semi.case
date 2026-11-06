@@ -1,0 +1,10 @@
+Ported from ../outln/__tests__/cases/rust/023-rust-declaration-semi.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/rust-declaration-semi.e2e.rs
+== file input/rust-declaration-semi.e2e.rs
+fn declared() -> i32;
+== stdout
+\x1b[32mfn declared() -> i32\x1b[0m;
+== stderr
+== exit 0

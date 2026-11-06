@@ -16,7 +16,7 @@ setup:
 run *args:
     cargo run --quiet -- "$@"
 
-# Build the static release binary (musl libc, C grammars compiled by zig), then fail unless it is static and outlines a .ts, .tsx, and .js file.
+# Build the static release binary (musl libc, C grammars compiled by zig), then fail unless it is static and outlines a .ts, .tsx, .js, and .rs file.
 build-static:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -33,9 +33,11 @@ build-static:
     fi
     sample=$(mktemp -d)
     trap 'rm -rf "$sample"' EXIT
-    for extension in ts tsx js; do
-        printf '// Sample.\nexport function run(task) {}\n' > "$sample/sample.$extension"
-        expected=$(printf '%s\nSample.\n[L2-L2] export function run(task)' "$sample/sample.$extension")
+    for extension in ts tsx js rs; do
+        declaration='export function run(task)'
+        if [ "$extension" = rs ]; then declaration='pub fn run(task: u8)'; fi
+        printf '// Sample.\n%s {}\n' "$declaration" > "$sample/sample.$extension"
+        expected=$(printf '%s\nSample.\n[L2-L2] %s' "$sample/sample.$extension" "$declaration")
         actual=$("$binary" "$sample/sample.$extension")
         if [ "$actual" != "$expected" ]; then
             printf '%s outlined sample.%s wrongly:\n%s\n' "$binary" "$extension" "$actual" >&2

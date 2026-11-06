@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/rust/026-edge-do-not-scan-past-leading-block-comment.case.yaml; expected output is the TypeScript build's, except:
+- A plain block comment at the top is the header comment when there is no `//!` comment; the TypeScript build read only `//` lines and gave no header here.
+== args
+input/block-comment-before-regular-comment.rs
+== file input/block-comment-before-regular-comment.rs
+/* Block comments are not eligible file headers. */
+// Regular comment after block comment must stay excluded.
+struct Item {}
+== stdout
+input/block-comment-before-regular-comment.rs
+Block comments are not eligible file headers.
+[L3-L3] struct Item
+== stderr
+== exit 0

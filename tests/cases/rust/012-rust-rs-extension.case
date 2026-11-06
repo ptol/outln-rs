@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-rs-extension.case.yaml; expected output is the TypeScript build's, except:
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+== args
+input/main.rs
+== file input/main.rs
+// Entry point.
+
+fn main() {}
+== stdout
+input/main.rs
+Entry point.
+[L3-L3] fn main()
+== stderr
+== exit 0

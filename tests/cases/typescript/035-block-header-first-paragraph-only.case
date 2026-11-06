@@ -1,0 +1,17 @@
+Ported from ../outln/__tests__/cases/headers/035-block-header-blank-lines-dropped.case.yaml; expected output is the TypeScript build's, except:
+- Only the header comment's first paragraph is printed, so `Second paragraph.` after the ` *` line is left out; the TypeScript build printed both.
+== args
+input/notes.ts
+== file input/notes.ts
+/**
+ * First paragraph.
+ *
+ * Second paragraph.
+ */
+export const notes = 1;
+== stdout
+input/notes.ts
+First paragraph.
+[L6-L6] export const notes
+== stderr
+== exit 0

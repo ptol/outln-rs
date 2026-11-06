@@ -1,0 +1,27 @@
+Ported from ../outln/__tests__/cases/rust/020-rust-debug-use-trait-impl.case.yaml; expected output is the TypeScript build's, except:
+- A private `use` is no longer highlighted, since it isn't listed.
+== args
+--debug
+input/contracts.rs
+== file input/contracts.rs
+use std::fmt::Debug;
+
+trait Repo {
+  fn load(&self);
+}
+
+impl Repo for Store {
+  fn load(&self) {}
+}
+== stdout
+use std::fmt::Debug;
+
+\x1b[32mtrait Repo\x1b[0m {
+  fn load(&self);
+}
+
+\x1b[32mimpl Repo for Store\x1b[0m {
+  fn load(&self) {}
+}
+== stderr
+== exit 0

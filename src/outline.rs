@@ -19,6 +19,15 @@ pub(crate) enum Header {
 }
 
 impl Header {
+    /// The byte offset where the header's last line ends in the source.
+    pub(crate) fn end(&self) -> usize {
+        let last_range = match self {
+            Header::Frontmatter(fields) => fields.last().map(|field| field.range),
+            Header::Comment(lines) => lines.last().map(|line| line.range),
+        };
+        last_range.map_or(0, |range| range.end)
+    }
+
     /// What a glob view puts between the header's printed lines: fields are a list, while
     /// comment lines are one sentence wrapped over several lines.
     fn summary_separator(&self) -> &'static str {
@@ -54,7 +63,8 @@ pub(crate) struct FrontmatterField {
 pub(crate) struct OutlineLine {
     /// The declaration as printed after its line range, such as `## Install`.
     pub(crate) text: String,
-    /// The whole declaration, which becomes the printed line range.
+    /// The whole declaration from its first leading annotation, which becomes the printed line
+    /// range.
     pub(crate) range: ByteRange,
     /// The part of the source that debug mode highlights.
     pub(crate) highlight: ByteRange,

@@ -1,0 +1,27 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-complex-signatures.case.yaml; expected output is the TypeScript build's, except:
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+- Its input had `unsafe async fn`, which isn't valid Rust; it is `async unsafe fn` here.
+== args
+input/complex.rs
+== file input/complex.rs
+// Complex functions
+
+const fn compute(x: u32) -> u64 { x as u64 }
+unsafe fn dangerous() {}
+async fn fetch() -> Result<(), Error> { Ok(()) }
+extern "C" fn callback(data: *mut c_void) {}
+pub fn public_func() {}
+async unsafe fn unsafe_async() {}
+fn generic<T: Display>(value: T) where T: Clone {}
+== stdout
+input/complex.rs
+Complex functions
+[L3-L3] const fn compute(x: u32) -> u64
+[L4-L4] unsafe fn dangerous()
+[L5-L5] async fn fetch() -> Result<(), Error>
+[L6-L6] extern "C" fn callback(data: *mut c_void)
+[L7-L7] pub fn public_func()
+[L8-L8] async unsafe fn unsafe_async()
+[L9-L9] fn generic<T: Display>(value: T) where T: Clone
+== stderr
+== exit 0

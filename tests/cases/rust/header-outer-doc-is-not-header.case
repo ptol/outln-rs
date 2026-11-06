@@ -1,0 +1,15 @@
+A `///` or `/** */` comment documents the declaration after it, so it is never the header comment; it starts that declaration's line range instead.
+== args
+input/types.rs
+== file input/types.rs
+/// A user of the service.
+pub struct User;
+
+/** A role. */
+pub enum Role {}
+== stdout
+input/types.rs
+[L1-L2] pub struct User
+[L4-L5] pub enum Role
+== stderr
+== exit 0

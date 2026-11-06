@@ -1,0 +1,17 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-use-declarations.case.yaml; expected output is the TypeScript build's, except:
+- Private `use` declarations aren't listed; the TypeScript build listed every `use`.
+== args
+input/use.rs
+== file input/use.rs
+// Use declarations
+
+use std::io;
+use std::collections::HashMap;
+use crate::utils::helpers::{self, format};
+use super::*;
+use std::fs::File as FsFile;
+== stdout
+input/use.rs
+Use declarations
+== stderr
+== exit 0

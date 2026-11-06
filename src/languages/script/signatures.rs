@@ -3,16 +3,8 @@
 use tree_sitter::Node;
 
 use super::one_line;
+use crate::signature::Signature;
 use crate::syntax_tree::{child_of_kind, children, first_syntax_child, has_child_of_kind, source};
-
-/// A declaration's signature, such as `function parse(input: string): Ast` or `class Cache<K>`.
-pub(super) struct Signature {
-    /// The printed text, on one line.
-    pub(super) text: String,
-    /// Byte offset where the signature's source ends, before any body; debug mode's highlight
-    /// ends here.
-    pub(super) highlight_end: usize,
-}
 
 /// The fields after a function's or method's name, in source order, printed without spaces
 /// between them (the return type's node includes its `:`).

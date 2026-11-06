@@ -1,0 +1,13 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-function-where-clause.case.yaml; expected output is the TypeScript build's, except:
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+== args
+input/where.rs
+== file input/where.rs
+fn generic<T>(value: T) -> T where T: Clone { value }
+fn multi<T, U>(x: T, y: U) -> U where T: Display, U: Clone { y }
+== stdout
+input/where.rs
+[L1-L1] fn generic<T>(value: T) -> T where T: Clone
+[L2-L2] fn multi<T, U>(x: T, y: U) -> U where T: Display, U: Clone
+== stderr
+== exit 0

@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use crate::languages::markdown::Markdown;
+use crate::languages::rust::Rust;
 use crate::languages::script::{JAVASCRIPT, TSX, TYPESCRIPT};
 use crate::outline::{FileSummary, Outline};
 
@@ -23,7 +24,7 @@ pub(crate) trait LanguageEngine: Sync {
 
 /// Every engine, in lookup order, one entry per grammar. Engines are immutable configuration, so
 /// they hold no mutable state; add new engines here.
-static ENGINES: &[&dyn LanguageEngine] = &[&Markdown, &TYPESCRIPT, &TSX, &JAVASCRIPT];
+static ENGINES: &[&dyn LanguageEngine] = &[&Markdown, &TYPESCRIPT, &TSX, &JAVASCRIPT, &Rust];
 
 /// The engine for a path, matched by extension ignoring ASCII case, or `None` if unsupported.
 pub(crate) fn engine_for(path: &str) -> Option<&'static dyn LanguageEngine> {
@@ -44,10 +45,10 @@ mod tests {
     fn engine_for_matches_extensions_ignoring_case() {
         assert!(engine_for("docs/guide.md").is_some());
         assert!(engine_for("README.MD").is_some());
-        for script in [
-            "a.ts", "a.d.ts", "a.mts", "a.cts", "a.tsx", "a.js", "a.jsx", "a.mjs", "a.CJS",
+        for code in [
+            "a.ts", "a.d.ts", "a.mts", "a.cts", "a.tsx", "a.js", "a.jsx", "a.mjs", "a.CJS", "a.rs",
         ] {
-            assert!(engine_for(script).is_some(), "{script}");
+            assert!(engine_for(code).is_some(), "{code}");
         }
         assert!(engine_for("notes.txt").is_none());
         assert!(engine_for("Makefile").is_none());

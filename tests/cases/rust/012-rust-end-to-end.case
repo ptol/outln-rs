@@ -1,0 +1,88 @@
+Ported from ../outln/__tests__/cases/typescript/012-end-to-end.case.yaml; expected output is the TypeScript build's, except:
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+- Private `use` declarations aren't listed; the TypeScript build listed every `use`.
+== args
+input/models/types.rs
+input/utils/helpers.rs
+input/main.rs
+== file input/models/types.rs
+// Core domain types for the application.
+// Defines entities and value objects.
+
+use std::collections::HashMap;
+
+pub type UserId = u64;
+
+pub struct User {
+    id: UserId,
+    name: String,
+}
+
+pub enum Role {
+    Admin,
+    User,
+    Guest,
+}
+
+pub trait Authenticable {
+    fn authenticate(&self) -> bool;
+}
+
+impl Authenticable for User {
+    fn authenticate(&self) -> bool { self.id > 0 }
+}
+== file input/utils/helpers.rs
+// Utility functions for common operations.
+
+pub const MAX_SIZE: usize = 1024;
+pub static VERSION: &str = "1.0.0";
+
+pub fn format_name(name: &str) -> String {
+    name.trim().to_lowercase()
+}
+
+macro_rules! log_debug {
+    ($msg:expr) => { println!("[DEBUG] {}", $msg); };
+}
+== file input/main.rs
+// Main entry point for the Rust application.
+// Handles CLI arguments and orchestrates execution.
+
+mod storage;
+extern crate log;
+
+async fn run() -> Result<(), Box<dyn Error>> {
+    println!("Starting...");
+    Ok(())
+}
+
+fn main() {
+    let rt = Runtime::new().unwrap();
+    rt.block_on(run());
+}
+== stdout
+input/models/types.rs
+Core domain types for the application.
+Defines entities and value objects.
+[L6-L6] pub type UserId = u64
+[L8-L11] pub struct User
+[L13-L17] pub enum Role
+[L19-L21] pub trait Authenticable
+[L23-L25] impl Authenticable for User
+
+input/utils/helpers.rs
+Utility functions for common operations.
+[L3-L3] pub const MAX_SIZE: usize
+[L4-L4] pub static VERSION: &str
+[L6-L8] pub fn format_name(name: &str) -> String
+[L10-L12] macro_rules! log_debug
+
+input/main.rs
+Main entry point for the Rust application.
+Handles CLI arguments and orchestrates execution.
+[L4-L4] mod storage
+[L5-L5] extern crate log
+[L7-L10] async fn run() -> Result<(), Box<dyn Error>>
+[L12-L15] fn main()
+== stderr
+== exit 0

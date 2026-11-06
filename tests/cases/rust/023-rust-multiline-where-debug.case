@@ -1,0 +1,26 @@
+Ported from ../outln/__tests__/cases/rust/023-rust-multiline-where-debug.case.yaml; expected output is the TypeScript build's, except:
+- A private `use` is no longer highlighted, since it isn't listed.
+- The highlight runs to the end of the signature, a `where` clause on its own lines included; the TypeScript build stopped before `where`.
+== args
+--debug
+input/rust-highlight-members.rs
+== file input/rust-highlight-members.rs
+use std::collections::{HashMap, HashSet};
+
+pub(crate) fn generic_where<T>(value: T) -> T
+where
+    T: Clone,
+{
+    value.clone()
+}
+== stdout
+use std::collections::{HashMap, HashSet};
+
+\x1b[32mpub(crate) fn generic_where<T>(value: T) -> T\x1b[0m
+\x1b[32mwhere\x1b[0m
+\x1b[32m    T: Clone,\x1b[0m
+{
+    value.clone()
+}
+== stderr
+== exit 0

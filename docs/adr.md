@@ -153,7 +153,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-008: Parse TypeScript and JavaScript with tree-sitter, on a shared code-engine layer
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations)
 
 ### Decision
 
@@ -177,7 +177,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-009: Build the static binary for musl with zig as the C compiler
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-011 (the check also outlines a `.rs` file)
 
 ### Decision
 
@@ -220,6 +220,47 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - The workflow's clippy and test commands copy `just lint` and `just test`, so CI needs no tools beyond rustup; change them together.
 - crates.io's trusted publishing (OIDC, no stored token) needs the crate to exist first; switching to it after the first release removes the secret.
 
+## ADR-011: Parse Rust with tree-sitter-rust
+
+**Status**: Accepted (2026-11-06)
+
+### Decision
+
+- The `Rust` engine (`src/languages/rust.rs`) parses `.rs` files with `tree-sitter-rust` 0.24.2, the latest release, on the shared code-engine layer of ADR-008.
+- It lists top-level declarations only: functions, `struct`, `enum`, `union`, `trait`, `impl`, `mod`, `const`, `static`, `type`, `extern crate`, `extern` blocks, `macro_rules!`, and re-exports (`pub use`, `pub(crate) use`, and other visibilities). Methods, fields, variants, private `use` declarations, and top-level macro calls aren't listed; an inline `mod` (`mod tests { … }`) is one line.
+- A signature is the declaration's source up to its body (or a `const`'s `=`, or the final `;`), on one line with `syntax_tree::one_line_source_before`.
+
+### Rationale
+
+- tree-sitter is the TypeScript build's parser for Rust too, and the grammar crate needs no dependencies beyond `tree-sitter-language`, which the other grammars already pull in.
+- Source-as-written signatures carry types, generics, and `where` clauses, so agents need not open a file to see them; the TypeScript build printed keyword and name only.
+
+### Consequences
+
+- The static binary grew from 6.35 MB to 7.51 MB, and `just build-static` also outlines a `.rs` sample; a 1.6 MB file with 20 000 annotated functions outlines in 0.29 s.
+- Declarations inside a part of the file the parser couldn't make sense of (an `ERROR` node) aren't listed ([techdebt.md](techdebt.md)).
+
+## ADR-012: Doc-aware header comments, first paragraphs, and leading annotations
+
+**Status**: Accepted (2026-11-06)
+
+### Decision
+
+- `header_comment::find_header_comment` reads every comment at the top of the file, up to the first code, as runs: a block comment, or consecutive `//` lines of one kind; scanning goes on right after each comment or preamble, so code or another comment on the same line counts. The engine passes a `CommentSyntax` (a `DocMarkers` value saying what doc markers mean, and whether block comments nest, as Rust's do) and a `preamble_end` function for what may come before or between comments (a shebang, directives, inner attributes spanning lines, skipped with as much of Rust's lexer as brackets need). With `DocMarkers::Ignored` (TypeScript, JavaScript) the header is the first comment; with `DocMarkers::InnerAndOuter` (Rust) it is the first `//!` or `/*!` comment, or else the first plain comment, never a `///` or `/**` one.
+- A header comment is only its first paragraph, up to the first line without text when more text follows, in every engine and mode.
+- A declaration's line range starts at its first leading annotation (doc comment, attribute, or decorator directly above it), found by `leading_annotations::leading_annotations_start`; the engine classifies each preceding node. Attributes and decorators stay attached across blank lines, doc comments don't, plain comments are stepped over, and the header's comment is never one.
+
+### Rationale
+
+- Rust files document themselves with `//!` comments, often after a `//` license comment, and this repo's own files start with one; the TypeScript build read only `//` lines.
+- Well-documented files have multi-paragraph headers (a summary, then details and examples); a glob view line should carry the summary.
+- An agent reading a declaration's line range should get its docs and attributes (`#[cfg(test)]`, `#[derive]`) in the same read; TypeScript decorators were already in the range, so one rule covers both engines.
+
+### Consequences
+
+- Shared code now grows per language through two small hooks (`CommentSyntax`, `PrecedingNode` classification) instead of per-engine copies; Go, Java, Kotlin, and C# doc comments (`///`, `/** */`) fit `DocMarkers::InnerAndOuter`'s outer kind or need one more variant.
+- TypeScript and JavaScript output changed: JSDoc comments now start declarations' and class members' line ranges, and headers print only their first paragraph ([changelog.md](changelog.md)).
+
 ## Dependencies
 
 One line per crate: why std was not enough.
@@ -230,3 +271,4 @@ One line per crate: why std was not enough.
 - `pulldown-cmark` (default features off): CommonMark parsing for the Markdown engine (ADR-007).
 - `tree-sitter` (default features off: no query regex engine): the parser runtime of the code-language engines (ADR-008).
 - `tree-sitter-typescript`, `tree-sitter-javascript` (no features): the TypeScript, TSX, and JavaScript grammars (ADR-008).
+- `tree-sitter-rust` (no features): the Rust grammar (ADR-011).

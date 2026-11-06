@@ -1,0 +1,19 @@
+`pub use` and `pub(crate) use` re-exports are listed, like TypeScript's `export { … } from`; private `use` declarations aren't.
+== args
+input/lib.rs
+== file input/lib.rs
+//! Public API.
+
+use std::io;
+pub use crate::outline::{Outline, OutlineLine};
+pub(crate) use crate::engine::{
+    Engine,
+    Registry,
+};
+== stdout
+input/lib.rs
+Public API.
+[L4-L4] pub use crate::outline::{Outline, OutlineLine}
+[L5-L8] pub(crate) use crate::engine::{ Engine, Registry }
+== stderr
+== exit 0

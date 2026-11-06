@@ -9,16 +9,18 @@ mod test_blocks;
 
 use tree_sitter::{Language, Node};
 
-use crate::header_comment::find_header_comment;
+use crate::header_comment::{
+    BlockComments, CommentSyntax, DocMarkers, find_header_comment, is_outer_doc_block_comment,
+};
 use crate::language_engine::LanguageEngine;
+use crate::leading_annotations::{PrecedingNode, leading_annotations_start};
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
+use crate::signature::Signature;
 use crate::source_text::{ByteRange, line_around};
 use crate::syntax_tree::{
     byte_range, child_of_kind, children, first_syntax_child, has_child_of_kind, one_line_source,
     parse, source,
 };
-
-use signatures::Signature;
 
 /// The language engine for TypeScript and JavaScript, configured with one grammar.
 pub(crate) struct Script {
@@ -67,14 +69,30 @@ impl LanguageEngine for Script {
 
     fn outline(&self, text: &str) -> Outline {
         let tree = parse(text, &self.language());
-        let lines = children(tree.root_node())
-            .into_iter()
-            .flat_map(|statement| statement_lines(statement, text))
+        let header = header(text);
+        let header_end = header.as_ref().map_or(0, Header::end);
+        let statements = children(tree.root_node());
+        let lines = statements
+            .iter()
+            .enumerate()
+            .flat_map(|(index, &statement)| {
+                let lines = statement_lines(statement, text);
+                // Only statements with outline lines look back for leading annotations, so a
+                // run of comments isn't walked again from each of them.
+                if lines.is_empty() {
+                    return lines;
+                }
+                let start = leading_annotations_start(
+                    &statements[..index],
+                    statement.start_byte(),
+                    text,
+                    header_end,
+                    preceding_node,
+                );
+                with_range_start(lines, statement, start)
+            })
             .collect();
-        Outline {
-            header: header(text),
-            lines,
-        }
+        Outline { header, lines }
     }
 
     fn file_summary(&self, text: &str) -> FileSummary {
@@ -86,10 +104,47 @@ impl LanguageEngine for Script {
 /// The header comment: the first comment that starts a line, if nothing but a shebang, blank
 /// lines, and directives (`'use strict';`) come before it.
 fn header(text: &str) -> Option<Header> {
-    find_header_comment(text, |index, line| {
-        let is_shebang = index == 0 && line.starts_with("#!");
-        is_shebang || is_directive(line)
+    find_header_comment(text, COMMENT_SYNTAX, |text, start| {
+        let line_end = line_around(text, start).end;
+        let line_text = &text[start..line_end];
+        let is_shebang = start == 0 && line_text.starts_with("#!");
+        (is_shebang || is_directive(line_text)).then_some(line_end)
     })
+}
+
+/// `///` is a directive in TypeScript, and doc comments don't say whether they document the
+/// file, so the header is the first comment; block comments don't nest.
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+    doc_markers: DocMarkers::Ignored,
+    block_comments: BlockComments::Flat,
+};
+
+/// What a node before a statement or class member is to its leading annotations: a `/** */`
+/// comment documents what follows it, and a decorator (a sibling of its class member in the
+/// TypeScript grammar) belongs to it.
+pub(super) fn preceding_node(node: Node<'_>, text: &str) -> PrecedingNode {
+    match node.kind() {
+        "decorator" => PrecedingNode::Attribute,
+        "comment" if is_outer_doc_block_comment(source(node, text)) => PrecedingNode::DocComment,
+        "comment" => PrecedingNode::PlainComment,
+        _ => PrecedingNode::Other,
+    }
+}
+
+/// The statement's outline lines, with each line range that covers the whole statement moved
+/// to start at `start`, its first leading annotation. Every such line comes from
+/// [`statement_line`], which gives exactly the statement's range; class members keep their own.
+fn with_range_start(
+    mut lines: Vec<OutlineLine>,
+    statement: Node<'_>,
+    start: usize,
+) -> Vec<OutlineLine> {
+    for line in &mut lines {
+        if line.range == byte_range(statement) {
+            line.range = ByteRange::new(start, line.range.end);
+        }
+    }
+    lines
 }
 
 /// Whether a line is a directive prologue such as `'use client';` or `"use strict"`.
@@ -178,19 +233,15 @@ fn declaration_lines(
 }
 
 /// The outline line of a statement that declares one thing: its line range covers the whole
-/// statement, decorators included, and its highlight runs from the statement's first keyword
-/// to the end of the signature.
+/// statement, decorators included (the statement's leading annotations above it are added by
+/// [`with_range_start`]), and its highlight runs from the statement's first keyword to the end
+/// of the signature.
 fn statement_line(statement: Node<'_>, prefix: &str, signature: Signature) -> OutlineLine {
-    let highlight_start = first_keyword_start(statement);
-    OutlineLine {
+    let signature = Signature {
         text: prefixed(prefix, signature.text),
-        range: byte_range(statement),
-        highlight: ByteRange::new(
-            highlight_start,
-            signature.highlight_end.max(highlight_start),
-        ),
-        depth: 0,
-    }
+        ..signature
+    };
+    signature.into_outline_line(byte_range(statement), first_keyword_start(statement), 0)
 }
 
 /// Where a statement's own syntax starts, after any decorators and comments before it.

@@ -1,0 +1,23 @@
+The `//!` comment is the header comment even after a plain `//` license comment, and only its first paragraph is printed.
+A Rust file's plain `//` comment is its header only when no `//!` comment comes before the first declaration.
+== args
+input/config.rs
+== file input/config.rs
+// Copyright 2026 Example Authors.
+// SPDX-License-Identifier: MIT
+
+//! Parses config files.
+//!
+//! The format is described in docs/config.md.
+
+use std::fs;
+
+pub fn parse(path: &str) -> Config {
+    todo!()
+}
+== stdout
+input/config.rs
+Parses config files.
+[L10-L12] pub fn parse(path: &str) -> Config
+== stderr
+== exit 0

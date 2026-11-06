@@ -1,0 +1,8 @@
+Ported from ../outln/__tests__/cases/typescript/012-rust-truly-empty.case.yaml; expected output is the TypeScript build's.
+== args
+input/empty.rs
+== file input/empty.rs
+== stdout
+input/empty.rs
+== stderr
+== exit 0

@@ -1,0 +1,55 @@
+Ported from ../outln/__tests__/cases/rust/020-rust-debug-end-to-end.case.yaml; expected output is the TypeScript build's, except:
+- A private `use` is no longer highlighted, since it isn't listed.
+== args
+--debug
+input/full-feature.rs
+== file input/full-feature.rs
+// Main entry point for the application.
+
+pub struct App {
+  name: String,
+}
+
+impl App {
+  pub fn new() -> Self {
+    Self { name: String::new() }
+  }
+
+  pub fn run(&self) {}
+}
+
+async fn handle_request(req: Request) -> Response {
+  Response::new()
+}
+
+use std::collections::HashMap;
+
+pub trait Service {
+  fn process(&self, input: u64) -> u64;
+}
+== stdout
+\x1b[32m// Main entry point for the application.\x1b[0m
+
+\x1b[32mpub struct App\x1b[0m {
+  name: String,
+}
+
+\x1b[32mimpl App\x1b[0m {
+  pub fn new() -> Self {
+    Self { name: String::new() }
+  }
+
+  pub fn run(&self) {}
+}
+
+\x1b[32masync fn handle_request(req: Request) -> Response\x1b[0m {
+  Response::new()
+}
+
+use std::collections::HashMap;
+
+\x1b[32mpub trait Service\x1b[0m {
+  fn process(&self, input: u64) -> u64;
+}
+== stderr
+== exit 0

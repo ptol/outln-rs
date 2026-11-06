@@ -1,0 +1,18 @@
+Ported from ../outln/__tests__/cases/rust/026-happy-emit-rust-top-regular-comment-block.case.yaml; expected output is the TypeScript build's, except:
+- Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
+== args
+input/with-header.rs
+== file input/with-header.rs
+#!/usr/bin/env rust-script
+
+// Service bootstrap for CLI scripts.
+// Loads config and starts runner.
+
+fn main() {}
+== stdout
+input/with-header.rs
+Service bootstrap for CLI scripts.
+Loads config and starts runner.
+[L6-L6] fn main()
+== stderr
+== exit 0

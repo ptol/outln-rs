@@ -1,0 +1,24 @@
+The glob view prints only the first paragraph of each header comment: Rust `//!` docs usually go on after a blank `//!` line.
+== args
+input
+== file input/lib.rs
+//! Library core: parses arguments and runs a mode.
+//!
+//! ```
+//! let x = 1;
+//! ```
+
+pub fn run() {}
+== file input/plain.rs
+// Small helper script.
+// Kept for local runs.
+
+fn main() {}
+== stdout
+glob view: input
+Includes only headers per file.
+For file-level outlines, use `outln [FILE]...`.
+input/lib.rs: Library core: parses arguments and runs a mode.
+input/plain.rs: Small helper script. Kept for local runs.
+== stderr
+== exit 0
