@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/001-multiple-files.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/001-multiple-files.case.yaml; expected output is the TypeScript build's.
 == args
 input/a.ts
 input/b.ts

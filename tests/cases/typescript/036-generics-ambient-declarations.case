@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/036-generics-ambient-declarations.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/036-generics-ambient-declarations.case.yaml; expected output is the TypeScript build's.
 == args
 input/ambient.d.ts
 == file input/ambient.d.ts

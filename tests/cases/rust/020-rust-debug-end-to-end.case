@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/rust/020-rust-debug-end-to-end.case.yaml; expected output is the TypeScript build's, except:
+Ported from the TypeScript build's __tests__/cases/rust/020-rust-debug-end-to-end.case.yaml; expected output is the TypeScript build's, except:
 - A private `use` is no longer highlighted, since it isn't listed.
 == args
 --debug

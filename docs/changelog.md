@@ -1,5 +1,5 @@
 ---
-description: 'Notable changes to the outln Rust rewrite by release, including deliberate divergences from the TypeScript build.'
+description: 'Notable changes to outln by release, including deliberate divergences from the TypeScript build.'
 readWhen: 'finishing a change that users or agents would notice'
 ---
 

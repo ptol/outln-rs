@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/002-comment-after-code.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/002-comment-after-code.case.yaml; expected output is the TypeScript build's.
 == args
 input/comment-after-code.ts
 == file input/comment-after-code.ts

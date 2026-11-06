@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/014-end-to-end.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/014-end-to-end.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/import-namespace-module.ts

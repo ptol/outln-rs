@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/debug/017-debug-const-multiline-three.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/debug/017-debug-const-multiline-three.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/const-multi-line-three.ts

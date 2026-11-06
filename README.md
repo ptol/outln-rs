@@ -4,7 +4,7 @@ description: 'What outln is, how to install, build, and run it, and where the pr
 
 # outln
 
-A CLI that prints compact structural outlines of source files (a header, then top-level declarations with line ranges) for coding agents. This is a Rust rewrite of the TypeScript implementation in `../outln`; so far it outlines Markdown, TypeScript, JavaScript, and Rust files, and TOML, YAML, and JSON data files.
+A CLI that prints compact structural outlines of source files (a header, then top-level declarations with line ranges) for coding agents. So far it outlines Markdown, TypeScript, JavaScript, and Rust files, and TOML, YAML, and JSON data files.
 
 ## Install
 

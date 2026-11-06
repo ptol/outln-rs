@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/debug/027-debug-dir-happy-path.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/debug/027-debug-dir-happy-path.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
 == args
 --debug

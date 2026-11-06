@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/headers/035-use-client-directive-before-header.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/headers/035-use-client-directive-before-header.case.yaml; expected output is the TypeScript build's.
 == args
 input/page.tsx
 == file input/page.tsx

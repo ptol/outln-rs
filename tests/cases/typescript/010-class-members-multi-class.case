@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/010-class-members-multi-class.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/010-class-members-multi-class.case.yaml; expected output is the TypeScript build's.
 == args
 input/multi-class.ts
 == file input/multi-class.ts

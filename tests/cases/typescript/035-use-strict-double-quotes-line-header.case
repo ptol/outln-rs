@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/headers/035-use-strict-double-quotes-line-header.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/headers/035-use-strict-double-quotes-line-header.case.yaml; expected output is the TypeScript build's.
 == args
 input/legacy.js
 == file input/legacy.js

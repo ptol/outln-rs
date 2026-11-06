@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/012-rust-block-comment-not-header.case.yaml; expected output is the TypeScript build's, except:
+Ported from the TypeScript build's __tests__/cases/typescript/012-rust-block-comment-not-header.case.yaml; expected output is the TypeScript build's, except:
 - A plain block comment at the top is the header comment when there is no `//!` comment; the TypeScript build read only `//` lines.
 - Signatures print as written on one line (`fn main()`, not `fn main ()`), with generics, a const's or static's type, and a type alias's type; the TypeScript build printed keyword and name only, spaced out.
 == args

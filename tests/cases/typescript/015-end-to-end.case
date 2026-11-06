@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/015-end-to-end.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/015-end-to-end.case.yaml; expected output is the TypeScript build's.
 == args
 input/ambient-full.ts
 == file input/ambient-full.ts

@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/012-rust-glob-view.case.yaml; expected output is the TypeScript build's, except:
+Ported from the TypeScript build's __tests__/cases/typescript/012-rust-glob-view.case.yaml; expected output is the TypeScript build's, except:
 - The glob view's wording is this build's (`Includes only a header or summary per file.`, `(no header available)`).
 == args
 input/**/*

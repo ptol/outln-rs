@@ -1,5 +1,5 @@
 ---
-description: 'Architecture Decision Records for the outln Rust rewrite.'
+description: 'Architecture Decision Records for outln.'
 readWhen: 'making or questioning a design decision, or adding a dependency'
 ---
 
@@ -7,13 +7,13 @@ readWhen: 'making or questioning a design decision, or adding a dependency'
 
 Each record states the decision, why, and what it costs. Add a new ADR rather than editing an accepted one; mark the old one superseded, or amended when the new one replaces only part of it.
 
-## ADR-001: Rewrite outln in Rust
+## ADR-001: Build outln in Rust
 
 **Status**: Accepted (2026-11-06); amended by ADR-014 (the published Rust build replaces the installed TypeScript build before full parity)
 
 ### Decision
 
-Rewrite the TypeScript CLI (`../outln`) in Rust, in this repo, as a single Cargo package with a library and a thin binary.
+Build outln in Rust, in this repo, as a single Cargo package with a library and a thin binary.
 
 ### Rationale
 
@@ -23,7 +23,7 @@ Rewrite the TypeScript CLI (`../outln`) in Rust, in this repo, as a single Cargo
 
 ### Consequences
 
-- The TypeScript build stays the installed `outln` until the rewrite reaches feature parity.
+- The TypeScript build stays the installed `outln` until the Rust build reaches feature parity.
 - Behaviour may diverge from the TypeScript build on purpose (no backward compatibility); [changelog.md](changelog.md) records each divergence.
 
 ## ADR-002: Local-only tooling with strict lints and an auto-fixing pre-commit hook
@@ -298,7 +298,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ### Consequences
 
-- Supersedes ADR-001's "The TypeScript build stays the installed `outln` until the rewrite reaches feature parity" and ADR-010's advice to keep the TypeScript build installed.
+- Supersedes ADR-001's "The TypeScript build stays the installed `outln` until the Rust build reaches feature parity" and ADR-010's advice to keep the TypeScript build installed.
 - The installed build can lag this repo's code by a release; `just run <args>` runs the working copy.
 - Porting an engine's cases takes the expected output from `npx --yes outln@0.2.1`, which needs Node and network access on first use.
 

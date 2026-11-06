@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/cli/030-version-short-flag.case.yaml; output differs from the TypeScript build's: clap prints the program name before the version.
+Ported from the TypeScript build's __tests__/cases/cli/030-version-short-flag.case.yaml; output differs from the TypeScript build's: clap prints the program name before the version.
 Its source-code inputs were rewritten as Markdown files.
 == args
 -v

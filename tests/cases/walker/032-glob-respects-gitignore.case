@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/walker/032-glob-respects-gitignore.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/walker/032-glob-respects-gitignore.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
 input/.git/HEAD makes input a git repository: outln applies .gitignore files only inside one.
 Except: the glob view says "a header or summary" instead of "header comments" (docs/changelog.md).

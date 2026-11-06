@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/rust/026-edge-comment-only-file-stops-at-blank-line.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/rust/026-edge-comment-only-file-stops-at-blank-line.case.yaml; expected output is the TypeScript build's.
 == args
 input/comment-only-blank-break.rs
 == file input/comment-only-blank-break.rs

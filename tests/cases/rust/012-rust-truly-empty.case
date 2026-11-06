@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/012-rust-truly-empty.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/012-rust-truly-empty.case.yaml; expected output is the TypeScript build's.
 == args
 input/empty.rs
 == file input/empty.rs

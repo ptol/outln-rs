@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/037-re-exports-export-assignment.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/037-re-exports-export-assignment.case.yaml; expected output is the TypeScript build's.
 == args
 input/legacy.d.ts
 == file input/legacy.d.ts

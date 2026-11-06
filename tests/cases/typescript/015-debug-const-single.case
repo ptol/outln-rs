@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/015-debug-const-single.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/015-debug-const-single.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/declare-const-single.ts

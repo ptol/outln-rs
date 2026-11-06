@@ -1,10 +1,10 @@
 ---
-description: 'Agent workflow for the outln Rust rewrite: setup, code navigation, conventions, lint, verification, and priorities.'
+description: 'Agent workflow for outln: setup, code navigation, conventions, lint, verification, and priorities.'
 ---
 
 # outln
 
-`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. This repo is a Rust rewrite of the TypeScript implementation in `../outln`; so far it supports Markdown, TypeScript, JavaScript, and Rust files, and TOML, YAML, and JSON data files. [docs/overview.md](docs/overview.md) has the goals and current status.
+`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. It is written in Rust and so far supports Markdown, TypeScript, JavaScript, and Rust files, and TOML, YAML, and JSON data files. [docs/overview.md](docs/overview.md) has the goals and current status.
 
 The maintainer is learning Rust. In your final summary, briefly explain each non-obvious Rust concept your change relies on (an ownership or borrowing choice, a lifetime, a trait, a macro, why a crate was added), a sentence or two each. Prefer simple, readable idioms over clever ones.
 

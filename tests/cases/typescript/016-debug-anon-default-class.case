@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/typescript/016-debug-anon-default-class.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/typescript/016-debug-anon-default-class.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/default-anon-class.ts

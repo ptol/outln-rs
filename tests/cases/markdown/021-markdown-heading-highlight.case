@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/markdown/021-markdown-heading-highlight.case.yaml; expected output is the TypeScript build's.
+Ported from the TypeScript build's __tests__/cases/markdown/021-markdown-heading-highlight.case.yaml; expected output is the TypeScript build's.
 == args
 --debug
 input/sample.md

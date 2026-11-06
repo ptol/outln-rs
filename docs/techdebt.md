@@ -1,5 +1,5 @@
 ---
-description: 'Register of known technical debt in the outln Rust rewrite, with impact and the way out.'
+description: 'Register of known technical debt in outln, with impact and the way out.'
 readWhen: 'taking a shortcut, or before changing an area to check its known weak spots'
 ---
 

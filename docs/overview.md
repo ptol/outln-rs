@@ -1,5 +1,5 @@
 ---
-description: 'Goals, current status, and scope of the outln Rust rewrite.'
+description: 'Goals, current status, and scope of outln.'
 readWhen: 'starting any task, to learn what the project is for and how far it is'
 ---
 
@@ -13,7 +13,7 @@ readWhen: 'starting any task, to learn what the project is for and how far it is
 
 ## Reference implementation
 
-The TypeScript implementation in `../outln` (commit `ee514b1`, released as 0.2.1) is the behavioural reference: its `docs/overview.md` lists every feature, and `__tests__/cases/` holds its `.case.yaml` casefiles. How far to follow it is in the Priorities section of `AGENTS.md`.
+The TypeScript build (commit `ee514b1`, released as 0.2.1) is the behavioural reference: run it with `npx --yes outln@0.2.1` ([ADR-014](adr.md)). How far to follow it is in the Priorities section of `AGENTS.md`.
 
 ## Current status
 

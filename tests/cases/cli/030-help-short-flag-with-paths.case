@@ -1,4 +1,4 @@
-Ported from ../outln/__tests__/cases/cli/030-help-short-flag-with-paths.case.yaml; output differs from the TypeScript build's: help text now comes from clap.
+Ported from the TypeScript build's __tests__/cases/cli/030-help-short-flag-with-paths.case.yaml; output differs from the TypeScript build's: help text now comes from clap.
 Its source-code inputs were rewritten as Markdown files.
 == args
 input/a.md
