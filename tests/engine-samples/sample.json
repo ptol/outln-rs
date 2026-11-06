@@ -1,0 +1,10 @@
+// Engine sample for JSON: a header comment, then keys with every kind of value.
+{
+  "name": "sample",
+  "version": "1.0.0",
+  "count": 3,
+  "enabled": true,
+  "missing": null,
+  "nested": { "key": [1, 2] },
+  "list": ["a", "b"]
+}

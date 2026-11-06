@@ -6,8 +6,9 @@ edition = "2024"
 # The published crate holds only what builds it; integration tests (`tests/`), casefiles, docs,
 # and dev tooling stay in git (an allowlist, so new repo files stay out of the crate by default).
 # `cargo package` warns that it ignores each integration test target for this reason; that is
-# expected.
-include = ["src/**/*.rs", "Cargo.toml", "Cargo.lock", "LICENSE"]
+# expected. The engine samples are the exception: unit tests in `src/language_engine/contract.rs`
+# read them, so `cargo test` still passes on the published crate.
+include = ["src/**/*.rs", "tests/engine-samples/*", "Cargo.toml", "Cargo.lock", "LICENSE"]
 keywords = ["outline", "cli", "tree-sitter", "coding-agents", "markdown"]
 license = "MIT"
 # crates.io doesn't parse YAML frontmatter, so README.md's would render as a rule and a heading

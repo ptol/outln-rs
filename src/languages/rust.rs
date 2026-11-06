@@ -2,18 +2,17 @@
 
 use tree_sitter::Node;
 
+use crate::code_outline::code_outline;
 use crate::header_comment::{
     BlockComments, CommentSyntax, DocMarkers, after_whitespace, block_comment_end,
     find_header_comment,
 };
 use crate::language_engine::LanguageEngine;
-use crate::leading_annotations::{PrecedingNode, leading_annotations_start};
+use crate::leading_annotations::PrecedingNode;
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
 use crate::source_text::{ByteRange, line_around, trim_end};
-use crate::syntax_tree::{
-    child_of_kind, children, has_child_of_kind, one_line_source_before, parse,
-};
+use crate::syntax_tree::{child_of_kind, has_child_of_kind, one_line_source_before};
 
 /// The language engine for Rust.
 pub(crate) struct Rust;
@@ -24,28 +23,13 @@ impl LanguageEngine for Rust {
     }
 
     fn outline(&self, text: &str) -> Outline {
-        let tree = parse(text, &tree_sitter_rust::LANGUAGE.into());
-        let header = header(text);
-        let header_end = header.as_ref().map_or(0, Header::end);
-        let nodes = children(tree.root_node());
-        let lines = nodes
-            .iter()
-            .enumerate()
-            .filter_map(|(index, &node)| {
-                // Only declarations look back for leading annotations, so a run of comments
-                // isn't walked again from each of its lines.
-                let signature_end = signature_end(node)?;
-                let range_start = leading_annotations_start(
-                    &nodes[..index],
-                    node.start_byte(),
-                    text,
-                    header_end,
-                    preceding_node,
-                );
-                Some(declaration_line(node, signature_end, range_start, text))
-            })
-            .collect();
-        Outline { header, lines }
+        code_outline(
+            text,
+            &tree_sitter_rust::LANGUAGE.into(),
+            header(text),
+            preceding_node,
+            declaration_line,
+        )
     }
 
     fn file_summary(&self, text: &str) -> FileSummary {
@@ -180,13 +164,10 @@ fn preceding_node(node: Node<'_>, _text: &str) -> PrecedingNode {
 /// of `extern "C"`.
 const VERBATIM_KINDS: &[&str] = &["string_literal", "raw_string_literal", "char_literal"];
 
-/// The outline line of a declaration whose signature ends at `signature_end`.
-fn declaration_line(
-    node: Node<'_>,
-    signature_end: usize,
-    range_start: usize,
-    text: &str,
-) -> OutlineLine {
+/// The outline line of a top-level node with line range `range`, or `None` for a node that
+/// isn't a listed declaration.
+fn declaration_line(node: Node<'_>, range: ByteRange, text: &str) -> Option<OutlineLine> {
+    let signature_end = signature_end(node)?;
     let signature = Signature {
         text: one_line_source_before(node, signature_end, text, VERBATIM_KINDS),
         // `signature_end` is where the next token starts, so this leaves out the whitespace
@@ -194,11 +175,7 @@ fn declaration_line(
         highlight_end: trim_end(text, ByteRange::new(node.start_byte(), signature_end)).end,
     };
     // Attributes are siblings of the declaration, so its node starts at its first keyword.
-    signature.into_outline_line(
-        ByteRange::new(range_start, node.end_byte()),
-        node.start_byte(),
-        0,
-    )
+    Some(signature.into_outline_line(range, node.start_byte(), 0))
 }
 
 /// Where a declaration's signature ends, or `None` for a node that isn't a listed declaration

@@ -1,0 +1,15 @@
+# Engine sample for YAML: a header comment, then keys and documents.
+
+name: sample
+# The version.
+version: '1.0.0'
+description: |
+  Several lines.
+list:
+  - a
+  - b
+nested:
+  key: value
+flow: { a: 1 }
+---
+second: document

@@ -9,17 +9,17 @@ mod test_blocks;
 
 use tree_sitter::{Language, Node};
 
+use crate::code_outline::code_outline;
 use crate::header_comment::{
     BlockComments, CommentSyntax, DocMarkers, find_header_comment, is_outer_doc_block_comment,
 };
 use crate::language_engine::LanguageEngine;
-use crate::leading_annotations::{PrecedingNode, leading_annotations_start};
+use crate::leading_annotations::PrecedingNode;
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
 use crate::source_text::{ByteRange, line_around};
 use crate::syntax_tree::{
-    byte_range, child_of_kind, children, first_syntax_child, has_child_of_kind, one_line_source,
-    parse, source,
+    child_of_kind, children, first_syntax_child, has_child_of_kind, one_line_source, source,
 };
 
 /// The language engine for TypeScript and JavaScript, configured with one grammar.
@@ -68,31 +68,13 @@ impl LanguageEngine for Script {
     }
 
     fn outline(&self, text: &str) -> Outline {
-        let tree = parse(text, &self.language());
-        let header = header(text);
-        let header_end = header.as_ref().map_or(0, Header::end);
-        let statements = children(tree.root_node());
-        let lines = statements
-            .iter()
-            .enumerate()
-            .flat_map(|(index, &statement)| {
-                let lines = statement_lines(statement, text);
-                // Only statements with outline lines look back for leading annotations, so a
-                // run of comments isn't walked again from each of them.
-                if lines.is_empty() {
-                    return lines;
-                }
-                let start = leading_annotations_start(
-                    &statements[..index],
-                    statement.start_byte(),
-                    text,
-                    header_end,
-                    preceding_node,
-                );
-                with_range_start(lines, statement, start)
-            })
-            .collect();
-        Outline { header, lines }
+        code_outline(
+            text,
+            &self.language(),
+            header(text),
+            preceding_node,
+            statement_lines,
+        )
     }
 
     fn file_summary(&self, text: &str) -> FileSummary {
@@ -131,20 +113,13 @@ pub(super) fn preceding_node(node: Node<'_>, text: &str) -> PrecedingNode {
     }
 }
 
-/// The statement's outline lines, with each line range that covers the whole statement moved
-/// to start at `start`, its first leading annotation. Every such line comes from
-/// [`statement_line`], which gives exactly the statement's range; class members keep their own.
-fn with_range_start(
-    mut lines: Vec<OutlineLine>,
-    statement: Node<'_>,
-    start: usize,
-) -> Vec<OutlineLine> {
-    for line in &mut lines {
-        if line.range == byte_range(statement) {
-            line.range = ByteRange::new(start, line.range.end);
-        }
-    }
-    lines
+/// A top-level statement with its line range, which starts at the statement's first leading
+/// annotation. Every outline line of the statement itself gets this range; its class members
+/// get their own.
+#[derive(Clone, Copy)]
+struct Statement<'tree> {
+    node: Node<'tree>,
+    range: ByteRange,
 }
 
 /// Whether a line is a directive prologue such as `'use client';` or `"use strict"`.
@@ -169,15 +144,17 @@ fn one_line(node: Node<'_>, text: &str) -> String {
     one_line_source(node, text, VERBATIM_KINDS)
 }
 
-/// The outline lines of one top-level statement; most statements give none.
-fn statement_lines(statement: Node<'_>, text: &str) -> Vec<OutlineLine> {
-    match statement.kind() {
+/// The outline lines of one top-level statement with line range `range`; most statements give
+/// none.
+fn statement_lines(node: Node<'_>, range: ByteRange, text: &str) -> Vec<OutlineLine> {
+    let statement = Statement { node, range };
+    match node.kind() {
         "export_statement" => export_lines(statement, text),
         "expression_statement" => expression_statement_lines(statement, text),
         "import_statement" | "import_alias" => {
             import_alias_line(statement, text).into_iter().collect()
         }
-        _ => declaration_lines(statement, statement, "", text),
+        _ => declaration_lines(node, statement, "", text),
     }
 }
 
@@ -185,7 +162,7 @@ fn statement_lines(statement: Node<'_>, text: &str) -> Vec<OutlineLine> {
 /// `export` or `declare` statement. `prefix` is printed before it, such as `export default`.
 fn declaration_lines(
     declaration: Node<'_>,
-    statement: Node<'_>,
+    statement: Statement<'_>,
     prefix: &str,
     text: &str,
 ) -> Vec<OutlineLine> {
@@ -232,16 +209,15 @@ fn declaration_lines(
     }
 }
 
-/// The outline line of a statement that declares one thing: its line range covers the whole
-/// statement, decorators included (the statement's leading annotations above it are added by
-/// [`with_range_start`]), and its highlight runs from the statement's first keyword to the end
-/// of the signature.
-fn statement_line(statement: Node<'_>, prefix: &str, signature: Signature) -> OutlineLine {
+/// The outline line of a statement that declares one thing: its line range is the statement's,
+/// decorators and leading annotations included, and its highlight runs from the statement's
+/// first keyword to the end of the signature.
+fn statement_line(statement: Statement<'_>, prefix: &str, signature: Signature) -> OutlineLine {
     let signature = Signature {
         text: prefixed(prefix, signature.text),
         ..signature
     };
-    signature.into_outline_line(byte_range(statement), first_keyword_start(statement), 0)
+    signature.into_outline_line(statement.range, first_keyword_start(statement.node), 0)
 }
 
 /// Where a statement's own syntax starts, after any decorators and comments before it.
@@ -266,7 +242,7 @@ fn prefixed(prefix: &str, text: String) -> String {
 /// keyword; the others at their name. Destructuring patterns declare no listed name.
 fn variable_lines(
     declaration: Node<'_>,
-    statement: Node<'_>,
+    statement: Statement<'_>,
     prefix: &str,
     text: &str,
 ) -> Vec<OutlineLine> {
@@ -317,7 +293,7 @@ fn variable_lines(
 /// bodies worth listing, so their members are not shown.
 fn ambient_lines(
     ambient: Node<'_>,
-    statement: Node<'_>,
+    statement: Statement<'_>,
     prefix: &str,
     text: &str,
 ) -> Vec<OutlineLine> {
@@ -356,19 +332,20 @@ fn ambient_lines(
 
 /// The outline lines of an `export` statement: a re-export, an exported declaration, or a
 /// default export of an expression.
-fn export_lines(statement: Node<'_>, text: &str) -> Vec<OutlineLine> {
-    if is_re_export(statement) {
+fn export_lines(statement: Statement<'_>, text: &str) -> Vec<OutlineLine> {
+    let node = statement.node;
+    if is_re_export(node) {
         return vec![re_export_line(statement, text)];
     }
-    let prefix = if has_child_of_kind(statement, "default") {
+    let prefix = if has_child_of_kind(node, "default") {
         "export default"
     } else {
         "export"
     };
-    if let Some(declaration) = statement.child_by_field_name("declaration") {
+    if let Some(declaration) = node.child_by_field_name("declaration") {
         return declaration_lines(declaration, statement, prefix, text);
     }
-    let Some(value) = statement
+    let Some(value) = node
         .child_by_field_name("value")
         .map(signatures::without_wrappers)
     else {
@@ -378,8 +355,8 @@ fn export_lines(statement: Node<'_>, text: &str) -> Vec<OutlineLine> {
     if !lines.is_empty() {
         return lines;
     }
-    let default_keyword_end = child_of_kind(statement, "default")
-        .map_or(statement.start_byte(), |keyword| keyword.end_byte());
+    let default_keyword_end =
+        child_of_kind(node, "default").map_or(node.start_byte(), |keyword| keyword.end_byte());
     vec![statement_line(
         statement,
         prefix,
@@ -399,23 +376,22 @@ fn is_re_export(statement: Node<'_>) -> bool {
 
 /// A re-export prints as its statement on one line without the semicolon, and highlights the
 /// statement's first source line.
-fn re_export_line(statement: Node<'_>, text: &str) -> OutlineLine {
-    let statement_text = one_line(statement, text);
-    let first_line_end = line_around(text, statement.start_byte())
-        .end
-        .min(statement.end_byte());
-    OutlineLine {
+fn re_export_line(statement: Statement<'_>, text: &str) -> OutlineLine {
+    let node = statement.node;
+    let statement_text = one_line(node, text);
+    let signature = Signature {
         text: statement_text.trim_end_matches(';').trim_end().to_owned(),
-        range: byte_range(statement),
-        highlight: ByteRange::new(statement.start_byte(), first_line_end),
-        depth: 0,
-    }
+        highlight_end: line_around(text, node.start_byte())
+            .end
+            .min(node.end_byte()),
+    };
+    signature.into_outline_line(statement.range, node.start_byte(), 0)
 }
 
 /// The outline lines of an expression statement: a `namespace` block, which the TypeScript
 /// grammar parses as an expression, or a test block.
-fn expression_statement_lines(statement: Node<'_>, text: &str) -> Vec<OutlineLine> {
-    let Some(expression) = first_syntax_child(statement) else {
+fn expression_statement_lines(statement: Statement<'_>, text: &str) -> Vec<OutlineLine> {
+    let Some(expression) = first_syntax_child(statement.node) else {
         return Vec::new();
     };
     match expression.kind() {
@@ -429,11 +405,11 @@ fn expression_statement_lines(statement: Node<'_>, text: &str) -> Vec<OutlineLin
 
 /// `import Name = require('...')` and `import Name = Namespace.member` print as `import Name`;
 /// other imports aren't declarations.
-fn import_alias_line(statement: Node<'_>, text: &str) -> Option<OutlineLine> {
-    let owner = if statement.kind() == "import_statement" {
-        child_of_kind(statement, "import_require_clause")?
+fn import_alias_line(statement: Statement<'_>, text: &str) -> Option<OutlineLine> {
+    let owner = if statement.node.kind() == "import_statement" {
+        child_of_kind(statement.node, "import_require_clause")?
     } else {
-        statement
+        statement.node
     };
     let name = child_of_kind(owner, "identifier")?;
     Some(statement_line(

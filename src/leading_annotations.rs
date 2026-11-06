@@ -10,6 +10,11 @@ use tree_sitter::Node;
 use crate::source_text::line_around;
 
 /// What a node before a declaration is to the walk that finds its leading annotations.
+///
+/// Only `Other` nodes can be declarations: a node classified as a comment or attribute belongs
+/// to what follows it (an engine classifies a comment or attribute that doesn't, such as
+/// Rust's `//!`, as `Other`). `code_outline::code_outline` relies on this to skip every other
+/// node without asking the engine for its outline lines.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PrecedingNode {
     /// A doc comment (`///`, `/** */`): a leading annotation unless a blank line separates it

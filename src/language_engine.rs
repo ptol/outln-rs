@@ -49,6 +49,9 @@ pub(crate) fn engine_for(path: &str) -> Option<&'static dyn LanguageEngine> {
 }
 
 #[cfg(test)]
+mod contract;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

@@ -127,3 +127,8 @@ _Avoid_: Config file (not every one configures something)
 
 One test case of outln's behaviour in a single file: the arguments, the input files, and the expected stdout, stderr, and exit code.
 _Avoid_: Golden file, fixture, snapshot
+
+### Engine sample
+
+A small file with a header and declarations of most kinds, one per language engine (one per grammar for an engine with several), that the checks shared by every engine outline.
+_Avoid_: Fixture, example file, sample case

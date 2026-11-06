@@ -177,7 +177,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-009: Build the static binary for musl with zig as the C compiler
 
-**Status**: Accepted (2026-11-06); amended by ADR-011 (the check also outlines a `.rs` file)
+**Status**: Accepted (2026-11-06); amended by ADR-011 (the check also outlines a `.rs` file) and ADR-017 (the check outlines every engine sample and compares with the dev build)
 
 ### Decision
 
@@ -196,7 +196,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-010: Publish to crates.io from a tag-triggered GitHub Actions workflow
 
-**Status**: Accepted (2026-11-06); amended by ADR-014 (agents' machines install this crate instead of keeping the TypeScript build)
+**Status**: Accepted (2026-11-06); amended by ADR-014 (agents' machines install this crate instead of keeping the TypeScript build) and ADR-017 (the package also includes the engine samples)
 
 ### Decision
 
@@ -349,6 +349,32 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - The YAML and TOML grammars compile C scanners, which `just build-static` now covers with a sample per format; the static binary grew from 7.52 MB to 7.78 MB.
 - The glob view's preamble says "Includes only a header or summary per file.", since a line may be a field summary or a Markdown file's first heading.
 - Format-specific extras are left out: `.jsonc` and `.json5` aren't recognized, later YAML documents aren't outlined, and lockfiles get no special handling.
+
+## ADR-017: Check every engine against shared engine samples
+
+**Status**: Accepted (2026-11-06); amends ADR-009 (what `just build-static` outlines) and ADR-010 (the package also includes the engine samples)
+
+### Decision
+
+- `tests/engine-samples/` holds one engine sample per `ENGINES` entry, named `sample.<first extension>`: a header comment (frontmatter for Markdown) and declarations of most kinds.
+- The unit tests in `src/language_engine/contract.rs` run over `ENGINES`: every extension is lowercase and claimed by one engine; the samples match the registry one to one; each sample outlines to a header and declarations; and for every prefix of every sample, plus edge inputs (empty, whitespace, unclosed markers, a 100 000-byte line), every byte range lies inside the text on character boundaries, each highlight lies inside its line range, and rendering doesn't panic.
+- `just build-static` outlines all the samples with the static binary and fails unless the output equals the dev build's.
+- The package `include`s `tests/engine-samples/*`, so those unit tests pass on the published crate.
+
+### Rationale
+
+- outln will hold about eight engines, so a check written once over the registry beats one per engine, and a new engine is checked as soon as it's registered.
+- Agents outline files they're editing; the prefixes stand for half-edited files, the input most likely to put byte ranges from tree-sitter's error recovery in odd places.
+- The static build's samples used to be written inline in the justfile, one `case` branch per extension, so a new grammar could be left out; the contract test now keeps the sample set complete.
+- Comparing with the dev build checks every outline line, not only one declaration per grammar, without a second copy of the expected output.
+
+### Consequences
+
+- A new engine needs an engine sample before the unit tests pass.
+- The prefix check outlines each sample once per character (about 0.3 s for all eight samples in a debug build); a much longer sample makes the unit tests slower.
+- `just build-static` builds and runs the dev build too.
+- rustfmt and dprint skip the engine samples (`hk.pkl`, `dprint.json`), so they can keep syntax a formatter would rewrite, such as setext headings.
+- The published crate grows by the samples, a few kilobytes.
 
 ## Dependencies
 

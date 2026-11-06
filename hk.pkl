@@ -8,6 +8,9 @@ local rustFiles = List("**/*.rs", "**/Cargo.toml", "Cargo.lock", "clippy.toml", 
 // Casefiles hold exact input and output bytes (trailing spaces, missing final newlines), so the
 // hygiene fixers must not touch them, but a changed casefile must run the tests.
 local casefiles = "tests/cases/**"
+// Engine samples keep syntax a formatter would rewrite (setext headings, odd line breaks), which
+// the engine contract tests exist to cover (ADR-017), so the formatters leave them alone.
+local engineSamples = "tests/engine-samples/**"
 
 // Formatters and hygiene fixers: auto-fix in pre-commit and `hk fix`, report in `hk check`.
 local fixerSteps = new Mapping<String, Step> {
@@ -20,12 +23,13 @@ local fixerSteps = new Mapping<String, Step> {
       // Declared so hk's file locks keep other fixers off these files while it runs.
       effect = "write"
     }
+    exclude = List(engineSamples)
   }
   ["dprint"] = (Builtins.dprint) {
     // The builtin selects every text file; dprint only formats these.
     types = null
     glob = List("**/*.md", "**/*.toml", "**/*.json", "**/*.jsonc", "**/*.yaml", "**/*.yml")
-    exclude = List("Cargo.lock", "mise.lock")
+    exclude = List("Cargo.lock", "mise.lock", engineSamples)
   }
   ["trailing_whitespace"] = (Builtins.trailing_whitespace) {
     exclude = List(casefiles)
@@ -52,7 +56,8 @@ local allSteps = (fixerSteps) {
   // Every test, doc examples included: the hook is the only automatic gate on commits, so broken behaviour
   // must not be committable.
   ["tests"] {
-    glob = rustFiles + List(casefiles)
+    // The engine contract tests read the engine samples at run time, so a changed sample runs them.
+    glob = rustFiles + List(casefiles, engineSamples)
     depends = List("clippy")
     check = "cargo test --locked --quiet"
     env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }

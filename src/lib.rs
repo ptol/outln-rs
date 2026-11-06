@@ -19,6 +19,7 @@
 //! ```
 
 mod cli;
+mod code_outline;
 mod debug_mode;
 mod discovery;
 mod file_mode;

@@ -7,7 +7,7 @@
   "yaml": {
     "quotes": "preferSingle"
   },
-  "excludes": ["target", "Cargo.lock", "mise.lock"],
+  "excludes": ["target", "Cargo.lock", "mise.lock", "tests/engine-samples"],
   "plugins": [
     "https://plugins.dprint.dev/json-0.26.0.wasm",
     "https://plugins.dprint.dev/markdown-0.29.0.wasm",

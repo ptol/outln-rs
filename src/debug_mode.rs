@@ -61,7 +61,7 @@ fn highlighted_source(cwd: &Path, path: &str) -> Result<String, InputError> {
 
 /// Wraps every highlighted part of `text` in ANSI green, line by line, so each highlight
 /// starts and ends on the same line.
-fn highlight(text: &str, ranges: Vec<ByteRange>) -> String {
+pub(crate) fn highlight(text: &str, ranges: Vec<ByteRange>) -> String {
     let ranges = merge(ranges);
     let mut result = String::with_capacity(text.len() + ranges.len() * 16);
     let mut pending = ranges.iter().peekable();

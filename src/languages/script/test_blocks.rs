@@ -2,8 +2,7 @@
 
 use tree_sitter::Node;
 
-use super::one_line;
-use super::statement_line;
+use super::{Statement, one_line, statement_line};
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
 use crate::syntax_tree::{first_syntax_child, source};
@@ -21,7 +20,7 @@ const TEST_MODIFIERS: [&str; 3] = ["only", "skip", "each"];
 /// (`test.each(table)('title', fn)`, or with a tagged template table) prints its callee and
 /// title without the table.
 pub(super) fn test_block_line(
-    statement: Node<'_>,
+    statement: Statement<'_>,
     call: Node<'_>,
     text: &str,
 ) -> Option<OutlineLine> {

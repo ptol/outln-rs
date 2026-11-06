@@ -1,0 +1,14 @@
+# Engine sample for TOML: a header comment, then keys and tables.
+
+name = "sample"
+# The version.
+version = "1.0.0"
+description = """
+Several lines.
+"""
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+
+[[bin]]
+name = "tool"

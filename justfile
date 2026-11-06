@@ -16,7 +16,7 @@ setup:
 run *args:
     cargo run --quiet -- "$@"
 
-# Build the static release binary (musl libc, C grammars compiled by zig), then fail unless it is static and outlines a .ts, .tsx, .js, .rs, .json, .toml, and .yaml file.
+# Build the static release binary (musl libc, C grammars compiled by zig), then fail unless it is static and outlines every engine sample (tests/engine-samples) exactly as the dev build does.
 build-static:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -31,27 +31,19 @@ build-static:
         echo "$binary is dynamically linked" >&2
         exit 1
     fi
-    sample=$(mktemp -d)
-    trap 'rm -rf "$sample"' EXIT
-    # Each sample is a header comment and one declaration, written as `source` and printed as
-    # `printed`; the YAML and TOML grammars compile C scanners, so every grammar is covered.
-    for extension in ts tsx js rs json toml yaml; do
-        comment='// Sample.'
-        case "$extension" in
-            rs) source='pub fn run(task: u8) {}'; printed='pub fn run(task: u8)' ;;
-            json) source='{"run": 1}'; printed='run: 1' ;;
-            toml) comment='# Sample.'; source='run = 1'; printed='run = 1' ;;
-            yaml) comment='# Sample.'; source='run: 1'; printed='run: 1' ;;
-            *) source='export function run(task) {}'; printed='export function run(task)' ;;
-        esac
-        printf '%s\n%s\n' "$comment" "$source" > "$sample/sample.$extension"
-        expected=$(printf '%s\nSample.\n[L2-L2] %s' "$sample/sample.$extension" "$printed")
-        actual=$("$binary" "$sample/sample.$extension")
-        if [ "$actual" != "$expected" ]; then
-            printf '%s outlined sample.%s wrongly:\n%s\n' "$binary" "$extension" "$actual" >&2
-            exit 1
-        fi
-    done
+    # One engine sample per grammar (a unit test keeps the set complete), so every grammar's C
+    # code, scanners included, runs in the static binary; the dev build is the tested reference.
+    samples=(tests/engine-samples/*)
+    expected=$(cargo run --quiet --locked -- "${samples[@]}")
+    if ! actual=$("$binary" "${samples[@]}"); then
+        echo "$binary failed on the engine samples" >&2
+        exit 1
+    fi
+    if [ "$actual" != "$expected" ]; then
+        echo "$binary outlines the engine samples differently from the dev build:" >&2
+        diff <(printf '%s\n' "$expected") <(printf '%s\n' "$actual") >&2 || true
+        exit 1
+    fi
     echo "$binary: static, $(stat --format=%s "$binary") bytes"
 
 # Format every file: Rust with rustfmt, Markdown/TOML/JSON/YAML with dprint.
