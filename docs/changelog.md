@@ -9,6 +9,8 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+## 0.2.0 (2026-11-06)
+
 - Rust support in every mode (`.rs`), ported from the TypeScript build with its casefiles in `tests/cases/rust/`. Deliberate differences from the TypeScript build:
   - **Header comments**: the first `//!` or `/*!` comment before the first code is the header, even after a `//` license comment or `#![...]` inner attributes (nested `/* */` comments included); without one, the first plain `//` or `/* */` comment is. `///` and `/**` comments are never the header. The TypeScript build read only plain `//` lines, so this repo's own files had no header.
   - **Signatures** print the source as written on one line (`pub(crate) fn parse<'a>(text: &'a str) -> Tree where T: Clone`, `impl<T: Display> Render for Wrapper<T>`, `const MAX: usize`, `type Id = u64`) instead of keyword and name with spaces (`fn main ()`, `impl Render for Wrapper`, `const MAX`, `type Id`).
