@@ -11,9 +11,7 @@ fn ping() {}
 plain text
 == stdout
 glob view: input/**/*
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/src/no-header.rs: (no header available)
-input/src/with-header.rs: Rust service worker. Handles background jobs.
+input/src/no-header.rs (1 line): (no header available)
+input/src/with-header.rs (4 lines): Rust service worker. Handles background jobs.
 == stderr
 == exit 0

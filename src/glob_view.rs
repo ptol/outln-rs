@@ -9,9 +9,7 @@ use crate::input_error::InputError;
 use crate::language_engine::engine_for;
 use crate::outline::render_file_summary;
 use crate::source_file::load;
-
-/// Printed after the `glob view:` line, so a reader knows these aren't full outlines.
-const PREAMBLE: &str = "Includes only a header or summary per file.\nFor file-level outlines, use `outln [FILE]...`.\n";
+use crate::source_text::LineCount;
 
 /// Prints a file summary for every supported file the arguments name, sorted and without
 /// duplicates. Walked files of unsupported types are skipped silently; an explicitly named
@@ -37,14 +35,16 @@ pub(crate) fn run(
         return Ok(ExitStatus::Failure);
     }
 
+    // Only the arguments, so outputs of several runs can be told apart: how to read a glob
+    // view belongs in the agent's instructions, which is why it runs outln at all (ADR-019).
     writeln!(out, "glob view: {}", printed_arguments.join(" "))?;
-    out.write_all(PREAMBLE.as_bytes())?;
     let mut status = ExitStatus::failure_if(!errors.is_empty());
     for path in &files {
         match load(walker.cwd, path) {
             Ok(source) => {
                 let summary = source.engine.file_summary(&source.text);
-                writeln!(out, "{}", render_file_summary(path, &summary))?;
+                let line_count = LineCount::of(&source.text);
+                writeln!(out, "{}", render_file_summary(path, line_count, &summary))?;
             }
             Err(error) => {
                 writeln!(err, "{error}")?;

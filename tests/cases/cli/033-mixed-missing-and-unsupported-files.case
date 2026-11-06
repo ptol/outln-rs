@@ -11,9 +11,7 @@ description: A summary.
 plain text
 == stdout
 glob view: input/src input/missing.md input/notes.txt
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/src/a.md: description: "A summary."
+input/src/a.md (4 lines): description: "A summary."
 == stderr
 File input/missing.md does not exist
 FILE input/notes.txt HAS UNSUPPORTED FILE TYPE

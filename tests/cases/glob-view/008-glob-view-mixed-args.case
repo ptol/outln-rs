@@ -8,8 +8,6 @@ description: Direct file.
 # direct
 == stdout
 glob view: input/**/*.md input/direct.md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/direct.md: description: "Direct file."
+input/direct.md (4 lines): description: "Direct file."
 == stderr
 == exit 0

@@ -1,0 +1,39 @@
+A CSS file's header comment is its first `/* */` comment, which only `@charset` may precede, even on its line; the header prints its first paragraph.
+CSS has no doc comments, so any comment directly above a rule starts its line range, also inside an at-rule's block; a blank line detaches it, and a comment after a rule on its line belongs to that rule.
+== args
+input/buttons.css
+== file input/buttons.css
+@charset "UTF-8"; /*
+ * Button styles.
+ *
+ * Shared by every page.
+ */
+
+/* Primary buttons. */
+.primary {
+  color: white;
+}
+.secondary {} /* Trailing note. */
+.tertiary {}
+
+/* Detached by a blank line. */
+
+.link {}
+
+@media print {
+  /* Hidden when printed. */
+  .primary {
+    display: none;
+  }
+}
+== stdout
+input/buttons.css
+Button styles.
+[L7-L10] .primary
+[L11-L11] .secondary
+[L12-L12] .tertiary
+[L16-L16] .link
+[L18-L23] @media print
+  [L19-L22] .primary
+== stderr
+== exit 0

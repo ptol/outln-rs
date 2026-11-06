@@ -4,7 +4,7 @@ description: 'Agent workflow for outln: setup, code navigation, conventions, lin
 
 # outln
 
-`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. It is written in Rust and so far supports Markdown, TypeScript, JavaScript, and Rust files, and TOML, YAML, and JSON data files. [docs/overview.md](docs/overview.md) has the goals and current status.
+`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. It is written in Rust and so far supports Markdown, TypeScript, JavaScript, Rust, and CSS files, and TOML, YAML, and JSON data files. [docs/overview.md](docs/overview.md) has the goals and current status.
 
 The maintainer is learning Rust. In your final summary, briefly explain each non-obvious Rust concept your change relies on (an ownership or borrowing choice, a lifetime, a trait, a macro, why a crate was added), a sentence or two each. Prefer simple, readable idioms over clever ones.
 
@@ -19,10 +19,10 @@ Default sequence, cheapest first. Each step is its own tool call, because its ou
 1. **Find the docs for the task**: run `outln docs` and read every doc whose `readWhen` matches your task. [docs/codestyle.md](docs/codestyle.md) applies to every source change.
 2. **Learn the structure**: read [docs/architecture.md](docs/architecture.md) for modules and data flow.
 3. **Learn the API**: read `tests/usage.rs`, which is executable documentation of the public library API, and the doc examples in `src/lib.rs`.
-4. **Find the file**: `outln <dir>` prints one line per file, taken from its header (header comment or frontmatter), or else a data file's first scalar keys or a Markdown file's first heading.
+4. **Find the file**: `outln <dir>` prints one line per file: its line count, and a summary taken from its header (header comment or frontmatter), or else a data file's first scalar keys or a Markdown file's first heading.
 5. **Find the section**: `outln <file>...` prints declarations with line ranges like `[L1-L10]`; read only those ranges with `Read` `offset`/`limit`.
 
-The `outln` on `PATH` is this crate's latest crates.io release ([ADR-014](docs/adr.md)), which can lag the code here; run the working copy with `just run <args>`. Releases up to 0.2.0 reject `.toml`, `.yaml`, and `.json` files; use `just run` for those until the next release.
+The `outln` on `PATH` is this crate's latest crates.io release ([ADR-014](docs/adr.md)), which can lag the code here; run the working copy with `just run <args>`. Releases up to 0.2.0 reject `.toml`, `.yaml`, `.json`, and `.css` files; use `just run` for those until the next release.
 
 `outln` prints its own error for a missing path, so read its full output and stderr. When the output is too long, narrow the path or glob.
 
@@ -69,4 +69,4 @@ Coding agents write most of this codebase and are its main readers. Optimize for
 
 The project is in active development: ignore backward compatibility, including CLI output; note output changes in [docs/changelog.md](docs/changelog.md). The goals are a single static binary and speed: measure before optimizing, and avoid needless allocation and copying.
 
-outln will hold about 8 language engines (TypeScript/JavaScript, Go, Rust, Java, Kotlin, C#, Markdown) and more later, so anything written or checked once per engine is multiplied: prefer shared machinery, traits, and table-driven tests over per-engine copies. Fix problems at their root. When a change fights the current design, refactor the design so the change fits naturally, even if that touches more files than a local patch would. Leave the codebase easier to extend than you found it.
+outln will hold about ten language engines (TypeScript/JavaScript, Go, Rust, Java, Kotlin, C#, Markdown, CSS, and TOML/YAML/JSON data files) and more later, so anything written or checked once per engine is multiplied: prefer shared machinery, traits, and table-driven tests over per-engine copies. Fix problems at their root. When a change fights the current design, refactor the design so the change fits naturally, even if that touches more files than a local patch would. Leave the codebase easier to extend than you found it.

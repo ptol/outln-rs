@@ -18,9 +18,7 @@ description: Explicitly named, so listed despite .gitignore.
 # generated
 == stdout
 glob view: input/src input/src/generated.md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/src/a.md: description: "A summary."
-input/src/generated.md: description: "Explicitly named, so listed despite .gitignore."
+input/src/a.md (4 lines): description: "A summary."
+input/src/generated.md (4 lines): description: "Explicitly named, so listed despite .gitignore."
 == stderr
 == exit 0

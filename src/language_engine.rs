@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+use crate::languages::css::Css;
 use crate::languages::data_file::{JSON, TOML, YAML};
 use crate::languages::markdown::Markdown;
 use crate::languages::rust::Rust;
@@ -32,6 +33,7 @@ static ENGINES: &[&dyn LanguageEngine] = &[
     &TSX,
     &JAVASCRIPT,
     &Rust,
+    &Css,
     &JSON,
     &TOML,
     &YAML,
@@ -70,6 +72,7 @@ mod tests {
             "a.mjs",
             "a.CJS",
             "a.rs",
+            "a.CSS",
             "a.json",
             "Cargo.toml",
             "a.yaml",

@@ -2,7 +2,7 @@
 
 use std::fmt::Write as _;
 
-use crate::source_text::{ByteRange, LineIndex};
+use crate::source_text::{ByteRange, LineCount, LineIndex};
 
 /// The compact structural summary of one source file, as data; [`render_outline`] prints it.
 #[derive(Debug, PartialEq, Eq)]
@@ -75,8 +75,8 @@ pub(crate) struct OutlineLine {
     pub(crate) range: ByteRange,
     /// The part of the source that debug mode highlights.
     pub(crate) highlight: ByteRange,
-    /// How deep the declaration is nested: 0 at the top level, 1 for a class member. Each level
-    /// indents the printed line by [`INDENT_PER_DEPTH`].
+    /// How deep the declaration is nested: 0 at the top level, 1 for a class member or a CSS rule
+    /// inside a top-level at-rule. Each level indents the printed line by [`INDENT_PER_DEPTH`].
     pub(crate) depth: usize,
 }
 
@@ -151,8 +151,13 @@ pub(crate) fn render_outline(path: &str, outline: &Outline, line_index: &LineInd
     text
 }
 
-/// Renders the one line a glob view prints for a file, without its newline.
-pub(crate) fn render_file_summary(path: &str, summary: &FileSummary) -> String {
+/// Renders the one line a glob view prints for a file, without its newline: its path, its line
+/// count, then its summary, as `src/cli.rs (120 lines): Command-line arguments.`.
+pub(crate) fn render_file_summary(
+    path: &str,
+    line_count: LineCount,
+    summary: &FileSummary,
+) -> String {
     let printed = match summary {
         FileSummary::Header(header) => {
             let lines = header_lines(header);
@@ -162,7 +167,10 @@ pub(crate) fn render_file_summary(path: &str, summary: &FileSummary) -> String {
         FileSummary::FirstHeading(heading) => Some(heading.clone()),
         FileSummary::Empty => None,
     };
-    format!("{path}: {}", printed.as_deref().unwrap_or(NO_HEADER))
+    format!(
+        "{path} ({line_count}): {}",
+        printed.as_deref().unwrap_or(NO_HEADER)
+    )
 }
 
 /// A field summary as `[table] {a: 1, b: 2, ...}`.
@@ -223,16 +231,16 @@ mod tests {
             field("draft", "true"),
         ]));
         assert_eq!(
-            render_file_summary("guide.md", &summary),
-            "guide.md: title: \"Guide\", draft: true"
+            render_file_summary("guide.md", LineCount::of("---\n"), &summary),
+            "guide.md (1 line): title: \"Guide\", draft: true"
         );
     }
 
     #[test]
     fn file_summary_without_header_says_so() {
         assert_eq!(
-            render_file_summary("a.md", &FileSummary::Empty),
-            "a.md: (no header available)"
+            render_file_summary("a.md", LineCount::of(""), &FileSummary::Empty),
+            "a.md (0 lines): (no header available)"
         );
     }
 
@@ -247,14 +255,17 @@ mod tests {
             shown: FieldsShown::First,
         });
         assert_eq!(
-            render_file_summary("Cargo.toml", &summary),
-            "Cargo.toml: [package] {name = \"outln\", edition = \"2024\", ...}"
+            render_file_summary("Cargo.toml", LineCount::of("a\nb\n"), &summary),
+            "Cargo.toml (2 lines): [package] {name = \"outln\", edition = \"2024\", ...}"
         );
         let all = FileSummary::Fields(FieldSummary {
             table: None,
             fields: vec!["a: 1".to_owned()],
             shown: FieldsShown::All,
         });
-        assert_eq!(render_file_summary("a.yaml", &all), "a.yaml: {a: 1}");
+        assert_eq!(
+            render_file_summary("a.yaml", LineCount::of("a: 1\n"), &all),
+            "a.yaml (1 line): {a: 1}"
+        );
     }
 }

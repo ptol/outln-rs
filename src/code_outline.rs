@@ -29,20 +29,38 @@ pub(crate) fn code_outline<Lines: IntoIterator<Item = OutlineLine>>(
     let tree = parse(text, language);
     let header_end = header.as_ref().map_or(0, Header::end);
     let nodes = children(tree.root_node());
-    let mut lines = Vec::new();
-    for (index, &node) in nodes.iter().enumerate() {
-        if classify(node, text) != PrecedingNode::Other {
-            continue;
-        }
-        let range_start = leading_annotations_start(
-            &nodes[..index],
-            node.start_byte(),
-            text,
-            header_end,
-            &classify,
-        );
-        let range = ByteRange::new(range_start, node.end_byte());
-        lines.extend(declaration_lines(node, range, text));
-    }
+    let lines = with_line_ranges(&nodes, text, header_end, &classify)
+        .flat_map(|(node, range)| declaration_lines(node, range, text))
+        .collect();
     Outline { header, lines }
+}
+
+/// Each of the `siblings` that `classify` calls [`PrecedingNode::Other`], so each one that may be
+/// a declaration, with its line range: from its first leading annotation
+/// ([`leading_annotations_start`]) to its end. `header_end` is where the file's header ends, or
+/// 0 for siblings below the top level, which can't contain it.
+pub(crate) fn with_line_ranges<'tree>(
+    siblings: &[Node<'tree>],
+    text: &str,
+    header_end: usize,
+    classify: impl Fn(Node<'_>, &str) -> PrecedingNode,
+) -> impl Iterator<Item = (Node<'tree>, ByteRange)> {
+    siblings
+        .iter()
+        .enumerate()
+        .filter_map(move |(index, &node)| {
+            // A comment or attribute is skipped before the walk back: walking from each line
+            // of a long comment run would be quadratic in the run's length.
+            if classify(node, text) != PrecedingNode::Other {
+                return None;
+            }
+            let start = leading_annotations_start(
+                &siblings[..index],
+                node.start_byte(),
+                text,
+                header_end,
+                &classify,
+            );
+            Some((node, ByteRange::new(start, node.end_byte())))
+        })
 }

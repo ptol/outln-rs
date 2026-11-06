@@ -1,0 +1,32 @@
+Debug mode highlights a CSS rule's selectors or prelude, up to its block or `;`, on every line of a wrapped selector list.
+== args
+--debug
+input/site.css
+== file input/site.css
+/* Site. */
+@import "base.css";
+
+/* Links. */
+a,
+a:visited {
+  color: blue;
+}
+
+@media screen {
+  .wide { width: 100%; }
+}
+== stdout
+\x1b[32m/* Site. */\x1b[0m
+\x1b[32m@import "base.css"\x1b[0m;
+
+/* Links. */
+\x1b[32ma,\x1b[0m
+\x1b[32ma:visited\x1b[0m {
+  color: blue;
+}
+
+\x1b[32m@media screen\x1b[0m {
+  \x1b[32m.wide\x1b[0m { width: 100%; }
+}
+== stderr
+== exit 0

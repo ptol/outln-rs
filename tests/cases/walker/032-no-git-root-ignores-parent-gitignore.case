@@ -9,8 +9,6 @@ description: Parent .gitignore does not apply outside a git repo.
 # a
 == stdout
 glob view: input/pkg
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/pkg/a.md: description: "Parent .gitignore does not apply outside a git repo."
+input/pkg/a.md (4 lines): description: "Parent .gitignore does not apply outside a git repo."
 == stderr
 == exit 0

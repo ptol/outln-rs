@@ -15,7 +15,7 @@ Each entry: what, impact, and the way out. Remove an entry when it's paid off.
 
 ## Declarations inside syntax errors are dropped
 
-- **What**: tree-sitter wraps code it can't parse in `ERROR` nodes, and the Script, Rust, and data file engines list only the top-level nodes they recognize, so a declaration caught inside an `ERROR` node isn't listed (the data file engine reads a JSON root object that never closes up to its first broken key, [ADR-016](adr.md)).
+- **What**: tree-sitter wraps code it can't parse in `ERROR` nodes, and the Script, Rust, CSS, and data file engines list only the top-level nodes they recognize, so a declaration caught inside an `ERROR` node isn't listed (the data file engine reads a JSON root object that never closes up to its first broken key, [ADR-016](adr.md)).
 - **Impact**: outlines of half-edited files can miss declarations around the broken spot.
 - **Way out**: for the code-language engines, have `code_outline::code_outline` apply the engine's rules to an `ERROR` node's children (with that node's children as the siblings for leading annotations); the data file engine needs rules per format, since a broken JSON object flattens nested keys into its `ERROR` node. Add a broken-file casefile per engine.
 

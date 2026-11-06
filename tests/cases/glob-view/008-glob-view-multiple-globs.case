@@ -18,10 +18,8 @@ description: Three summary.
 # three
 == stdout
 glob view: input/a/**/* input/**/*
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/a/one.md: description: "One summary."
-input/a/two.md: title: "Some title", summary: "Two summary."
-input/z/three.md: description: "Three summary."
+input/a/one.md (4 lines): description: "One summary."
+input/a/two.md (4 lines): title: "Some title", summary: "Two summary."
+input/z/three.md (4 lines): description: "Three summary."
 == stderr
 == exit 0

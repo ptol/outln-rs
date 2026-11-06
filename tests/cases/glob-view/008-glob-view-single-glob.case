@@ -18,10 +18,8 @@ description: Utility helpers for HTTP requests.
 plain text
 == stdout
 glob view: input/**/*
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/docs/guide.md: summary: "Guide overview."
-input/src/no-summary.md: # value
-input/src/with-comment.md: description: "Utility helpers for HTTP requests."
+input/docs/guide.md (5 lines): summary: "Guide overview."
+input/src/no-summary.md (1 line): # value
+input/src/with-comment.md (4 lines): description: "Utility helpers for HTTP requests."
 == stderr
 == exit 0

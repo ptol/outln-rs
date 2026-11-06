@@ -20,11 +20,9 @@ description: Y.
 ---
 == stdout
 glob view: docs/{v1}/{a,b}.md {docs/x,docs/y}/*.md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-docs/v1/a.md: description: "A."
-docs/v1/b.md: description: "B."
-docs/x/x.md: description: "X."
-docs/y/y.md: description: "Y."
+docs/v1/a.md (3 lines): description: "A."
+docs/v1/b.md (3 lines): description: "B."
+docs/x/x.md (3 lines): description: "X."
+docs/y/y.md (3 lines): description: "Y."
 == stderr
 == exit 0

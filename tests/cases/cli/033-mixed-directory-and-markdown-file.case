@@ -13,9 +13,7 @@ description: Agent instructions.
 # Agents
 == stdout
 glob view: input/docs input/AGENTS.md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/AGENTS.md: description: "Agent instructions."
-input/docs/guide.md: description: "How to use the tool."
+input/AGENTS.md (4 lines): description: "Agent instructions."
+input/docs/guide.md (4 lines): description: "How to use the tool."
 == stderr
 == exit 0

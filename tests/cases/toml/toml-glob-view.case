@@ -25,12 +25,10 @@ items = [1, 2]
 path = ["x"]
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/Cargo.toml: [package] {name = "demo", version = "0.1.0", edition = "2024"}
-input/commented.toml: Commented settings.
-input/lists.toml: (no header available)
-input/many.toml: {a = 1, b = 'two', c = true, ...}
-input/rustfmt.toml: {edition = "2024", max_width = 100}
+input/Cargo.toml (5 lines): [package] {name = "demo", version = "0.1.0", edition = "2024"}
+input/commented.toml (2 lines): Commented settings.
+input/lists.toml (3 lines): (no header available)
+input/many.toml (4 lines): {a = 1, b = 'two', c = true, ...}
+input/rustfmt.toml (2 lines): {edition = "2024", max_width = 100}
 == stderr
 == exit 0

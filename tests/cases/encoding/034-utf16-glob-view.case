@@ -9,9 +9,7 @@ description: OK file.
 # ok
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/ok.md: description: "OK file."
+input/ok.md (4 lines): description: "OK file."
 == stderr
 FILE input/utf16.md IS NOT UTF-8 TEXT
 == exit 1

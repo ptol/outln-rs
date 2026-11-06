@@ -7,8 +7,6 @@ description: Special dir file.
 # special
 == stdout
 glob view: input/dir-special
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/dir-special/file.md: description: "Special dir file."
+input/dir-special/file.md (4 lines): description: "Special dir file."
 == stderr
 == exit 0

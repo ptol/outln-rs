@@ -14,7 +14,7 @@ use crate::outline::{
     FileSummary, Header, Outline, highlights, render_file_summary, render_outline,
 };
 use crate::source_file::load;
-use crate::source_text::{ByteRange, LineIndex};
+use crate::source_text::{ByteRange, LineCount, LineIndex};
 
 /// The engine samples, relative to the crate root: one per engine, named `sample.<extension>`
 /// after the engine's first extension. `just build-static` outlines them too.
@@ -182,7 +182,7 @@ fn check_ranges_and_render(engine: &dyn LanguageEngine, text: &str) {
     }
     render_outline("sample", &outline, &LineIndex::new(text));
     highlight(text, highlights(&outline));
-    render_file_summary("sample", &engine.file_summary(text));
+    render_file_summary("sample", LineCount::of(text), &engine.file_summary(text));
 }
 
 /// Every byte range of an outline: the header's, and each outline line's range and highlight.

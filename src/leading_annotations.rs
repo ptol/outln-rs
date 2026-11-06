@@ -17,8 +17,9 @@ use crate::source_text::line_around;
 /// node without asking the engine for its outline lines.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PrecedingNode {
-    /// A doc comment (`///`, `/** */`): a leading annotation unless a blank line separates it
-    /// from the next annotation or the declaration (plain comments between them don't).
+    /// A doc comment (`///`, `/** */`, or any comment in CSS, which has no doc comments): a
+    /// leading annotation unless a blank line separates it from the next annotation or the
+    /// declaration (plain comments between them don't).
     DocComment,
     /// An attribute (`#[...]`) or decorator (`@x`): a leading annotation even across blank
     /// lines, because the syntax ties it to the declaration.

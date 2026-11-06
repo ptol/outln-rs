@@ -1,0 +1,76 @@
+A CSS outline lists every top-level rule: a style rule by its selectors, an at-rule by its keyword and prelude, each on one line.
+- A selector list or media query wrapped over several lines prints on one line with its numbers, `>` and `>=` included, and strings stay as written.
+- The rules inside a top-level at-rule's block (`@media`, `@supports`, `@scope`) are listed one level deeper; the rules nested in a style rule (`&:hover`) and `@keyframes` steps, in any case, aren't.
+- `@charset` and stray CSS declarations aren't rules worth listing.
+== args
+input/theme.css
+== file input/theme.css
+@charset "UTF-8";
+@import url("reset.css") screen;
+@layer base, components;
+
+:root {
+  --brand: #333;
+}
+
+.button,
+.nav
+  > a:hover::before {
+  color: var(--brand);
+}
+
+input[type="text"] {
+  border: 1px solid;
+}
+
+@media
+  (max-width: 600px) and
+  (width >= 40.5em) {
+  .button {
+    color: blue;
+  }
+  @supports (display: grid) {
+    .grid {
+      display: grid;
+    }
+  }
+}
+
+@font-face {
+  font-family: "Inter";
+}
+
+@KEYFRAMES spin {
+  from {
+    opacity: 0;
+  }
+}
+
+@scope (.card) to (.content) {
+  img {
+    border: 0;
+  }
+}
+
+.card {
+  &:hover {
+    color: blue;
+  }
+}
+== stdout
+input/theme.css
+[L2-L2] @import url("reset.css") screen
+[L3-L3] @layer base, components
+[L5-L7] :root
+[L9-L13] .button, .nav > a:hover::before
+[L15-L17] input[type="text"]
+[L19-L30] @media (max-width: 600px) and (width >= 40.5em)
+  [L22-L24] .button
+  [L25-L29] @supports (display: grid)
+[L32-L34] @font-face
+[L36-L40] @KEYFRAMES spin
+[L42-L46] @scope (.card) to (.content)
+  [L43-L45] img
+[L48-L52] .card
+== stderr
+== exit 0

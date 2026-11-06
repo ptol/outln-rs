@@ -1,4 +1,4 @@
-//! Header comments, shared by every engine but Markdown's: `//` lines or one `/* */` block in C-family syntax, or `#` lines in TOML and YAML.
+//! Header comments, shared by every engine but Markdown's: `//` lines or one `/* */` block in C-family syntax, one `/* */` block in CSS, or `#` lines in TOML and YAML.
 //!
 //! Each engine says which lines may come before its header comment (a shebang, directives,
 //! inner attributes) and which [`CommentSyntax`] it uses, then calls [`find_header_comment`];
@@ -45,16 +45,18 @@ pub(crate) enum CommentSyntax {
         doc_markers: DocMarkers,
         block_comments: BlockComments,
     },
+    /// `/* */` block comments only, as in CSS; no doc markers, and they don't nest.
+    Block,
     /// `#` line comments only, as in TOML and YAML; no doc markers.
     Hash,
 }
 
 impl CommentSyntax {
-    /// What doc markers mean in this syntax; `#` comments have none.
+    /// What doc markers mean in this syntax; `/* */`-only and `#` comments have none.
     fn doc_markers(self) -> DocMarkers {
         match self {
             CommentSyntax::CFamily { doc_markers, .. } => doc_markers,
-            CommentSyntax::Hash => DocMarkers::Ignored,
+            CommentSyntax::Block | CommentSyntax::Hash => DocMarkers::Ignored,
         }
     }
 }
@@ -217,6 +219,13 @@ fn comment_run_at(text: &str, start: usize, syntax: CommentSyntax) -> Option<Com
                     LineMarker::Slashes,
                     doc_markers,
                 ))
+            } else {
+                None
+            }
+        }
+        CommentSyntax::Block => {
+            if rest.starts_with(BLOCK_COMMENT_OPEN) {
+                block_comment_run(text, start, DocMarkers::Ignored, BlockComments::Flat)
             } else {
                 None
             }
@@ -612,6 +621,18 @@ mod tests {
         };
         let header = find_header_comment("#:schema x\n# Tool.\n", CommentSyntax::Hash, schema);
         assert!(matches!(header, Some(Header::Comment(lines)) if lines[0].text == "Tool."));
+    }
+
+    #[test]
+    fn block_syntax_reads_block_comments_but_not_line_comments() {
+        assert_eq!(
+            header_texts("/* Theme.\n * Colors. */\n.a {}\n", CommentSyntax::Block),
+            Some(texts(&["Theme.", "Colors."]))
+        );
+        assert_eq!(
+            header_texts("// Not a CSS comment.\n", CommentSyntax::Block),
+            None
+        );
     }
 
     #[test]

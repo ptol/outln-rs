@@ -7,8 +7,6 @@ input
 export const x = 1;
 == stdout
 glob view: input/empty-header.ts input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/empty-header.ts: (no header available)
+input/empty-header.ts (2 lines): (no header available)
 == stderr
 == exit 0

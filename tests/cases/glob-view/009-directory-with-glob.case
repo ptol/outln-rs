@@ -12,9 +12,7 @@ summary: Guide summary.
 ---
 == stdout
 glob view: input/src input/docs/**/*.md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/docs/guide.md: summary: "Guide summary."
-input/src/a.md: description: "A summary."
+input/docs/guide.md (3 lines): summary: "Guide summary."
+input/src/a.md (4 lines): description: "A summary."
 == stderr
 == exit 0

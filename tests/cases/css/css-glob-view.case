@@ -1,0 +1,18 @@
+The glob view prints a CSS file's header comment; `//` lines aren't CSS comments, so they are no header.
+== args
+input
+== file input/theme.css
+/* Theme colors and fonts. */
+:root {}
+== file input/plain.css
+.a {}
+== file input/slashes.css
+// Not a CSS comment.
+.a {}
+== stdout
+glob view: input
+input/plain.css (1 line): (no header available)
+input/slashes.css (2 lines): (no header available)
+input/theme.css (2 lines): Theme colors and fonts.
+== stderr
+== exit 0

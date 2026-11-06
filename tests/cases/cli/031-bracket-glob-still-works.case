@@ -17,9 +17,7 @@ description: File c.
 # c
 == stdout
 glob view: input/[ab].md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/a.md: description: "File a."
-input/b.md: description: "File b."
+input/a.md (4 lines): description: "File a."
+input/b.md (4 lines): description: "File b."
 == stderr
 == exit 0

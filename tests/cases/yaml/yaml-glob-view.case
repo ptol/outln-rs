@@ -19,11 +19,9 @@ a:
   b: 1
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/commented.yaml: Commented settings.
-input/compose.yml: {version: "3", name: demo}
-input/many.yaml: {a: 1, b: two, c: true, ...}
-input/nested.yaml: (no header available)
+input/commented.yaml (2 lines): Commented settings.
+input/compose.yml (4 lines): {version: "3", name: demo}
+input/many.yaml (4 lines): {a: 1, b: two, c: true, ...}
+input/nested.yaml (2 lines): (no header available)
 == stderr
 == exit 0

@@ -12,9 +12,7 @@ description: Has summary.
 plain text
 == stdout
 glob view: input/src
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/src/has-comment.md: description: "Has summary."
-input/src/nested/no-summary.md: # two
+input/src/has-comment.md (4 lines): description: "Has summary."
+input/src/nested/no-summary.md (1 line): # two
 == stderr
 == exit 0

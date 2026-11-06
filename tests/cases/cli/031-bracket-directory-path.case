@@ -12,8 +12,6 @@ description: Must not match the [id] character class.
 # other
 == stdout
 glob view: input/app/[id]
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/app/[id]/page.md: description: "Product detail page."
+input/app/[id]/page.md (4 lines): description: "Product detail page."
 == stderr
 == exit 0

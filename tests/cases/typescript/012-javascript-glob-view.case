@@ -14,10 +14,8 @@ export const charlie = 3;
 plain text
 == stdout
 glob view: input/**/*
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/alpha.js: Alpha summary
-input/bravo.jsx: Bravo summary
-input/charlie.mjs: (no header available)
+input/alpha.js (2 lines): Alpha summary
+input/bravo.jsx (4 lines): Bravo summary
+input/charlie.mjs (1 line): (no header available)
 == stderr
 == exit 0

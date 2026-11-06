@@ -152,7 +152,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-008: Parse TypeScript and JavaScript with tree-sitter, on a shared code-engine layer
 
-**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations)
+**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations) and ADR-018 (`CommentSyntax` gains block-only comments)
 
 ### Decision
 
@@ -240,7 +240,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-012: Doc-aware header comments, first paragraphs, and leading annotations
 
-**Status**: Accepted (2026-11-06); amended by ADR-016 (`CommentSyntax` gains `#` comments, preamble is checked before comments, and a data file's key takes the comment lines directly above it)
+**Status**: Accepted (2026-11-06); amended by ADR-016 (`CommentSyntax` gains `#` comments, preamble is checked before comments, and a data file's key takes the comment lines directly above it) and ADR-018 (every CSS comment directly above a rule is its leading annotation)
 
 ### Decision
 
@@ -321,7 +321,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-016: Outline TOML, YAML, and JSON data files with tree-sitter
 
-**Status**: Accepted (2026-11-06); amends ADR-003 and ADR-012
+**Status**: Accepted (2026-11-06); amends ADR-003 and ADR-012; amended by ADR-019 (the glob view prints no preamble)
 
 ### Decision
 
@@ -371,6 +371,54 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - rustfmt and dprint skip the engine samples (`hk.pkl`, `dprint.json`), so they can keep syntax a formatter would rewrite, such as setext headings.
 - The published crate grows by the samples, a few kilobytes.
 
+## ADR-018: Outline CSS with tree-sitter-css, rules as declarations
+
+**Status**: Accepted (2026-11-06); amends ADR-008 and ADR-012
+
+### Decision
+
+- A `Css` engine (`src/languages/css.rs`) outlines `.css` files with `tree-sitter-css` 0.25.0 (the latest, from the tree-sitter organization), through `code_outline` like the Rust and Script engines.
+- Its declarations are rules: a style rule prints its selectors, an at-rule its keyword and prelude, up to its block or `;`, on one line. The rules directly inside a top-level at-rule's block are listed at depth 1, as class members are; rules nested inside a style rule, `@keyframes` steps, and CSS declarations (`color: red`) aren't listed, and neither is `@charset`.
+- The header is the first `/* */` comment, after an `@charset` rule at the file's start; a new `CommentSyntax::Block` reads block comments only, since `//` starts no comment in CSS.
+- Every comment directly above a rule is a leading annotation (classified as a doc comment, so a blank line detaches it), as a data file's comments are for its keys.
+- A prelude is read from the source text, not joined from the syntax tree's tokens with `syntax_tree::one_line_source`: comments are left out (a comment between two name characters separates them like a space), whitespace runs become one space (none inside brackets when the run holds a line break or comment), and strings, escapes, and unquoted URLs stay as written.
+
+### Rationale
+
+- Agents open stylesheets to change one rule; selectors and at-rule preludes are what they search for, and a `@media` block's rules are hidden in one line without the nested level.
+- One nested level keeps outlines short: a stylesheet using CSS nesting would otherwise list every `&:hover` rule.
+- CSS has no doc-comment convention, and a comment directly above a rule almost always describes it.
+- tree-sitter-css keeps parts of valid preludes out of its leaves (the number in `600px`, a hex color) or in `ERROR` nodes (`>=` in a media query, an attribute selector's `i` flag), so joining tokens loses them when a prelude spans lines; `>` is the child combinator, not a closing bracket; and a comment between selectors (`.a/**/.b`) must not become a space, which would change what the selector matches.
+- The grammar depends only on `tree-sitter-language`, which the other grammars already pull in, and is MIT-licensed; cargo deny passes.
+
+### Consequences
+
+- SCSS and Less aren't recognized (they need their own grammars); SCSS syntax in a `.css` file parses as errors.
+- A long selector list, such as a CSS reset's, prints on one long outline line, since signatures are never cut.
+- The grammar compiles a C scanner, which `just build-static` covers with `tests/engine-samples/sample.css`; the static binary grew from 7.78 MB to 7.91 MB, and a 1 MB file with 11 000 commented rules outlines in 0.15 s.
+
+## ADR-019: Print each file's line count in the glob view, and no preamble
+
+**Status**: Accepted (2026-11-06); amends ADR-016 (the glob view's preamble)
+
+### Decision
+
+- Each glob view line prints the file's line count between its path and its summary: `src/cli.rs (120 lines): Command-line arguments.`, `1 line` for one line. The count is the file's line breaks, plus one for a last line without one, so an empty file has `0 lines`.
+- The glob view prints only `glob view: <arguments>` before its file lines, dropping the preamble (`Includes only ... per file.` and `For file-level outlines, use outln [FILE]...`). How to use outln lives in the agent's instructions; the README has a section to paste into them.
+- File mode and debug mode are unchanged: an outline's last line range already shows roughly where the file ends.
+
+### Rationale
+
+- An agent choosing what to read needs a file's size as much as its purpose: a 40-line file is cheaper to read whole than to outline first, and a 3 000-line one needs its outline.
+- Lines, not bytes, because agents read files by line (`offset`/`limit`) and line ranges are what outlines print.
+- The glob view already reads every file whole to find its summary, so counting its lines adds one pass over text in memory and no I/O.
+- An agent runs outln only because its instructions say to, so they are where the workflow (glob view, then file mode, then reading only the printed line ranges) is taught once per session; a preamble repeated it on every run, and described a line format that changed with each new kind of summary. The `glob view:` line stays because it tells several runs' outputs apart.
+
+### Consequences
+
+- Every glob view line is longer by about ten characters.
+- An agent whose instructions name only the glob view isn't told about file mode by the output.
+
 ## Dependencies
 
 One line per crate: why std was not enough.
@@ -383,3 +431,4 @@ One line per crate: why std was not enough.
 - `tree-sitter-typescript`, `tree-sitter-javascript` (no features): the TypeScript, TSX, and JavaScript grammars (ADR-008).
 - `tree-sitter-rust` (no features): the Rust grammar (ADR-011).
 - `tree-sitter-json`, `tree-sitter-toml-ng`, `tree-sitter-yaml` (no features): the data file grammars (ADR-016).
+- `tree-sitter-css` (no features): the CSS grammar (ADR-018).

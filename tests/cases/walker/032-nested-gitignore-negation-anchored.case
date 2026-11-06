@@ -41,10 +41,8 @@ description: Nested rule does not apply outside src.
 # o
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/other/local/o.md: description: "Nested rule does not apply outside src."
-input/src/build/kept.md: description: "Not the root build dir, so kept."
-input/src/keep.gen.md: description: "Re-included by nested negation."
+input/other/local/o.md (4 lines): description: "Nested rule does not apply outside src."
+input/src/build/kept.md (4 lines): description: "Not the root build dir, so kept."
+input/src/keep.gen.md (4 lines): description: "Re-included by nested negation."
 == stderr
 == exit 0

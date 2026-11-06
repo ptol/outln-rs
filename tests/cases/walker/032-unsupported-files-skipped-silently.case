@@ -7,14 +7,12 @@ description: Source a.
 # a
 == file input/data.txt
 {"a": 1}
-== file input/styles.css
+== file input/styles.scss
 body {}
 == file input/logo.png
 not really a png
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/a.md: description: "Source a."
+input/a.md (4 lines): description: "Source a."
 == stderr
 == exit 0

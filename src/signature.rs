@@ -15,7 +15,7 @@ pub(crate) struct Signature {
 
 impl Signature {
     /// The outline line of a declaration with this signature: `range` becomes its line range,
-    /// and its highlight runs from `highlight_start` (the declaration's first keyword, after
+    /// and its highlight runs from `highlight_start` (the declaration's first token, after
     /// its leading annotations) to the end of the signature.
     pub(crate) fn into_outline_line(
         self,

@@ -1,0 +1,61 @@
+@charset "UTF-8";
+/* Engine sample for CSS: a header comment, then rules of most kinds. */
+
+@import url("reset.css") screen;
+@layer base, components;
+
+:root {
+  --brand: #333;
+}
+
+/* Documented. */
+.button,
+a.link:hover > span::before {
+  color: var(--brand);
+}
+
+input[type="text"] {
+  border: 1px solid;
+}
+
+@media (max-width: 600px) and (orientation: landscape) {
+  /* Nested. */
+  .button {
+    color: blue;
+  }
+  #main {
+    margin: 0;
+  }
+}
+
+@supports (display: grid) {
+  .grid {
+    display: grid;
+  }
+}
+
+@font-face {
+  font-family: "Inter";
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@layer base {
+  html {
+    color: black;
+  }
+}
+
+.card {
+  color: red;
+  &:hover {
+    color: blue;
+  }
+}

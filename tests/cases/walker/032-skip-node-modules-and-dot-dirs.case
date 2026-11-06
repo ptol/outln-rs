@@ -27,8 +27,6 @@ description: Hidden file.
 # hidden
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/src/app.md: description: "App entry."
+input/src/app.md (4 lines): description: "App entry."
 == stderr
 == exit 0

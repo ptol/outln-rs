@@ -26,12 +26,10 @@ description: Config settings.
 # settings
 == stdout
 glob view: input/src input/docs/ input/config/*.md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/config/settings.md: description: "Config settings."
-input/docs/guide.md: # User Guide
-input/docs/readme.md: title: "Documentation"
-input/src/helpers/nested.md: description: "Helper functions."
-input/src/utils.md: description: "Utility functions."
+input/config/settings.md (4 lines): description: "Config settings."
+input/docs/guide.md (1 line): # User Guide
+input/docs/readme.md (3 lines): title: "Documentation"
+input/src/helpers/nested.md (4 lines): description: "Helper functions."
+input/src/utils.md (4 lines): description: "Utility functions."
 == stderr
 == exit 0

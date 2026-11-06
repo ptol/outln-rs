@@ -44,6 +44,27 @@ impl fmt::Display for LineRange {
     }
 }
 
+/// How many lines a file has: one per line break, plus one for a last line without one, so an
+/// empty file has none. Printed as `1 line` or `42 lines`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct LineCount(usize);
+
+impl LineCount {
+    /// The line count of normalized text, whose line breaks are all `\n`.
+    pub(crate) fn of(text: &str) -> Self {
+        Self(text.lines().count())
+    }
+}
+
+impl fmt::Display for LineCount {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            1 => write!(f, "1 line"),
+            count => write!(f, "{count} lines"),
+        }
+    }
+}
+
 /// Why a file's bytes could not become source text.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct NotUtf8Text;
@@ -127,6 +148,21 @@ pub(crate) fn trim_end(text: &str, range: ByteRange) -> ByteRange {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn line_count_counts_a_last_line_without_a_line_break() {
+        let cases = [
+            ("", "0 lines"),
+            ("\n", "1 line"),
+            ("a", "1 line"),
+            ("a\nb\n", "2 lines"),
+            ("a\nb", "2 lines"),
+            ("a\n\n", "2 lines"),
+        ];
+        for (text, printed) in cases {
+            assert_eq!(LineCount::of(text).to_string(), printed, "{text:?}");
+        }
+    }
 
     #[test]
     fn normalize_strips_the_bom_and_converts_crlf() {

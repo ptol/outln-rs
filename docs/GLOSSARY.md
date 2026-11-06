@@ -26,18 +26,18 @@ _Avoid_: Span, location
 
 ### Declaration
 
-A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a class member, a test block, or a data file's key.
+A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a class member, a test block, a data file's key, or a CSS rule.
 Code says declaration even where a grammar's node kinds say item (tree-sitter-rust's `function_item`).
 _Avoid_: Symbol, definition, item
 
 ### Signature
 
-The text an outline line prints for a code declaration: its keywords and visibility, name, type parameters, parameters, return type, and `where` clause (for an `impl` block, its trait and type; for a constant, its type), on one line and without its body or value.
+The text an outline line prints for a code declaration: its keywords and visibility, name, type parameters, parameters, return type, and `where` clause (for an `impl` block, its trait and type; for a constant, its type; for a CSS rule, its selectors or prelude), on one line and without its body or value.
 _Avoid_: Head, prototype
 
 ### Leading annotation
 
-A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration. Data files have no doc comments, so the comment lines directly above a key are its leading annotation.
+A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration. Data files and CSS have no doc comments, so the comment lines directly above a key or rule are its leading annotation.
 _Avoid_: Preamble, prefix, trivia
 
 ### Class member
@@ -54,6 +54,11 @@ _Avoid_: Test case, spec, suite
 
 A top-level key of a data file, or a TOML table header (`[package]`, `[[bin]]`): the data file's kind of declaration. Its outline line prints a scalar value after the key (`name: CI`, `edition = "2024"`), and only the key for a table, mapping, object, or list.
 _Avoid_: Property, entry
+
+### Rule
+
+A CSS style rule or at-rule: the CSS kind of declaration. Its outline line prints a style rule's selectors (`.button, a:hover`) or an at-rule's keyword and prelude (`@media (max-width: 600px)`); the rules inside a top-level at-rule's block are listed one level deeper.
+_Avoid_: Selector (only part of a rule), ruleset. CSS's own word declaration names a property inside a rule, such as `color: red`, which is never listed.
 
 ### Header
 
@@ -72,7 +77,7 @@ _Avoid_: Metadata block, YAML header
 
 ### File summary
 
-The single line a file contributes to a glob view: its path and its header, or, for a data file without a header comment, its field summary, and for a Markdown file without frontmatter fields, its first heading.
+The single line a file contributes to a glob view: its path, its line count, and its header, or, for a data file without a header comment, its field summary, and for a Markdown file without frontmatter fields, its first heading.
 _Avoid_: Outline, description
 
 ### Field summary

@@ -21,11 +21,9 @@ Just text.
 ## Usage ##
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/empty-frontmatter.md: # Setext title
-input/fields.md: title: "Fields"
-input/plain.md: (no header available)
-input/quoted.md: ## Usage
+input/empty-frontmatter.md (4 lines): # Setext title
+input/fields.md (4 lines): title: "Fields"
+input/plain.md (1 line): (no header available)
+input/quoted.md (4 lines): ## Usage
 == stderr
 == exit 0

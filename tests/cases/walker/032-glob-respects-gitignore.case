@@ -34,8 +34,6 @@ description: Dependency.
 # dep
 == stdout
 glob view: input/**/*.md
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/src/a.md: description: "Source a."
+input/src/a.md (4 lines): description: "Source a."
 == stderr
 == exit 0

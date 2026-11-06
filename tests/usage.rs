@@ -53,7 +53,7 @@ fn directory_arguments_print_a_glob_view() {
 
     assert!(out.starts_with("glob view: docs\n"), "{out}");
     assert!(
-        out.ends_with("docs/guide.md: description: \"How to use it.\"\n"),
+        out.ends_with("docs/guide.md (4 lines): description: \"How to use it.\"\n"),
         "{out}"
     );
     assert_eq!(status, ExitStatus::Success);

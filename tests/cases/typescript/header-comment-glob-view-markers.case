@@ -8,8 +8,6 @@ input
 export const x = 1;
 == stdout
 glob view: input
-Includes only a header or summary per file.
-For file-level outlines, use `outln [FILE]...`.
-input/doc.ts: Triple. Bang.
+input/doc.ts (4 lines): Triple. Bang.
 == stderr
 == exit 0
