@@ -44,7 +44,7 @@ local sharedSteps = new Mapping<String, Step> {
     check = "cargo clippy --all-targets --locked --quiet -- -D warnings"
     env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
   }
-  // Every test, doc examples included: the hook is the only automatic gate, so broken behaviour
+  // Every test, doc examples included: the hook is the only automatic gate on commits, so broken behaviour
   // must not be committable.
   ["tests"] {
     glob = rustFiles + List(casefiles)

@@ -7,6 +7,7 @@ readWhen: 'finishing a change that users or agents would notice'
 
 ## 2026-11-06
 
+- Releases are published to crates.io as `outln` (`cargo install outln --locked`) by a GitHub Actions workflow when a `v<version>` tag is pushed ([ADR-010](adr.md)).
 - TypeScript and JavaScript support in every mode (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`), ported from the TypeScript build with its casefiles in `tests/cases/typescript/`. Deliberate differences from the TypeScript build:
   - **New declarations**: a variable holding an arrow function or function expression prints its signature (`export const parse = (input: string): Ast`); `export default <expression>` prints as `export default defineConfig(…)`, `{…}`, `[…]`, an arrow function's signature, or `…`; top-level `describe`/`it`/`test`/`suite` test blocks (with `.only`, `.skip`, `.each`) print as `describe('parser')`; `export declare` statements are listed; JavaScript `using` declarations are listed like `const`.
   - **One-line signatures**: a signature wrapped over several lines prints on one line instead of copying its line breaks, comments inside it are left out, and a line break inside a template literal prints as `\n`. Debug mode highlights it on every line up to its body, not only the first.

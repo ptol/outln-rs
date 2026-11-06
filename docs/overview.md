@@ -20,6 +20,7 @@ The TypeScript implementation in `../outln` (commit `ee514b1`, released as 0.2.1
 - Markdown files work in every mode: file mode (frontmatter and headings with section line ranges), glob view (gitignore-aware directory walking and glob patterns), and debug mode.
 - TypeScript and JavaScript files (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`) work in every mode: header comments, top-level declarations with class members, function-valued variables, default-exported expressions, and test blocks. Their ported casefiles are in `tests/cases/typescript/`.
 - `just build-static` builds the single static binary (musl).
+- Releases go to crates.io from a version tag ([ADR-010](adr.md)); `cargo install outln` builds from source, and no prebuilt binaries are released yet.
 - `tests/cases` holds the TypeScript build's Markdown, TypeScript/JavaScript, header, CLI, glob view, walker, debug, and encoding cases (CLI, glob view, and walker inputs rewritten as Markdown), plus new ones for behaviour the TypeScript build lacked.
 - Not yet: the Go, Rust, Java, Kotlin, and C# engines (each comes with header comments and its ported casefiles); `.rs`, `.go`, and other such files are reported as unsupported.
 

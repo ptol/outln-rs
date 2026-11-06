@@ -5,7 +5,7 @@ readWhen: 'making or questioning a design decision, or adding a dependency'
 
 # Architecture Decision Records
 
-Each record states the decision, why, and what it costs. Add a new ADR rather than editing an accepted one; mark the old one superseded.
+Each record states the decision, why, and what it costs. Add a new ADR rather than editing an accepted one; mark the old one superseded, or amended when the new one replaces only part of it.
 
 ## ADR-001: Rewrite outln in Rust
 
@@ -28,7 +28,7 @@ Rewrite the TypeScript CLI (`../outln`) in Rust, in this repo, as a single Cargo
 
 ## ADR-002: Local-only tooling with strict lints and an auto-fixing pre-commit hook
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-010 (replaces "No CI for now": a CI workflow publishes releases, and commits stay gated only by the hook)
 
 ### Decision
 
@@ -193,6 +193,32 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - The static build can break unnoticed between runs of the recipe; run it after changing dependencies or the toolchain.
 - The static binary is 6.35 MB.
+
+## ADR-010: Publish to crates.io from a tag-triggered GitHub Actions workflow
+
+**Status**: Accepted (2026-11-06)
+
+### Decision
+
+- The crate is published to crates.io as `outln`, so users install it with `cargo install outln --locked`.
+- Pushing a tag `v<version>` runs `.github/workflows/publish.yml`: it fails unless the tag equals `Cargo.toml`'s version and `main` contains it, runs clippy and the tests, then runs `cargo publish` with the `CARGO_REGISTRY_TOKEN` repository secret. Run by hand, it skips the tag checks and runs the rest with `cargo publish --dry-run`.
+- The package `include`s only the `.rs` files under `src/`, the manifest, `Cargo.lock`, and `LICENSE`, and ships no README (`readme = false`).
+
+### Rationale
+
+- A published version can never be replaced, so the release re-runs clippy and the tests on a clean machine instead of trusting the local hook.
+- Publishing from CI instead of a laptop keeps the token out of local shells, and the tag checks stop a release whose tag and manifest disagree or whose commit never reached `main`.
+- An `include` allowlist keeps casefiles, docs, and dev tooling out of the crate; new repo files stay out without editing an `exclude` list.
+- crates.io renders a README with comrak and no frontmatter extension, so `README.md`'s YAML frontmatter (required by `tests/repo_conventions.rs`) would show as a rule and a `description: …` heading at the top of the crate page.
+
+### Consequences
+
+- `cargo install` builds from source: users need Rust at least `rust-version` and a C compiler for the grammars. Prebuilt binaries (`just build-static`) aren't released yet.
+- The crate page has no README; it shows the description and links to the repository.
+- The binary is named `outln`, like the TypeScript build: whichever comes first on `PATH` wins. On a machine where agents work in this repo, keep the TypeScript build installed (runbook).
+- The published crate can't run its integration tests (`cargo package` warns that it drops each one); unit tests and doctests in `src/` stay.
+- The workflow's clippy and test commands copy `just lint` and `just test`, so CI needs no tools beyond rustup; change them together.
+- crates.io's trusted publishing (OIDC, no stored token) needs the crate to exist first; switching to it after the first release removes the secret.
 
 ## Dependencies
 

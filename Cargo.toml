@@ -1,9 +1,19 @@
 [package]
 name = "outln"
 version = "0.1.0"
+categories = ["command-line-utilities", "development-tools"]
 edition = "2024"
+# The published crate holds only what builds it; integration tests (`tests/`), casefiles, docs,
+# and dev tooling stay in git (an allowlist, so new repo files stay out of the crate by default).
+# `cargo package` warns that it ignores each integration test target for this reason; that is
+# expected.
+include = ["src/**/*.rs", "Cargo.toml", "Cargo.lock", "LICENSE"]
+keywords = ["outline", "cli", "tree-sitter", "coding-agents", "markdown"]
 license = "MIT"
-publish = false
+# crates.io doesn't parse YAML frontmatter, so README.md's would render as a rule and a heading
+# (ADR-010). The crate page links to the repository instead.
+readme = false
+repository = "https://github.com/ptol/outln-rs"
 rust-version = "1.99"
 description = "CLI for generating structural outlines of source files for coding agents."
 

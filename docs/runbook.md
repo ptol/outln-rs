@@ -1,6 +1,6 @@
 ---
-description: 'How to set up, build, run, check, and debug outln, and how its tooling fits together.'
-readWhen: 'building, running, installing, or debugging the CLI, or when a hook or check misbehaves'
+description: 'How to set up, build, run, check, release, and debug outln, and how its tooling fits together.'
+readWhen: 'building, running, installing, releasing, or debugging the CLI, or when a hook or check misbehaves'
 ---
 
 # Runbook
@@ -20,7 +20,21 @@ just setup
 
 Building needs a C compiler (`cc` on `PATH`), because the tree-sitter grammars are C code.
 
-Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. The static binary: `just build-static` writes `target/x86_64-unknown-linux-musl/release/outln`, compiling the grammars with the zig that `mise install` pins, and fails unless the binary is static and outlines a sample `.ts`, `.tsx`, and `.js` file ([ADR-009](adr.md)). Keep it off `PATH` (no `cargo install`) until it reaches parity: the binary is also named `outln` and would shadow the TypeScript build agents navigate with.
+Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. The static binary: `just build-static` writes `target/x86_64-unknown-linux-musl/release/outln`, compiling the grammars with the zig that `mise install` pins, and fails unless the binary is static and outlines a sample `.ts`, `.tsx`, and `.js` file ([ADR-009](adr.md)). On a machine where agents work in this repo, keep it off `PATH` (no `cargo install`) until it reaches parity: the binary is also named `outln` and would shadow the TypeScript build agents navigate with.
+
+## Release
+
+Publishing to crates.io runs in CI, `.github/workflows/publish.yml` ([ADR-010](adr.md)). One-time setup: create a crates.io API token with the `publish-new` and `publish-update` scopes, then `gh secret set CARGO_REGISTRY_TOKEN`. To try the runner setup without uploading, run `gh workflow run publish.yml`: it skips the tag checks and runs the rest with `cargo publish --dry-run`.
+
+1. Bump `version` in `Cargo.toml`, run `cargo check` so `Cargo.lock` follows, add a changelog entry naming the version ([changelog.md](changelog.md)), and commit.
+2. Preview the crate: `cargo package --list` (the files `include` in `Cargo.toml` selects) and `cargo publish --dry-run --locked`. Both need the committed, clean tree.
+3. `git tag v<version>`, then `git push origin main v<version>`. The workflow refuses a tag that differs from the version or isn't on `main`.
+4. Check: the Publish run at `gh run list --workflow publish.yml` is green and `cargo search outln` shows the new version.
+
+When a run fails, first check whether crates.io has the version (`cargo search outln`): an upload can succeed before the job fails.
+
+- Not published: fix the cause, commit, push `main` (`git push origin main`; the workflow refuses a tag that isn't on it), then move the tag (`git tag -f v<version>`, `git push -f origin v<version>`). For a runner hiccup, rerun the job instead (`gh run rerun <run-id>`).
+- Published: leave the tag; release the next fix as a new version. A published version can't be replaced, only yanked (`cargo yank --version <version>`, with a local `cargo login` token that has the `yank` scope).
 
 ## Pre-commit hook
 

@@ -23,4 +23,4 @@ Each entry: what, impact, and the way out. Remove an entry when it's paid off.
 
 - **What**: `just build-static` ([ADR-009](adr.md)) runs neither in `just check` nor in the pre-commit hook.
 - **Impact**: a dependency or toolchain change can break the static build without any check failing.
-- **Way out**: run it after changing dependencies or the toolchain; gate it in CI once the project has one.
+- **Way out**: run it after changing dependencies or the toolchain; gate it in CI (the Publish workflow is the only one so far, [ADR-010](adr.md)).

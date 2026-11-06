@@ -1,0 +1,54 @@
+# Publishes the crate to crates.io when a version tag (`v<version>`) is pushed (docs/runbook.md,
+# Release). Run by hand (`gh workflow run publish.yml`), it skips the tag checks and runs the rest
+# with `cargo publish --dry-run`, so the runner setup can be tried before a release. Commits are gated by the local pre-commit hook; this
+# job re-runs clippy and the tests because a published version can never be replaced.
+name: Publish
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a commit: a moved tag can't change what runs with the crates.io token.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The history, so the main-branch check below can see whether main contains the tag.
+          fetch-depth: 0
+          # The job never pushes, so the checkout token isn't left in .git/config.
+          persist-credentials: false
+
+      # The runner's rustup installs the toolchain rust-toolchain.toml pins.
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+
+      - name: Check that the tag matches the crate version and is on main
+        if: github.event_name == 'push'
+        run: |
+          version=$(cargo metadata --no-deps --locked --format-version 1 | jq -r '.packages[0].version')
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match Cargo.toml's version $version; tag v$version instead"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME points to a commit that isn't on main; push main first"
+            exit 1
+          fi
+
+      # The same commands as `just lint` and `just test`; keep them in step with the justfile.
+      - name: Lint
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Publish to crates.io
+        run: cargo publish --locked ${{ github.event_name == 'workflow_dispatch' && '--dry-run' || '' }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
