@@ -261,6 +261,27 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - Shared code now grows per language through two small hooks (`CommentSyntax`, `PrecedingNode` classification) instead of per-engine copies; Go, Java, Kotlin, and C# doc comments (`///`, `/** */`) fit `DocMarkers::InnerAndOuter`'s outer kind or need one more variant.
 - TypeScript and JavaScript output changed: JSDoc comments now start declarations' and class members' line ranges, and headers print only their first paragraph ([changelog.md](changelog.md)).
 
+## ADR-013: Bump, tag, and push releases with cargo-release
+
+**Status**: Accepted (2026-11-06)
+
+### Decision
+
+- `just release <level>` runs `cargo publish --dry-run --locked`, then `cargo-release` (pinned in `mise.toml`, configured in `release.toml`). It sets the version in `Cargo.toml` and `Cargo.lock`, renames the changelog's `## Unreleased` section to `## <version> (<date>)`, commits, tags `v<version>`, and pushes `main` and the tag, after a confirmation prompt.
+- cargo-release doesn't publish (`publish = false`): the tag-triggered workflow of ADR-010 still uploads, and its tag checks stay as the backstop.
+- The changelog is grouped by release under `## Unreleased`, not by date; the release fails unless that section has an entry.
+
+### Rationale
+
+- Tag `v0.2.0` was pushed with `Cargo.toml` still at 0.1.0, and the workflow refused it: the manual steps (bump, lock, changelog, commit, tag, push) were easy to get out of order. One command derives the tag from the version it just wrote.
+- cargo-release is the established Rust tool for this and ships as a single binary, so mise installs it like the other dev tools; the crate gains no dependency.
+- release-plz was rejected: it generates changelogs from Conventional Commits, and this changelog is hand-written (deliberate divergences from the TypeScript build), and it would replace the publish workflow.
+
+### Consequences
+
+- Releasing needs `mise install` (for cargo-release) and an interactive terminal for the prompt.
+- The release commit runs the pre-commit hook (clippy and every test, since Cargo files are staged), as every commit does.
+
 ## Dependencies
 
 One line per crate: why std was not enough.

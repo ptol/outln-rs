@@ -81,3 +81,9 @@ check: fix verify
 verify:
     hk check --all
     cargo test --locked
+
+# Release `level` (major, minor, patch, or an exact version like 0.3.0): package the crate as crates.io would, dry-run cargo-release (release.toml) so a failing check changes no file, then bump, commit, tag, and push after you confirm; CI publishes.
+release level:
+    cargo publish --dry-run --locked
+    cargo release '{{ level }}'
+    cargo release '{{ level }}' --execute

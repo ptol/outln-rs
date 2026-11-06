@@ -1,5 +1,7 @@
 # Dev tools for this repo, pinned for reproducible hooks and checks.
 [tools]
+# Bumps the version, commits, tags, and pushes for `just release` (release.toml, ADR-013).
+cargo-release = "1.1.7"
 dprint = "0.64.3"
 hk = "2.11.1"
 just = "1.59.0"

@@ -1,13 +1,14 @@
 ---
-description: 'Notable changes to the outln Rust rewrite by date, including deliberate divergences from the TypeScript build.'
+description: 'Notable changes to the outln Rust rewrite by release, including deliberate divergences from the TypeScript build.'
 readWhen: 'finishing a change that users or agents would notice'
 ---
 
 # Changelog
 
-## 2026-11-06
+Add entries as bullets under `## Unreleased`; `just release` renames it to the version and date ([runbook.md](runbook.md), Release).
 
-- Releases are published to crates.io as `outln` (`cargo install outln --locked`) by a GitHub Actions workflow when a `v<version>` tag is pushed ([ADR-010](adr.md)).
+## Unreleased
+
 - Rust support in every mode (`.rs`), ported from the TypeScript build with its casefiles in `tests/cases/rust/`. Deliberate differences from the TypeScript build:
   - **Header comments**: the first `//!` or `/*!` comment before the first code is the header, even after a `//` license comment or `#![...]` inner attributes (nested `/* */` comments included); without one, the first plain `//` or `/* */` comment is. `///` and `/**` comments are never the header. The TypeScript build read only plain `//` lines, so this repo's own files had no header.
   - **Signatures** print the source as written on one line (`pub(crate) fn parse<'a>(text: &'a str) -> Tree where T: Clone`, `impl<T: Display> Render for Wrapper<T>`, `const MAX: usize`, `type Id = u64`) instead of keyword and name with spaces (`fn main ()`, `impl Render for Wrapper`, `const MAX`, `type Id`).
@@ -16,6 +17,10 @@ readWhen: 'finishing a change that users or agents would notice'
   - **Debug mode** highlights a signature up to its body, a `where` clause on its own lines included.
 - Every engine: a header comment prints only its first paragraph, up to the first comment line without text when more text follows (a ` *` or `//` line, or a blank line inside a block comment).
 - TypeScript and JavaScript: a `/** */` comment directly above a declaration or class member starts its line range, as decorators do; a header comment never does.
+
+## 0.1.0 (2026-11-06)
+
+- Releases are published to crates.io as `outln` (`cargo install outln --locked`) by a GitHub Actions workflow when a `v<version>` tag is pushed ([ADR-010](adr.md)).
 - TypeScript and JavaScript support in every mode (`.ts`, `.mts`, `.cts`, `.d.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`), ported from the TypeScript build with its casefiles in `tests/cases/typescript/`. Deliberate differences from the TypeScript build:
   - **New declarations**: a variable holding an arrow function or function expression prints its signature (`export const parse = (input: string): Ast`); `export default <expression>` prints as `export default defineConfig(…)`, `{…}`, `[…]`, an arrow function's signature, or `…`; top-level `describe`/`it`/`test`/`suite` test blocks (with `.only`, `.skip`, `.each`) print as `describe('parser')`; `export declare` statements are listed; JavaScript `using` declarations are listed like `const`.
   - **One-line signatures**: a signature wrapped over several lines prints on one line instead of copying its line breaks, comments inside it are left out, and a line break inside a template literal prints as `\n`. Debug mode highlights it on every line up to its body, not only the first.

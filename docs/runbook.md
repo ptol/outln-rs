@@ -26,10 +26,11 @@ Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/
 
 Publishing to crates.io runs in CI, `.github/workflows/publish.yml` ([ADR-010](adr.md)). One-time setup: create a crates.io API token with the `publish-new` and `publish-update` scopes, then `gh secret set CARGO_REGISTRY_TOKEN`. To try the runner setup without uploading, run `gh workflow run publish.yml`: it skips the tag checks and runs the rest with `cargo publish --dry-run`.
 
-1. Bump `version` in `Cargo.toml`, run `cargo check` so `Cargo.lock` follows, add a changelog entry naming the version ([changelog.md](changelog.md)), and commit.
-2. Preview the crate: `cargo package --list` (the files `include` in `Cargo.toml` selects) and `cargo publish --dry-run --locked`. Both need the committed, clean tree.
-3. `git tag v<version>`, then `git push origin main v<version>`. The workflow refuses a tag that differs from the version or isn't on `main`.
-4. Check: the Publish run at `gh run list --workflow publish.yml` is green and `cargo search outln` shows the new version.
+Change the version and make release tags only with `just release`, which runs `cargo-release` so the tag always matches `Cargo.toml` ([ADR-013](adr.md)).
+
+1. On a clean, up-to-date `main` whose changelog has entries under `## Unreleased` ([changelog.md](changelog.md)), preview: `cargo release <level>` (`major`, `minor`, `patch`, or an exact version) is a dry run that prints every step and changes nothing. `cargo package --list` shows the files `include` in `Cargo.toml` selects.
+2. `just release <level>`: runs `cargo publish --dry-run --locked` and the cargo-release dry run, then cargo-release (`release.toml`) shows the new version and asks to confirm. It sets the version in `Cargo.toml` and `Cargo.lock`, renames `## Unreleased` to `## <version> (<date>)`, commits `Release <version>` (through the pre-commit hook), tags `v<version>`, and pushes `main` and the tag.
+3. Check: the Publish run at `gh run list --workflow publish.yml` is green and `cargo search outln` shows the new version.
 
 When a run fails, first check whether crates.io has the version (`cargo search outln`): an upload can succeed before the job fails.
 

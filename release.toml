@@ -1,0 +1,20 @@
+# cargo-release settings for `just release` (docs/runbook.md, Release; ADR-013). It bumps the
+# version in Cargo.toml and Cargo.lock, names the version in docs/changelog.md, commits, tags
+# `v<version>`, and pushes main and the tag; the Publish workflow then uploads to crates.io.
+
+# The Publish workflow uploads, so the crates.io token never reaches a local shell (ADR-010).
+publish = false
+# The workflow refuses a tag that isn't on main.
+allow-branch = ["main"]
+pre-release-commit-message = "Release {{version}}"
+tag-message = "Release {{version}}"
+
+# Turns the changelog's `## Unreleased` section into `## <version> (<date>)` under a new, empty
+# `## Unreleased`. The search needs an entry under the heading, so a release without one fails.
+# With `--execute` cargo-release has already bumped Cargo.toml by then, so `just release` runs the
+# dry run first, which checks the same things and writes nothing.
+[[pre-release-replacements]]
+file = "docs/changelog.md"
+search = "## Unreleased\n\n- "
+replace = "## Unreleased\n\n## {{version}} ({{date}})\n\n- "
+exactly = 1

@@ -22,3 +22,7 @@ Add an entry when something cost you time and would cost the next agent time too
 ## zig cc rejects Rust's target triple
 
 Setting `CC_x86_64_unknown_linux_musl="zig cc -target x86_64-linux-musl"` failed with `unable to parse target query 'x86_64-unknown-linux-musl'`: cc-rs adds `--target=<rust triple>` to every compile, and zig spells triples without the vendor. `scripts/zig-cc-musl` drops that flag and passes zig's own `-target`.
+
+## A failed `cargo release --execute` leaves Cargo.toml bumped
+
+When a `pre-release-replacements` search (`exactly = 1`) found nothing, `cargo release <level> --execute` stopped with the version already written to `Cargo.toml` and `Cargo.lock`, so the tree was dirty for the next attempt. The dry run (no `--execute`) runs the same checks without writing, so `just release` runs it first. After such a failure, `git checkout Cargo.toml Cargo.lock`.
