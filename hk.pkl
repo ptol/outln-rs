@@ -9,8 +9,8 @@ local rustFiles = List("**/*.rs", "**/Cargo.toml", "Cargo.lock", "clippy.toml", 
 // hygiene fixers must not touch them, but a changed casefile must run the tests.
 local casefiles = "tests/cases/**"
 
-local sharedSteps = new Mapping<String, Step> {
-  // Formatters and hygiene fixers: auto-fix in pre-commit and `hk fix`, report in `hk check`.
+// Formatters and hygiene fixers: auto-fix in pre-commit and `hk fix`, report in `hk check`.
+local fixerSteps = new Mapping<String, Step> {
   ["rustfmt"] = (Builtins.rustfmt) {
     // Given a path, rustfmt also formats the out-of-line modules that file declares (`mod x;`),
     // which can rewrite files that aren't staged. Through stdin it formats exactly one file.
@@ -33,6 +33,11 @@ local sharedSteps = new Mapping<String, Step> {
   ["newlines"] = (Builtins.newlines) {
     exclude = List(casefiles)
   }
+}
+
+// Every step: the fixers, then the checks that only report. `hk fix` (`just fix`) runs only the
+// fixers, so `just check` (fix, then verify) runs each check once, not twice.
+local allSteps = (fixerSteps) {
   ["check_merge_conflict"] = Builtins.check_merge_conflict
   ["check_added_large_files"] = Builtins.check_added_large_files
 
@@ -84,13 +89,13 @@ hooks {
   ["pre-commit"] {
     fix = true
     stash = "git"
-    steps = sharedSteps
+    steps = allSteps
   }
   ["fix"] {
     fix = true
-    steps = sharedSteps
+    steps = fixerSteps
   }
   ["check"] {
-    steps = sharedSteps
+    steps = allSteps
   }
 }
