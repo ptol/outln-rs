@@ -1,0 +1,16 @@
+The glob view strips doc comment markers (`///`, `//!`) and drops marker-only lines, the same way file mode prints them.
+The TypeScript build cleaned glob view headers separately and printed `/ Triple.` and a double space here.
+== args
+input
+== file input/doc.ts
+/// Triple.
+//
+//! Bang.
+export const x = 1;
+== stdout
+glob view: input
+Includes only headers per file.
+For file-level outlines, use `outln [FILE]...`.
+input/doc.ts: Triple. Bang.
+== stderr
+== exit 0

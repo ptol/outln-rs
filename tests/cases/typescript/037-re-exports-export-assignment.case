@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/typescript/037-re-exports-export-assignment.case.yaml; expected output is the TypeScript build's.
+== args
+input/legacy.d.ts
+== file input/legacy.d.ts
+declare function lib(): void;
+export = lib;
+export as namespace Lib;
+== stdout
+input/legacy.d.ts
+[L1-L1] declare function lib(): void
+[L2-L2] export = lib
+[L3-L3] export as namespace Lib
+== stderr
+== exit 0

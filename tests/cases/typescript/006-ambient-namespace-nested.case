@@ -1,0 +1,13 @@
+Ported from ../outln/__tests__/cases/typescript/006-ambient-namespace-nested.case.yaml; expected output is the TypeScript build's.
+== args
+input/ambient-namespace-nested.ts
+== file input/ambient-namespace-nested.ts
+declare namespace App {
+  export function init(): void;
+  export const config: any;
+}
+== stdout
+input/ambient-namespace-nested.ts
+[L1-L4] declare namespace App
+== stderr
+== exit 0

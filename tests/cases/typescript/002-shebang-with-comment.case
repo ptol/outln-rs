@@ -1,0 +1,13 @@
+Ported from ../outln/__tests__/cases/typescript/002-shebang-with-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/shebang-with-comment.ts
+== file input/shebang-with-comment.ts
+#!/usr/bin/env node
+// CLI entrypoint wiring.
+export function main(): void {}
+== stdout
+input/shebang-with-comment.ts
+CLI entrypoint wiring.
+[L3-L3] export function main(): void
+== stderr
+== exit 0

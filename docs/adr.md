@@ -52,7 +52,7 @@ Rewrite the TypeScript CLI (`../outln`) in Rust, in this repo, as a single Cargo
 
 ## ADR-003: Language engines return data with byte ranges into normalized text
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-008 (one engine type may serve several grammars, and `Header` has a header comment variant)
 
 ### Decision
 
@@ -151,6 +151,49 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - The Markdown engine doesn't share tree-sitter machinery with the code-language engines; section ranges and rendering are shared anyway.
 - Heading text is the raw source line without its `#` markers, so inline markup keeps its syntax.
 
+## ADR-008: Parse TypeScript and JavaScript with tree-sitter, on a shared code-engine layer
+
+**Status**: Accepted (2026-11-06)
+
+### Decision
+
+- One engine type, `Script` (`src/languages/script.rs`), is registered three times in `ENGINES`, once per grammar: `tree-sitter-typescript`'s `typescript` grammar for `.ts`/`.mts`/`.cts`, its `tsx` grammar for `.tsx`, and `tree-sitter-javascript` for `.js`/`.jsx`/`.mjs`/`.cjs`. Every declaration rule is shared; the grammars differ only in syntax one of them lacks.
+- Shared by every future code engine: `src/syntax_tree.rs` (parsing, node byte ranges, a node's source on one line) and `src/header_comment.rs` (`//` and `/* */` header comments). An engine decides only where its header comment may start.
+- `Header::Comment` holds header comment lines; `OutlineLine::depth` indents class members.
+- The header is found by scanning lines, so `file_summary` never parses.
+- Versions: `tree-sitter` 0.27.1 (default features off), `tree-sitter-typescript` 0.23.2 (the reference's version; no release since November 2024), `tree-sitter-javascript` 0.25.0 (the latest).
+
+### Rationale
+
+- tree-sitter is the reference's parser, so the ported casefiles pass with few deliberate changes, and it parses broken files by recovering instead of failing.
+- One engine type keeps the TypeScript and JavaScript rules in one place; the grammar is a field because `LanguageEngine::outline` receives only the text, so each grammar needs its own registry entry.
+- The two grammar crates disagree on a few shapes (the TypeScript grammar parses a member's decorators as siblings in the class body, the JavaScript grammar as part of the member). The engine handles both, and `tests/cases/typescript/extensions-and-grammars.case` outlines one source with every grammar.
+
+### Consequences
+
+- The binary is built from C (the grammars), so building needs a C compiler; release size grew from 2.31 MB to 6.26 MB (glibc, x86-64), and a 760 KB file with 20 000 functions outlines in 0.14 s.
+- The TypeScript grammar predates newer syntax such as `using` declarations, which parse as errors in `.ts` files but work in JavaScript.
+- Debug-mode highlights come from node byte ranges rather than from the printed text's length, so a multi-line signature is highlighted on every line up to its body.
+
+## ADR-009: Build the static binary for musl with zig as the C compiler
+
+**Status**: Accepted (2026-11-06)
+
+### Decision
+
+`just build-static` builds the release binary for `x86_64-unknown-linux-musl`, compiling the grammars' C code with `zig cc` (pinned in `mise.toml`, called through `scripts/zig-cc-musl`), then fails unless the binary has no ELF interpreter or shared libraries and outlines a `.ts`, `.tsx`, and `.js` file. It isn't part of `just check` or the pre-commit hook.
+
+### Rationale
+
+- A single static binary is a project goal (ADR-001), and the C grammars are the first native code to link.
+- The system C compiler builds against glibc headers; zig ships musl headers and libc for every target, installed by mise like the other tools.
+- A fat-LTO release build of the grammars is too slow to run on every check.
+
+### Consequences
+
+- The static build can break unnoticed between runs of the recipe; run it after changing dependencies or the toolchain.
+- The static binary is 6.35 MB.
+
 ## Dependencies
 
 One line per crate: why std was not enough.
@@ -159,3 +202,5 @@ One line per crate: why std was not enough.
 - `ignore` (no default features to turn off): gitignore-aware directory walking with git's rules (ADR-006).
 - `globset` (default features off): glob patterns with `**`, classes, and `{a,b}` alternatives; already a dependency of `ignore`.
 - `pulldown-cmark` (default features off): CommonMark parsing for the Markdown engine (ADR-007).
+- `tree-sitter` (default features off: no query regex engine): the parser runtime of the code-language engines (ADR-008).
+- `tree-sitter-typescript`, `tree-sitter-javascript` (no features): the TypeScript, TSX, and JavaScript grammars (ADR-008).

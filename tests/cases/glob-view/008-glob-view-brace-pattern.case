@@ -1,5 +1,6 @@
 Ported from ../outln/__tests__/cases/typescript/008-glob-view-brace-pattern.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input/{one,two}.md
 == file input/one.md
@@ -14,7 +15,7 @@ description: Second summary.
 # two
 == stdout
 glob view: input/{one,two}.md
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/one.md: description: "First summary."
 input/two.md: description: "Second summary."

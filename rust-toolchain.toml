@@ -3,4 +3,7 @@
 [toolchain]
 channel = "1.99.1"
 components = ["rustfmt", "clippy"]
+# The static build's target (`just build-static`). mise overrides this file (docs/til.md), so
+# the recipe also adds the target itself.
+targets = ["x86_64-unknown-linux-musl"]
 profile = "minimal"

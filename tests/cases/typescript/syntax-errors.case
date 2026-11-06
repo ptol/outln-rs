@@ -1,0 +1,15 @@
+A file with syntax errors still outlines: tree-sitter recovers, and the declarations that parsed are listed.
+== args
+input/broken.ts
+== file input/broken.ts
+export function before(): void {}
+export function broken(: {
+const lost = 1;
+}
+export class After {}
+== stdout
+input/broken.ts
+[L1-L1] export function before(): void
+[L5-L5] export class After
+== stderr
+== exit 0

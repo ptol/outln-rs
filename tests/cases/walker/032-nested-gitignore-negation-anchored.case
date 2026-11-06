@@ -1,6 +1,7 @@
 Ported from ../outln/__tests__/cases/walker/032-nested-gitignore-negation-anchored.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
 input/.git/HEAD makes input a git repository: outln applies .gitignore files only inside one.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input
 == file input/.git/HEAD
@@ -43,7 +44,7 @@ description: Nested rule does not apply outside src.
 # o
 == stdout
 glob view: input
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/other/local/o.md: description: "Nested rule does not apply outside src."
 input/src/build/kept.md: description: "Not the root build dir, so kept."

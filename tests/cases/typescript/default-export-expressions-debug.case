@@ -1,0 +1,22 @@
+Debug mode highlights a default-exported expression from `export` through what its line prints: the callee of a call, the opening brace of an object, or the `default` keyword for an expression printed as `…`.
+== args
+--debug
+input/config.ts
+== file input/config.ts
+export default defineConfig({
+  plugins: [],
+});
+export default {
+  name: "x",
+};
+export default settings.production;
+== stdout
+\x1b[32mexport default defineConfig\x1b[0m({
+  plugins: [],
+});
+\x1b[32mexport default {\x1b[0m
+  name: "x",
+};
+\x1b[32mexport default\x1b[0m settings.production;
+== stderr
+== exit 0

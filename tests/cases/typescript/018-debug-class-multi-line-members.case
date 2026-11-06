@@ -1,0 +1,37 @@
+Ported from ../outln/__tests__/cases/typescript/018-debug-class-multi-line-members.case.yaml; expected output is the TypeScript build's.
+Except: a multi-line signature is highlighted on every line up to its body; the TypeScript build highlighted only its first line (docs/changelog.md).
+== args
+--debug
+input/multi-line-members.ts
+== file input/multi-line-members.ts
+class MultiLine {
+  constructor(
+    a: number,
+    b: string
+  ) {
+    console.log(a, b);
+  }
+  calculate(
+    x: number,
+    y: number
+  ): number {
+    return x + y;
+  }
+}
+== stdout
+\x1b[32mclass MultiLine\x1b[0m {
+  \x1b[32mconstructor(\x1b[0m
+\x1b[32m    a: number,\x1b[0m
+\x1b[32m    b: string\x1b[0m
+\x1b[32m  )\x1b[0m {
+    console.log(a, b);
+  }
+  \x1b[32mcalculate(\x1b[0m
+\x1b[32m    x: number,\x1b[0m
+\x1b[32m    y: number\x1b[0m
+\x1b[32m  ): number\x1b[0m {
+    return x + y;
+  }
+}
+== stderr
+== exit 0

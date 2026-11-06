@@ -1,0 +1,196 @@
+Every TypeScript and JavaScript extension is supported, and the same source outlines identically with the TypeScript, TSX, and JavaScript grammars, so the shared rules don't depend on one grammar's node names.
+== args
+input/a.ts
+input/a.mts
+input/a.cts
+input/a.tsx
+input/a.js
+input/a.mjs
+input/a.cjs
+input/a.jsx
+== file input/a.ts
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== file input/a.mts
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== file input/a.cts
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== file input/a.tsx
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== file input/a.js
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== file input/a.mjs
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== file input/a.cjs
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== file input/a.jsx
+// Shared module.
+export async function* stream(source) {}
+export class Queue {
+  #items = [];
+  static create() {}
+  get size() { return 0; }
+  set size(value) {}
+}
+export const run = async (task) => task;
+export default makeQueue();
+describe("queue", () => {});
+== stdout
+input/a.ts
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+
+input/a.mts
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+
+input/a.cts
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+
+input/a.tsx
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+
+input/a.js
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+
+input/a.mjs
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+
+input/a.cjs
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+
+input/a.jsx
+Shared module.
+[L2-L2] export async function* stream(source)
+[L3-L8] export class Queue
+  [L5-L5] create()
+  [L6-L6] get size()
+  [L7-L7] set size(value)
+[L9-L9] export const run = async (task)
+[L10-L10] export default makeQueue()
+[L11-L11] describe("queue")
+== stderr
+== exit 0

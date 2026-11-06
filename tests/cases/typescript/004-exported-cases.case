@@ -1,0 +1,16 @@
+Ported from ../outln/__tests__/cases/typescript/004-exported-cases.case.yaml; expected output is the TypeScript build's.
+== args
+input/exported-cases.ts
+== file input/exported-cases.ts
+export abstract class X {}
+export default class {}
+export type T = 'ok';
+export const enum ConstEnum { A = 1 }
+== stdout
+input/exported-cases.ts
+[L1-L1] export abstract class X
+[L2-L2] export default class
+[L3-L3] export type T
+[L4-L4] export const enum ConstEnum
+== stderr
+== exit 0

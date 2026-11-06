@@ -7,3 +7,5 @@ just = "1.59.0"
 # the active rust, which overrides rust-toolchain.toml (a global `rust = "latest"`
 # would otherwise win inside this repo).
 rust = "1.99.1"
+# The C compiler of the static musl build (`just build-static`, scripts/zig-cc-musl).
+zig = "0.17.1"

@@ -1,0 +1,18 @@
+Ported from ../outln/__tests__/cases/headers/035-debug-directive-and-block-header.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/page.tsx
+== file input/page.tsx
+'use client';
+/**
+ * Client page.
+ */
+export const page = 1;
+== stdout
+'use client';
+\x1b[32m/**\x1b[0m
+\x1b[32m * Client page.\x1b[0m
+\x1b[32m */\x1b[0m
+\x1b[32mexport const page\x1b[0m = 1;
+== stderr
+== exit 0

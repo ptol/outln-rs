@@ -1,0 +1,10 @@
+Ported from ../outln/__tests__/cases/typescript/016-debug-var-multi.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/var-multi.ts
+== file input/var-multi.ts
+var a = 1, b = 2;
+== stdout
+\x1b[32mvar a\x1b[0m = 1, \x1b[32mb\x1b[0m = 2;
+== stderr
+== exit 0

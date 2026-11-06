@@ -16,6 +16,34 @@ setup:
 run *args:
     cargo run --quiet -- "$@"
 
+# Build the static release binary (musl libc, C grammars compiled by zig), then fail unless it is static and outlines a .ts, .tsx, and .js file.
+build-static:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    target=x86_64-unknown-linux-musl
+    binary="target/$target/release/outln"
+    rustup --quiet target add "$target"
+    CC_x86_64_unknown_linux_musl="$PWD/scripts/zig-cc-musl" cargo build --release --locked --target "$target"
+    # Read the headers first, so a missing or failing readelf stops the recipe instead of
+    # passing as "no dynamic entries".
+    elf_headers=$(readelf --program-headers --dynamic "$binary")
+    if grep -q -e INTERP -e NEEDED <<< "$elf_headers"; then
+        echo "$binary is dynamically linked" >&2
+        exit 1
+    fi
+    sample=$(mktemp -d)
+    trap 'rm -rf "$sample"' EXIT
+    for extension in ts tsx js; do
+        printf '// Sample.\nexport function run(task) {}\n' > "$sample/sample.$extension"
+        expected=$(printf '%s\nSample.\n[L2-L2] export function run(task)' "$sample/sample.$extension")
+        actual=$("$binary" "$sample/sample.$extension")
+        if [ "$actual" != "$expected" ]; then
+            printf '%s outlined sample.%s wrongly:\n%s\n' "$binary" "$extension" "$actual" >&2
+            exit 1
+        fi
+    done
+    echo "$binary: static, $(stat --format=%s "$binary") bytes"
+
 # Format every file: Rust with rustfmt, Markdown/TOML/JSON/YAML with dprint.
 fmt:
     cargo fmt

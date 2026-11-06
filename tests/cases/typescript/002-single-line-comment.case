@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/002-single-line-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/single-line.ts
+== file input/single-line.ts
+// Simple comment.
+const x = 1;
+== stdout
+input/single-line.ts
+Simple comment.
+[L2-L2] const x
+== stderr
+== exit 0

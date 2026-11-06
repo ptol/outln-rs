@@ -18,7 +18,9 @@ just setup
 
 `just` lists every recipe with what it does; the `justfile` comment above each recipe is its documentation. Casefile recipes (`just case`, `just update-cases`) are explained in [testing.md](testing.md).
 
-Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. Keep it off `PATH` (no `cargo install`) until it reaches parity: the binary is also named `outln` and would shadow the TypeScript build agents navigate with.
+Building needs a C compiler (`cc` on `PATH`), because the tree-sitter grammars are C code.
+
+Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. The static binary: `just build-static` writes `target/x86_64-unknown-linux-musl/release/outln`, compiling the grammars with the zig that `mise install` pins, and fails unless the binary is static and outlines a sample `.ts`, `.tsx`, and `.js` file ([ADR-009](adr.md)). Keep it off `PATH` (no `cargo install`) until it reaches parity: the binary is also named `outln` and would shadow the TypeScript build agents navigate with.
 
 ## Pre-commit hook
 

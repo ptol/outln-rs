@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/001-only-comments.case.yaml; expected output is the TypeScript build's.
+== args
+input/comments.ts
+== file input/comments.ts
+// This is a comment
+/* Multi-line
+   comment */
+== stdout
+input/comments.ts
+This is a comment
+== stderr
+== exit 0

@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/typescript/003-shebang-leading-blanks.case.yaml; expected output is the TypeScript build's.
+== args
+input/preamble.ts
+== file input/preamble.ts
+#!/usr/bin/env node
+
+// CLI wiring.
+export function main(): void {}
+== stdout
+input/preamble.ts
+CLI wiring.
+[L4-L4] export function main(): void
+== stderr
+== exit 0

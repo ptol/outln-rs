@@ -1,0 +1,20 @@
+Comments inside a signature are left out, so a `//` comment can't swallow the rest of the line and a block comment can't wrap it; a line break inside a template literal prints as `\n`, and comments inside a template's `${…}` are left out too while its text keeps its spaces. Every outline line stays one line.
+== args
+input/commented.ts
+== file input/commented.ts
+function count(
+  a: number // the count
+): void {}
+function wrap(/* first
+second */ x, y /* last */) {}
+export function greet(message = `hello
+world`) {}
+function label(x = `${/* id */ y}  ${z}`) {}
+== stdout
+input/commented.ts
+[L1-L3] function count(a: number): void
+[L4-L5] function wrap(x, y)
+[L6-L7] export function greet(message = `hello\nworld`)
+[L8-L8] function label(x = `${y}  ${z}`)
+== stderr
+== exit 0

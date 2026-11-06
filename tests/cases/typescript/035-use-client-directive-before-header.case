@@ -1,0 +1,18 @@
+Ported from ../outln/__tests__/cases/headers/035-use-client-directive-before-header.case.yaml; expected output is the TypeScript build's.
+== args
+input/page.tsx
+== file input/page.tsx
+'use client';
+
+/**
+ * Client-side product page.
+ */
+export default function Page() {
+  return null;
+}
+== stdout
+input/page.tsx
+Client-side product page.
+[L6-L8] export default function Page()
+== stderr
+== exit 0

@@ -1,0 +1,38 @@
+Ported from ../outln/__tests__/cases/typescript/018-end-to-end.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/full-feature.ts
+== file input/full-feature.ts
+/**
+ * Service module with class members.
+ */
+export class Service {
+  private data: number;
+  constructor(initial: number) {
+    this.data = initial;
+  }
+  get value(): number {
+    return this.data;
+  }
+  process(input: number): number {
+    return input * 2;
+  }
+}
+== stdout
+\x1b[32m/**\x1b[0m
+\x1b[32m * Service module with class members.\x1b[0m
+\x1b[32m */\x1b[0m
+\x1b[32mexport class Service\x1b[0m {
+  private data: number;
+  \x1b[32mconstructor(initial: number)\x1b[0m {
+    this.data = initial;
+  }
+  \x1b[32mget value(): number\x1b[0m {
+    return this.data;
+  }
+  \x1b[32mprocess(input: number): number\x1b[0m {
+    return input * 2;
+  }
+}
+== stderr
+== exit 0

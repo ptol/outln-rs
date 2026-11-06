@@ -1,0 +1,20 @@
+Ported from ../outln/__tests__/cases/typescript/001-enum.case.yaml; expected output is the TypeScript build's.
+== args
+input/enum.ts
+== file input/enum.ts
+enum Color {
+  Red,
+  Green,
+  Blue
+}
+
+export enum Status {
+  Active = 'active',
+  Inactive = 'inactive'
+}
+== stdout
+input/enum.ts
+[L1-L5] enum Color
+[L7-L10] export enum Status
+== stderr
+== exit 0

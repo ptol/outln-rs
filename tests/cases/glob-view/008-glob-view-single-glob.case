@@ -1,5 +1,6 @@
 Ported from ../outln/__tests__/cases/typescript/008-glob-view-single-glob.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input/**/*
 == file input/docs/guide.md
@@ -19,10 +20,10 @@ description: Utility helpers for HTTP requests.
 plain text
 == stdout
 glob view: input/**/*
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/docs/guide.md: summary: "Guide overview."
-input/src/no-summary.md: (no header comment available)
+input/src/no-summary.md: (no header available)
 input/src/with-comment.md: description: "Utility helpers for HTTP requests."
 == stderr
 == exit 0

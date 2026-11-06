@@ -12,7 +12,7 @@ use crate::source_file::load;
 
 /// Printed after the `glob view:` line, so a reader knows these aren't full outlines.
 const PREAMBLE: &str =
-    "Includes only header comments per file.\nFor file-level outlines, use `outln [FILE]...`.\n";
+    "Includes only headers per file.\nFor file-level outlines, use `outln [FILE]...`.\n";
 
 /// Prints a file summary for every supported file the arguments name, sorted and without
 /// duplicates. Walked files of unsupported types are skipped silently; an explicitly named

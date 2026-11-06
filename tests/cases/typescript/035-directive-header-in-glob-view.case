@@ -1,0 +1,19 @@
+Ported from ../outln/__tests__/cases/headers/035-directive-header-in-glob-view.case.yaml; expected output is the TypeScript build's.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
+== args
+input
+== file input/page.tsx
+'use client';
+/** Client-side product page. */
+export default function Page() {}
+== file input/server.ts
+'use server';
+export async function save() {}
+== stdout
+glob view: input
+Includes only headers per file.
+For file-level outlines, use `outln [FILE]...`.
+input/page.tsx: Client-side product page.
+input/server.ts: (no header available)
+== stderr
+== exit 0

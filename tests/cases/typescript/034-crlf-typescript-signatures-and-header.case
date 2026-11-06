@@ -1,0 +1,29 @@
+Ported from ../outln/__tests__/cases/encoding/034-crlf-typescript-signatures-and-header.case.yaml; expected output is the TypeScript build's.
+Except: multi-line signatures print on one line; the TypeScript build copied their line breaks (docs/changelog.md).
+== args
+input/crlf.ts
+== file input/crlf.ts escaped
+/**\r
+ * CRLF header.\r
+ */\r
+export function add(\r
+  a: number,\r
+  b: number\r
+): number {\r
+  return a + b;\r
+}\r
+export class Box {\r
+  get(\r
+    key: string\r
+  ): string {\r
+    return key;\r
+  }\r
+}\r
+== stdout
+input/crlf.ts
+CRLF header.
+[L4-L9] export function add(a: number, b: number): number
+[L10-L16] export class Box
+  [L11-L15] get(key: string): string
+== stderr
+== exit 0

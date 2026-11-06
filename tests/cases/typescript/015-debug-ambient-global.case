@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/typescript/015-debug-ambient-global.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/declare-global.ts
+== file input/declare-global.ts
+declare global {
+  var declaredGlobalValue: string;
+}
+== stdout
+\x1b[32mdeclare global\x1b[0m {
+  var declaredGlobalValue: string;
+}
+== stderr
+== exit 0

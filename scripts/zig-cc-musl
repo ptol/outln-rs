@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# The C compiler of the static build (`just build-static`): zig's clang, targeting musl libc.
+# cc-rs adds Rust's target triple (`--target=x86_64-unknown-linux-musl`), which zig can't parse,
+# so that flag is dropped in favour of zig's own spelling.
+set -euo pipefail
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    --target=*) ;;
+    *) args+=("$arg") ;;
+  esac
+done
+exec zig cc -target x86_64-linux-musl "${args[@]}"

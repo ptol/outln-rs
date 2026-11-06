@@ -1,0 +1,22 @@
+`export declare` statements print with both prefixes. The TypeScript build listed nothing for them.
+`declare const enum` keeps its `const`, which the TypeScript build dropped.
+== args
+input/types.d.ts
+== file input/types.d.ts
+export declare function render(view: View): string;
+export declare const version: string, build: number;
+export declare class Store<T> {
+  get(key: string): T;
+}
+declare const enum Flags { A, B }
+export declare namespace Api {}
+== stdout
+input/types.d.ts
+[L1-L1] export declare function render(view: View): string
+[L2-L2] export declare const version
+[L2-L2] export declare const build
+[L3-L5] export declare class Store<T>
+[L6-L6] declare const enum Flags
+[L7-L7] export declare namespace Api
+== stderr
+== exit 0

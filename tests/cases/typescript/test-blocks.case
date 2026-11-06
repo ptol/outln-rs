@@ -1,0 +1,36 @@
+Top-level `describe`, `it`, `test`, and `suite` calls with a string or template literal title are listed as test blocks, with `.only`, `.skip`, and `.each` forms.
+A table test (`.each(table)` or `.each` with a tagged template table) prints its callee and title without the table.
+Blocks nested inside a test block aren't listed, nor are calls with other names or with a title that isn't a literal.
+== args
+input/parser.test.ts
+== file input/parser.test.ts
+import { describe, it, test } from "vitest";
+
+describe("parser", () => {
+  it("parses headings", () => {});
+  describe("nested", () => {});
+});
+it.only('focused', () => {});
+describe.skip(`skipped`, () => {});
+test.each([1, 2])("adds %i", (value) => {});
+test.each`
+  a    | b
+  ${1} | ${2}
+`("sums $a and $b", ({ a, b }) => {});
+describe.only.each([["x"]])("with %s", (name) => {});
+suite("node:test suite", () => {});
+describe(Parser.name, () => {});
+test.each("not a table form");
+expect("value").toBe("value");
+beforeEach(() => {});
+== stdout
+input/parser.test.ts
+[L3-L6] describe("parser")
+[L7-L7] it.only('focused')
+[L8-L8] describe.skip(`skipped`)
+[L9-L9] test.each("adds %i")
+[L10-L13] test.each("sums $a and $b")
+[L14-L14] describe.only.each("with %s")
+[L15-L15] suite("node:test suite")
+== stderr
+== exit 0

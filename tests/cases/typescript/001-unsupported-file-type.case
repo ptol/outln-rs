@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/typescript/001-unsupported-file-type.case.yaml; expected output is the TypeScript build's.
+== args
+input/script.py
+input/valid.ts
+== file input/script.py
+def hello():
+    print("Hello")
+== file input/valid.ts
+function greet() {}
+== stdout
+input/valid.ts
+[L1-L1] function greet()
+== stderr
+FILE input/script.py HAS UNSUPPORTED FILE TYPE
+== exit 1

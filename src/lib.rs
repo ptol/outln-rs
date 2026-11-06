@@ -23,6 +23,7 @@ mod debug_mode;
 mod discovery;
 mod file_mode;
 mod glob_view;
+mod header_comment;
 mod input_error;
 mod language_engine;
 mod languages;
@@ -30,6 +31,7 @@ mod outline;
 mod per_file;
 mod source_file;
 mod source_text;
+mod syntax_tree;
 
 use std::ffi::OsString;
 use std::io::{self, Write};

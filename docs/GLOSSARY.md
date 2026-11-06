@@ -16,7 +16,7 @@ _Avoid_: Summary, AST, tree
 
 ### Outline line
 
-One line of an outline naming a single declaration, prefixed with its line range.
+One line of an outline naming a single declaration, prefixed with its line range and indented by how deeply the declaration is nested.
 _Avoid_: Entry, row
 
 ### Line range
@@ -26,8 +26,23 @@ _Avoid_: Span, location
 
 ### Declaration
 
-A top-level definition worth listing in an outline, such as a function, type, or Markdown heading.
+A part of a file worth listing in an outline: a top-level definition such as a function, type, default export, or Markdown heading, a class member, or a test block.
 _Avoid_: Symbol, definition, item
+
+### Signature
+
+The text an outline line prints for a code declaration: its keywords, name, type parameters, parameters, and return type, on one line and without its body.
+_Avoid_: Head, prototype
+
+### Class member
+
+A method, accessor, or constructor of a class, listed under the class one level deeper.
+_Avoid_: Child, nested declaration
+
+### Test block
+
+A top-level call that opens a group of tests or one test, such as `describe('parser', …)`, listed by its title.
+_Avoid_: Test case, spec, suite
 
 ### Header
 
@@ -58,7 +73,7 @@ _Avoid_: Span, offsets
 
 ### Highlight
 
-The part of a file's source that debug mode marks because it became an outline line or a frontmatter field.
+The part of a file's source that debug mode marks because it became an outline line, a frontmatter field, or a header comment line.
 _Avoid_: Selection, mark
 
 ## Modes

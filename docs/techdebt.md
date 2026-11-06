@@ -11,10 +11,16 @@ Each entry: what, impact, and the way out. Remove an entry when it's paid off.
 
 - **What**: the TypeScript `outln` on `PATH` reads only plain `//` header comments, so `outln <dir>` shows no header for this repo's `.rs` files.
 - **Impact**: agents read the first lines of Rust files by hand instead of navigating by header.
-- **Way out**: the Rust outln reads `//!` headers; install it in place of the TypeScript build once it reaches parity.
+- **Way out**: the Rust outln's shared header comment reader strips `//!` markers, so once its Rust engine exists, install it in place of the TypeScript build.
 
-## Glob view messages still say "header comment" for frontmatter
+## The TypeScript grammar is frozen at 0.23.2
 
-- **What**: the glob view prints `Includes only header comments per file.` and `(no header comment available)`, kept from the TypeScript build, though a Markdown file's header is its frontmatter ([GLOSSARY.md](GLOSSARY.md)).
-- **Impact**: the output's wording disagrees with the glossary for Markdown files.
-- **Way out**: reword both to "header" (`src/glob_view.rs`, `src/outline.rs`) with a changelog entry, once the code-language engines show which wording fits all files.
+- **What**: `tree-sitter-typescript` has had no crates.io release since November 2024 ([ADR-008](adr.md)), so newer syntax such as `using` declarations parses as errors in `.ts`, `.mts`, `.cts`, and `.tsx` files.
+- **Impact**: declarations written with such syntax are missing from TypeScript outlines; the same code in a JavaScript file is listed.
+- **Way out**: move to a newer release when one ships, or pin a git commit of the grammar, and rerun `just case typescript`.
+
+## The static build isn't checked automatically
+
+- **What**: `just build-static` ([ADR-009](adr.md)) runs neither in `just check` nor in the pre-commit hook.
+- **Impact**: a dependency or toolchain change can break the static build without any check failing.
+- **Way out**: run it after changing dependencies or the toolchain; gate it in CI once the project has one.

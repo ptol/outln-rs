@@ -1,0 +1,10 @@
+Ported from ../outln/__tests__/cases/typescript/015-debug-const-triple.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/declare-const-triple.ts
+== file input/declare-const-triple.ts
+declare const a: number, b: string, c: boolean;
+== stdout
+\x1b[32mdeclare const a\x1b[0m: number, \x1b[32mb\x1b[0m: string, \x1b[32mc\x1b[0m: boolean;
+== stderr
+== exit 0

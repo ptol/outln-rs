@@ -1,5 +1,6 @@
 Ported from ../outln/__tests__/cases/typescript/009-directory-with-wildcard-filename.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input/dir-special
 == file input/dir-special/file.md
@@ -9,7 +10,7 @@ description: Special dir file.
 # special
 == stdout
 glob view: input/dir-special
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/dir-special/file.md: description: "Special dir file."
 == stderr

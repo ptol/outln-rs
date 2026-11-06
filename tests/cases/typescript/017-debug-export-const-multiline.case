@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/debug/017-debug-export-const-multiline.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/export-const-multi-line.ts
+== file input/export-const-multi-line.ts
+export const a = 1,
+  b = 2;
+== stdout
+\x1b[32mexport const a\x1b[0m = 1,
+  \x1b[32mb\x1b[0m = 2;
+== stderr
+== exit 0

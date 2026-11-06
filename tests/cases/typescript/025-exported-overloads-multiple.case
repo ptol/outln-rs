@@ -1,0 +1,25 @@
+Ported from ../outln/__tests__/cases/typescript/025-exported-overloads-multiple.case.yaml; expected output is the TypeScript build's.
+== args
+input/exported-overloads-multiple.ts
+== file input/exported-overloads-multiple.ts
+export function parse(input: string): number;
+export function parse(input: number): number;
+export function parse(input: string | number): number {
+  return Number(input);
+}
+
+export function format(value: number, radix?: number): string;
+export function format(value: bigint, radix?: number): string;
+export function format(value: number | bigint, radix = 10): string {
+  return value.toString(radix);
+}
+== stdout
+input/exported-overloads-multiple.ts
+[L1-L1] export function parse(input: string): number
+[L2-L2] export function parse(input: number): number
+[L3-L5] export function parse(input: string | number): number
+[L7-L7] export function format(value: number, radix?: number): string
+[L8-L8] export function format(value: bigint, radix?: number): string
+[L9-L11] export function format(value: number | bigint, radix = 10): string
+== stderr
+== exit 0

@@ -1,0 +1,42 @@
+`export default <expression>` lines: a call prints its callee with `(…)`, objects and arrays print as `{…}` and `[…]` (`{}` and `[]` when empty), an arrow function prints its signature, and parentheses and `as`/`satisfies` don't change what is exported.
+Any other expression prints as `export default …`. An identifier is a re-export and prints as written.
+The TypeScript build listed none of these except the identifier.
+== args
+input/config.ts
+input/empty.ts
+input/arrow.ts
+input/other.ts
+input/name.ts
+== file input/config.ts
+export default defineConfig({
+  plugins: [],
+});
+== file input/empty.ts
+export default {} satisfies Config;
+== file input/arrow.ts
+export default async (request: Request): Promise<Response> => respond(request);
+== file input/other.ts
+export default (["a", "b"]);
+export default settings.production;
+export default create();
+== file input/name.ts
+export default App;
+== stdout
+input/config.ts
+[L1-L3] export default defineConfig(…)
+
+input/empty.ts
+[L1-L1] export default {}
+
+input/arrow.ts
+[L1-L1] export default async (request: Request): Promise<Response>
+
+input/other.ts
+[L1-L1] export default […]
+[L2-L2] export default …
+[L3-L3] export default create()
+
+input/name.ts
+[L1-L1] export default App
+== stderr
+== exit 0

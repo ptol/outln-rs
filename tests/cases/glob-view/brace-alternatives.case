@@ -20,7 +20,7 @@ description: Y.
 ---
 == stdout
 glob view: docs/{v1}/{a,b}.md {docs/x,docs/y}/*.md
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 docs/v1/a.md: description: "A."
 docs/v1/b.md: description: "B."

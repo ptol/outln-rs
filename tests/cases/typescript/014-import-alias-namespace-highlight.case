@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/014-import-alias-namespace-highlight.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/import-alias-namespace.ts
+== file input/import-alias-namespace.ts
+import ReadFile = FS.readFileSync;
+import MyUtil = MyNamespace.Utils.helper;
+== stdout
+\x1b[32mimport ReadFile\x1b[0m = FS.readFileSync;
+\x1b[32mimport MyUtil\x1b[0m = MyNamespace.Utils.helper;
+== stderr
+== exit 0

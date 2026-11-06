@@ -1,0 +1,10 @@
+Ported from ../outln/__tests__/cases/typescript/005-ambient-single-declarator.case.yaml; expected output is the TypeScript build's.
+== args
+input/ambient-single-const.ts
+== file input/ambient-single-const.ts
+declare const API_KEY: string;
+== stdout
+input/ambient-single-const.ts
+[L1-L1] declare const API_KEY
+== stderr
+== exit 0

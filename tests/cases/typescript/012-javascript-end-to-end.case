@@ -1,0 +1,37 @@
+Ported from ../outln/__tests__/cases/typescript/012-javascript-end-to-end.case.yaml; expected output is the TypeScript build's.
+== args
+input/basic.js
+input/view.jsx
+input/module.mjs
+input/common.cjs
+== file input/basic.js
+// js summary
+function plain(value) {
+  return value;
+}
+== file input/view.jsx
+export function View() {
+  return <main>Hello</main>;
+}
+== file input/module.mjs
+export const version = '1.0.0';
+== file input/common.cjs
+/* cjs summary */
+const cache = {};
+module.exports = cache;
+== stdout
+input/basic.js
+js summary
+[L2-L4] function plain(value)
+
+input/view.jsx
+[L1-L3] export function View()
+
+input/module.mjs
+[L1-L1] export const version
+
+input/common.cjs
+cjs summary
+[L2-L2] const cache
+== stderr
+== exit 0

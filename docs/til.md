@@ -18,3 +18,7 @@ Add an entry when something cost you time and would cost the next agent time too
 ## rustfmt on a path also formats its child modules
 
 `rustfmt src/lib.rs` also rewrites every out-of-line module it declares (`mod child;` → `src/child.rs`), so a hook fixing only staged files could leave unstaged changes behind. The `rustfmt` fix step in `hk.pkl` formats each file through stdin, which never follows `mod` declarations.
+
+## zig cc rejects Rust's target triple
+
+Setting `CC_x86_64_unknown_linux_musl="zig cc -target x86_64-linux-musl"` failed with `unable to parse target query 'x86_64-unknown-linux-musl'`: cc-rs adds `--target=<rust triple>` to every compile, and zig spells triples without the vendor. `scripts/zig-cc-musl` drops that flag and passes zig's own `-target`.

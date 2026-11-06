@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/004-non-exported-cases.case.yaml; expected output is the TypeScript build's.
+== args
+input/non-exported-cases.ts
+== file input/non-exported-cases.ts
+function* gen() {}
+const plainConst = 1;
+== stdout
+input/non-exported-cases.ts
+[L1-L1] function* gen()
+[L2-L2] const plainConst
+== stderr
+== exit 0

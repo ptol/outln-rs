@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/typescript/003-decorator-lines.case.yaml; expected output is the TypeScript build's.
+== args
+input/decorated.ts
+== file input/decorated.ts
+@sealed
+export class Service {
+  run(): void {}
+}
+== stdout
+input/decorated.ts
+[L1-L4] export class Service
+  [L3-L3] run(): void
+== stderr
+== exit 0

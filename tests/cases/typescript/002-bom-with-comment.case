@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/002-bom-with-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/bom-with-comment.ts
+== file input/bom-with-comment.ts escaped
+﻿// File with BOM.
+export const x = 1;\
+== stdout
+input/bom-with-comment.ts
+File with BOM.
+[L2-L2] export const x
+== stderr
+== exit 0

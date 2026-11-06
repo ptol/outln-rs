@@ -1,5 +1,6 @@
 Ported from ../outln/__tests__/cases/typescript/009-directory-with-glob.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input/src
 input/docs/**/*.md
@@ -14,7 +15,7 @@ summary: Guide summary.
 ---
 == stdout
 glob view: input/src input/docs/**/*.md
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/docs/guide.md: summary: "Guide summary."
 input/src/a.md: description: "A summary."

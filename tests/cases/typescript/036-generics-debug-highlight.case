@@ -1,0 +1,16 @@
+Ported from ../outln/__tests__/cases/typescript/036-generics-debug-highlight.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/generic.ts
+== file input/generic.ts
+export function id<T>(value: T): T {
+  return value;
+}
+export class Box<T> {}
+== stdout
+\x1b[32mexport function id<T>(value: T): T\x1b[0m {
+  return value;
+}
+\x1b[32mexport class Box<T>\x1b[0m {}
+== stderr
+== exit 0

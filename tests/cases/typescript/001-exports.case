@@ -1,0 +1,25 @@
+Ported from ../outln/__tests__/cases/typescript/001-exports.case.yaml; expected output is the TypeScript build's.
+== args
+input/exports.ts
+== file input/exports.ts
+export interface Config {
+  env: string;
+}
+
+export function buildConfig(env: string): Config {
+  return { env };
+}
+
+export default function () {
+  return 1;
+}
+
+export default class App {}
+== stdout
+input/exports.ts
+[L1-L3] export interface Config
+[L5-L7] export function buildConfig(env: string): Config
+[L9-L11] export default function()
+[L13-L13] export default class App
+== stderr
+== exit 0

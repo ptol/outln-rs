@@ -1,5 +1,6 @@
 Ported from ../outln/__tests__/cases/walker/032-unsupported-files-skipped-silently.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input
 == file input/a.md
@@ -15,7 +16,7 @@ body {}
 not really a png
 == stdout
 glob view: input
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/a.md: description: "Source a."
 == stderr

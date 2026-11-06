@@ -1,0 +1,40 @@
+Ported from ../outln/__tests__/cases/typescript/014-end-to-end.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/import-namespace-module.ts
+== file input/import-namespace-module.ts
+import FS = require('node:fs');
+import ReadFile = FS.readFileSync;
+
+namespace PlainNamespace {
+  export const enabled = true;
+}
+
+module PlainModule {
+  export const mode = 'plain';
+}
+
+export namespace ExportedNamespace {
+  export const ready = true;
+}
+
+export module 'exported/module' {}
+== stdout
+\x1b[32mimport FS\x1b[0m = require('node:fs');
+\x1b[32mimport ReadFile\x1b[0m = FS.readFileSync;
+
+\x1b[32mnamespace PlainNamespace\x1b[0m {
+  export const enabled = true;
+}
+
+\x1b[32mmodule PlainModule\x1b[0m {
+  export const mode = 'plain';
+}
+
+\x1b[32mexport namespace ExportedNamespace\x1b[0m {
+  export const ready = true;
+}
+
+\x1b[32mexport module 'exported/module'\x1b[0m {}
+== stderr
+== exit 0

@@ -1,0 +1,20 @@
+Ported from ../outln/__tests__/cases/typescript/001-multiple-files.case.yaml; expected output is the TypeScript build's.
+== args
+input/a.ts
+input/b.ts
+== file input/a.ts
+interface A {
+  value: number;
+}
+== file input/b.ts
+export enum B {
+  One = 1
+}
+== stdout
+input/a.ts
+[L1-L3] interface A
+
+input/b.ts
+[L1-L3] export enum B
+== stderr
+== exit 0

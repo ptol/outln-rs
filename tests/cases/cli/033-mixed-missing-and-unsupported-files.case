@@ -1,5 +1,6 @@
 Ported from ../outln/__tests__/cases/cli/033-mixed-missing-and-unsupported-files.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input/src
 input/missing.md
@@ -13,7 +14,7 @@ description: A summary.
 plain text
 == stdout
 glob view: input/src input/missing.md input/notes.txt
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/src/a.md: description: "A summary."
 == stderr

@@ -4,13 +4,13 @@ description: 'Agent workflow for the outln Rust rewrite: setup, code navigation,
 
 # outln
 
-`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. This repo is a Rust rewrite of the TypeScript implementation in `../outln`; so far it supports Markdown files only. [docs/overview.md](docs/overview.md) has the goals and current status.
+`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. This repo is a Rust rewrite of the TypeScript implementation in `../outln`; so far it supports Markdown, TypeScript, and JavaScript files. [docs/overview.md](docs/overview.md) has the goals and current status.
 
 The maintainer is learning Rust. In your final summary, briefly explain each non-obvious Rust concept your change relies on (an ownership or borrowing choice, a lifetime, a trait, a macro, why a crate was added), a sentence or two each. Prefer simple, readable idioms over clever ones.
 
 ## Setup
 
-On a fresh clone, run `mise install` (it installs the tools pinned in `mise.toml`: Rust toolchain, hk, dprint, just), then `just setup` (it installs the git pre-commit hook). `just` lists every project command with what it does; [docs/runbook.md](docs/runbook.md) covers setup, the hook, and troubleshooting.
+On a fresh clone, run `mise install` (it installs the tools pinned in `mise.toml`: Rust toolchain, hk, dprint, just, and zig for the static build), then `just setup` (it installs the git pre-commit hook). `just` lists every project command with what it does; [docs/runbook.md](docs/runbook.md) covers setup, the hook, and troubleshooting.
 
 ## Navigate code
 
@@ -19,7 +19,7 @@ Default sequence, cheapest first. Each step is its own tool call, because its ou
 1. **Find the docs for the task**: run `outln docs` and read every doc whose `readWhen` matches your task. [docs/codestyle.md](docs/codestyle.md) applies to every source change.
 2. **Learn the structure**: read [docs/architecture.md](docs/architecture.md) for modules and data flow.
 3. **Learn the API**: read `tests/usage.rs`, which is executable documentation of the public library API, and the doc examples in `src/lib.rs`.
-4. **Find the file**: `outln <dir>` prints one line per file, taken from its header comment.
+4. **Find the file**: `outln <dir>` prints one line per file, taken from its header (header comment or frontmatter).
 5. **Find the section**: `outln <file>...` prints declarations with line ranges like `[L1-L10]`; read only those ranges with `Read` `offset`/`limit`.
 
 The `outln` on `PATH` is the installed TypeScript build, not this repo's binary (run that with `just run <args>`). It does not read `//!` header comments yet, in either mode: step 4 shows `(no header comment available)` for `.rs` files, so read the first lines of a Rust file instead (`Read` with `limit: 10`). Step 5 works for `.rs` declarations. It rejects `.toml` files.

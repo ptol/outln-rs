@@ -1,0 +1,24 @@
+Parentheses and `as`/`satisfies` around a default export or a variable's value don't change what it is: a wrapped identifier, class, or arrow function prints as if unwrapped. An array with only holes isn't empty; one with only a comment is.
+== args
+input/wrapped.ts
+== file input/wrapped.ts
+export default (App);
+export default App as Component;
+export default (class Store {});
+export default [,];
+export default [/* none */];
+export default {
+  // none
+};
+const double = ((x: number) => x * 2);
+== stdout
+input/wrapped.ts
+[L1-L1] export default App
+[L2-L2] export default App
+[L3-L3] export default class Store
+[L4-L4] export default […]
+[L5-L5] export default []
+[L6-L8] export default {}
+[L9-L9] const double = (x: number)
+== stderr
+== exit 0

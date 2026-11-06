@@ -1,0 +1,18 @@
+Ported from ../outln/__tests__/cases/typescript/018-debug-empty-class.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/empty-class.ts
+== file input/empty-class.ts
+class Empty {
+}
+class WithMethod {
+  doSomething(): void {}
+}
+== stdout
+\x1b[32mclass Empty\x1b[0m {
+}
+\x1b[32mclass WithMethod\x1b[0m {
+  \x1b[32mdoSomething(): void\x1b[0m {}
+}
+== stderr
+== exit 0

@@ -1,0 +1,11 @@
+Ported from ../outln/__tests__/cases/typescript/002-no-top-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/no-top-comment.ts
+== file input/no-top-comment.ts
+import { build } from './lib';
+export const ready = build();
+== stdout
+input/no-top-comment.ts
+[L2-L2] export const ready
+== stderr
+== exit 0

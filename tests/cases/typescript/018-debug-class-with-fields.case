@@ -1,0 +1,22 @@
+Ported from ../outln/__tests__/cases/typescript/018-debug-class-with-fields.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/class-with-fields.ts
+== file input/class-with-fields.ts
+class Example {
+  private secret: string;
+  public count = 0;
+  getSecret(): string {
+    return this.secret;
+  }
+}
+== stdout
+\x1b[32mclass Example\x1b[0m {
+  private secret: string;
+  public count = 0;
+  \x1b[32mgetSecret(): string\x1b[0m {
+    return this.secret;
+  }
+}
+== stderr
+== exit 0

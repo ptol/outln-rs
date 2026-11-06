@@ -6,7 +6,7 @@ use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 
 use crate::language_engine::LanguageEngine;
 use crate::outline::{FileSummary, FrontmatterField, Header, Outline, OutlineLine};
-use crate::source_text::{ByteRange, line_around, trim_end};
+use crate::source_text::{ByteRange, line_around, lines_with_offsets, trim_end};
 
 /// The language engine for `.md` files.
 pub(crate) struct Markdown;
@@ -66,15 +66,6 @@ fn parse_frontmatter(text: &str) -> Option<Frontmatter> {
         fields.extend(parse_field(line, start));
     }
     None
-}
-
-/// Each line of `text` without its newline, with the byte offset where it starts.
-fn lines_with_offsets(text: &str) -> impl Iterator<Item = (usize, &str)> {
-    text.split_inclusive('\n').scan(0, |offset, line| {
-        let start = *offset;
-        *offset += line.len();
-        Some((start, line.strip_suffix('\n').unwrap_or(line)))
-    })
 }
 
 /// Lines starting with these are never top-level fields: nested YAML and comments.
@@ -188,6 +179,7 @@ fn heading_lines(text: &str, body_start: usize) -> Vec<OutlineLine> {
                 text: heading_text(&text[heading.range.as_range()], heading.level),
                 range: trim_end(text, ByteRange::new(line_start, section_end)),
                 highlight: trim_end(text, ByteRange::new(line_start, heading.range.end)),
+                depth: 0,
             }
         })
         .collect()

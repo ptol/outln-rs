@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/001-anonymous-default-function.case.yaml; expected output is the TypeScript build's.
+== args
+input/anon.ts
+== file input/anon.ts
+export default function () {
+  return 42;
+}
+== stdout
+input/anon.ts
+[L1-L3] export default function()
+== stderr
+== exit 0

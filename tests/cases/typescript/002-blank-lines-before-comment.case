@@ -1,0 +1,14 @@
+Ported from ../outln/__tests__/cases/typescript/002-blank-lines-before-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/blank-lines.ts
+== file input/blank-lines.ts
+
+
+// After blank lines.
+const x = 1;
+== stdout
+input/blank-lines.ts
+After blank lines.
+[L4-L4] const x
+== stderr
+== exit 0

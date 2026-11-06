@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/005-function-overloads-only.case.yaml; expected output is the TypeScript build's.
+== args
+input/overloads-only.ts
+== file input/overloads-only.ts
+declare function fetch(url: string): Promise<Response>;
+declare function fetch(url: URL): Promise<Response>;
+== stdout
+input/overloads-only.ts
+[L1-L1] declare function fetch(url: string): Promise<Response>
+[L2-L2] declare function fetch(url: URL): Promise<Response>
+== stderr
+== exit 0

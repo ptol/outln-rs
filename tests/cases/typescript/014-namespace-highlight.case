@@ -1,0 +1,26 @@
+Ported from ../outln/__tests__/cases/typescript/014-namespace-highlight.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/namespace.ts
+== file input/namespace.ts
+namespace PlainNamespace {
+  export const enabled = true;
+}
+
+namespace NestedNamespace {
+  export module Inner {
+    export const value = 42;
+  }
+}
+== stdout
+\x1b[32mnamespace PlainNamespace\x1b[0m {
+  export const enabled = true;
+}
+
+\x1b[32mnamespace NestedNamespace\x1b[0m {
+  export module Inner {
+    export const value = 42;
+  }
+}
+== stderr
+== exit 0

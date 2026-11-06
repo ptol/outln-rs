@@ -1,0 +1,9 @@
+Ported from ../outln/__tests__/cases/typescript/001-empty-file.case.yaml; expected output is the TypeScript build's.
+== args
+input/empty.ts
+== file input/empty.ts escaped
+\
+== stdout
+input/empty.ts
+== stderr
+== exit 0

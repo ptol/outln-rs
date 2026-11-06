@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/001-error-file-not-found.case.yaml; expected output is the TypeScript build's.
+== args
+input/missing.ts
+input/existing.ts
+== file input/existing.ts
+// This file exists
+== stdout
+input/existing.ts
+This file exists
+== stderr
+File input/missing.ts does not exist
+== exit 1

@@ -1,0 +1,24 @@
+Ported from ../outln/__tests__/cases/typescript/018-debug-class-return-types.case.yaml; expected output is the TypeScript build's.
+== args
+--debug
+input/class-return-types.ts
+== file input/class-return-types.ts
+class Calculator {
+  add(a: number, b: number): number {
+    return a + b;
+  }
+  get result(): number {
+    return 42;
+  }
+}
+== stdout
+\x1b[32mclass Calculator\x1b[0m {
+  \x1b[32madd(a: number, b: number): number\x1b[0m {
+    return a + b;
+  }
+  \x1b[32mget result(): number\x1b[0m {
+    return 42;
+  }
+}
+== stderr
+== exit 0

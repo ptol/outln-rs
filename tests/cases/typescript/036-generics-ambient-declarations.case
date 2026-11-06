@@ -1,0 +1,16 @@
+Ported from ../outln/__tests__/cases/typescript/036-generics-ambient-declarations.case.yaml; expected output is the TypeScript build's.
+== args
+input/ambient.d.ts
+== file input/ambient.d.ts
+declare function parse<T>(text: string): T;
+declare class Store<K, V> {}
+declare interface Lookup<K> {}
+declare type Maybe<T> = T | null;
+== stdout
+input/ambient.d.ts
+[L1-L1] declare function parse<T>(text: string): T
+[L2-L2] declare class Store<K, V>
+[L3-L3] declare interface Lookup<K>
+[L4-L4] declare type Maybe<T>
+== stderr
+== exit 0

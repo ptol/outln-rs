@@ -1,0 +1,16 @@
+Ported from ../outln/__tests__/cases/typescript/006-edge-empty-ambient-forms.case.yaml; expected output is the TypeScript build's.
+== args
+input/empty-ambient.ts
+== file input/empty-ambient.ts
+declare namespace EmptyNS {}
+declare interface EmptyInterface {}
+declare type EmptyType = {};
+declare enum EmptyEnum {}
+== stdout
+input/empty-ambient.ts
+[L1-L1] declare namespace EmptyNS
+[L2-L2] declare interface EmptyInterface
+[L3-L3] declare type EmptyType
+[L4-L4] declare enum EmptyEnum
+== stderr
+== exit 0

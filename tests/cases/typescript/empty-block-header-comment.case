@@ -1,0 +1,14 @@
+An empty block comment (`/**/`) is a header comment without text, so no header is printed.
+== args
+input/empty-header.ts
+input
+== file input/empty-header.ts
+/**/
+export const x = 1;
+== stdout
+glob view: input/empty-header.ts input
+Includes only headers per file.
+For file-level outlines, use `outln [FILE]...`.
+input/empty-header.ts: (no header available)
+== stderr
+== exit 0

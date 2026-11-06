@@ -1,0 +1,11 @@
+Ported from ../outln/__tests__/cases/typescript/001-only-imports.case.yaml; expected output is the TypeScript build's.
+== args
+input/imports.ts
+== file input/imports.ts
+import { readFile } from 'node:fs/promises';
+import type { Config } from './types';
+import * as path from 'node:path';
+== stdout
+input/imports.ts
+== stderr
+== exit 0

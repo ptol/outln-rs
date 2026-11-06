@@ -1,5 +1,6 @@
 Ported from ../outln/__tests__/cases/typescript/008-glob-view-multiple-globs.case.yaml; expected output is the TypeScript build's.
 Its source-code inputs were rewritten as Markdown files.
+Except: the glob view says "headers" instead of "header comments" (docs/changelog.md).
 == args
 input/a/**/*
 input/**/*
@@ -20,7 +21,7 @@ description: Three summary.
 # three
 == stdout
 glob view: input/a/**/* input/**/*
-Includes only header comments per file.
+Includes only headers per file.
 For file-level outlines, use `outln [FILE]...`.
 input/a/one.md: description: "One summary."
 input/a/two.md: title: "Some title", summary: "Two summary."

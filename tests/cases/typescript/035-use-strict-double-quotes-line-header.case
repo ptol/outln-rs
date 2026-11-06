@@ -1,0 +1,15 @@
+Ported from ../outln/__tests__/cases/headers/035-use-strict-double-quotes-line-header.case.yaml; expected output is the TypeScript build's.
+== args
+input/legacy.js
+== file input/legacy.js
+"use strict"
+// Legacy helpers.
+// Kept for compatibility.
+function helper() {}
+== stdout
+input/legacy.js
+Legacy helpers.
+Kept for compatibility.
+[L4-L4] function helper()
+== stderr
+== exit 0

@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/002-inline-block-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/inline-block.ts
+== file input/inline-block.ts
+/* Inline block comment */
+const x = 1;
+== stdout
+input/inline-block.ts
+Inline block comment
+[L2-L2] const x
+== stderr
+== exit 0

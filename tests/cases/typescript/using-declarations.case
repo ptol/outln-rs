@@ -1,0 +1,13 @@
+JavaScript `using` and `await using` declarations are listed like `const`.
+The TypeScript grammar this build uses predates `using`, so this holds for JavaScript files only.
+== args
+input/resources.js
+== file input/resources.js
+using handle = open("a");
+await using connection = connect();
+== stdout
+input/resources.js
+[L1-L1] using handle
+[L2-L2] await using connection
+== stderr
+== exit 0

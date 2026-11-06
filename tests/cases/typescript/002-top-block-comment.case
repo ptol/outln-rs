@@ -1,0 +1,16 @@
+Ported from ../outln/__tests__/cases/typescript/002-top-block-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/with-top-comment.ts
+== file input/with-top-comment.ts
+/**
+ * Domain model for account sessions.
+ */
+export interface Session {
+  id: string;
+}
+== stdout
+input/with-top-comment.ts
+Domain model for account sessions.
+[L4-L6] export interface Session
+== stderr
+== exit 0

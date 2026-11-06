@@ -1,0 +1,21 @@
+A signature wrapped over several lines prints on one line: line breaks inside brackets and before commas disappear, others become one space, and a trailing comma before a closing bracket or brace is dropped.
+Whitespace inside string literals is kept.
+== args
+input/wrapped.ts
+== file input/wrapped.ts
+export function join<
+  T extends string,
+>(
+  parts: T[],
+  separator = "  ",
+  options: {
+    trim: boolean,
+  },
+): string {
+  return parts.join(separator);
+}
+== stdout
+input/wrapped.ts
+[L1-L11] export function join<T extends string>(parts: T[], separator = "  ", options: { trim: boolean }): string
+== stderr
+== exit 0

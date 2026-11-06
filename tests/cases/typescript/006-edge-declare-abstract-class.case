@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/006-edge-declare-abstract-class.case.yaml; expected output is the TypeScript build's.
+== args
+input/abstract-class.ts
+== file input/abstract-class.ts
+declare abstract class BaseModel {
+  abstract id: number;
+}
+== stdout
+input/abstract-class.ts
+[L1-L3] declare abstract class BaseModel
+== stderr
+== exit 0

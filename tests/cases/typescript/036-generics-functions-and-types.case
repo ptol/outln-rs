@@ -1,0 +1,39 @@
+Ported from ../outln/__tests__/cases/typescript/036-generics-functions-and-types.case.yaml; expected output is the TypeScript build's.
+== args
+input/generics.ts
+== file input/generics.ts
+export function add<T extends number>(a: T, b: T): T {
+  return a;
+}
+export function over<T>(a: T): T;
+export function over(a: unknown): unknown {
+  return a;
+}
+export class Box<T, U = string> {
+  map<R>(fn: (value: T) => R): Box<R> {
+    return null!;
+  }
+  get value(): T {
+    return null!;
+  }
+}
+export interface Repo<TEntity extends { id: string }> {
+  find(id: string): TEntity;
+}
+export type Pair<A, B> = [A, B];
+type Plain = string;
+class NotGeneric {}
+== stdout
+input/generics.ts
+[L1-L3] export function add<T extends number>(a: T, b: T): T
+[L4-L4] export function over<T>(a: T): T
+[L5-L7] export function over(a: unknown): unknown
+[L8-L15] export class Box<T, U = string>
+  [L9-L11] map<R>(fn: (value: T) => R): Box<R>
+  [L12-L14] get value(): T
+[L16-L18] export interface Repo<TEntity extends { id: string }>
+[L19-L19] export type Pair<A, B>
+[L20-L20] type Plain
+[L21-L21] class NotGeneric
+== stderr
+== exit 0

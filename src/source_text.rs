@@ -100,6 +100,15 @@ impl LineIndex {
     }
 }
 
+/// Each line of `text` without its newline, with the byte offset where it starts.
+pub(crate) fn lines_with_offsets(text: &str) -> impl Iterator<Item = (usize, &str)> {
+    text.split_inclusive('\n').scan(0, |offset, line| {
+        let start = *offset;
+        *offset += line.len();
+        Some((start, line.strip_suffix('\n').unwrap_or(line)))
+    })
+}
+
 /// Byte range of the line containing `offset`, without its newline.
 pub(crate) fn line_around(text: &str, offset: usize) -> ByteRange {
     let start = text[..offset].rfind('\n').map_or(0, |newline| newline + 1);

@@ -1,0 +1,19 @@
+Ported from ../outln/__tests__/cases/typescript/015-end-to-end.case.yaml; expected output is the TypeScript build's.
+== args
+input/ambient-full.ts
+== file input/ambient-full.ts
+declare const API_ENDPOINT: string, API_TIMEOUT: number;
+
+declare global {
+  var globalConfig: Record<string, unknown>;
+}
+
+declare function helper(a: string, b: number): boolean;
+== stdout
+input/ambient-full.ts
+[L1-L1] declare const API_ENDPOINT
+[L1-L1] declare const API_TIMEOUT
+[L3-L5] declare global
+[L7-L7] declare function helper(a: string, b: number): boolean
+== stderr
+== exit 0

@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/002-indented-block-comment.case.yaml; expected output is the TypeScript build's.
+== args
+input/indented-block.ts
+== file input/indented-block.ts escaped
+  /* Indented block comment */
+const x = 1;\
+== stdout
+input/indented-block.ts
+Indented block comment
+[L2-L2] const x
+== stderr
+== exit 0

@@ -1,0 +1,20 @@
+Debug mode highlights a function-valued variable from its first keyword through the function's return type, across lines, and never its body.
+== args
+--debug
+input/handlers.ts
+== file input/handlers.ts
+export const parse = (
+  input: string,
+): Ast => {
+  return build(input);
+};
+const a = 1, run = async (task: Task) => task.start();
+== stdout
+\x1b[32mexport const parse = (\x1b[0m
+\x1b[32m  input: string,\x1b[0m
+\x1b[32m): Ast\x1b[0m => {
+  return build(input);
+};
+\x1b[32mconst a\x1b[0m = 1, \x1b[32mrun = async (task: Task)\x1b[0m => task.start();
+== stderr
+== exit 0

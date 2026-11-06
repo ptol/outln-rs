@@ -1,0 +1,24 @@
+JSX parses in `.tsx` and JavaScript files: components are listed like other functions and variables.
+== args
+input/Button.tsx
+input/Card.jsx
+== file input/Button.tsx
+/** A button. */
+export function Button({ label }: Props): JSX.Element {
+  return <button>{label}</button>;
+}
+export const Icon = () => <svg />;
+== file input/Card.jsx
+export default function Card({ title }) {
+  return <div className="card">{title}</div>;
+}
+== stdout
+input/Button.tsx
+A button.
+[L2-L4] export function Button({ label }: Props): JSX.Element
+[L5-L5] export const Icon = ()
+
+input/Card.jsx
+[L1-L3] export default function Card({ title })
+== stderr
+== exit 0

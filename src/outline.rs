@@ -11,13 +11,32 @@ pub(crate) struct Outline {
     pub(crate) lines: Vec<OutlineLine>,
 }
 
-/// What a file says about itself at its top.
-///
-/// Markdown files carry frontmatter. The code-language engines will add a header comment
-/// variant; every `match` on `Header` then has to handle it.
+/// What a file says about itself at its top: frontmatter for Markdown, a header comment for code.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Header {
     Frontmatter(Vec<FrontmatterField>),
+    Comment(Vec<CommentLine>),
+}
+
+impl Header {
+    /// What a glob view puts between the header's printed lines: fields are a list, while
+    /// comment lines are one sentence wrapped over several lines.
+    fn summary_separator(&self) -> &'static str {
+        match self {
+            Header::Frontmatter(_) => ", ",
+            Header::Comment(_) => " ",
+        }
+    }
+}
+
+/// One non-blank source line of a header comment.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct CommentLine {
+    /// The line without comment markers; empty for a marker-only line such as `/**`, which
+    /// debug mode still highlights but no mode prints.
+    pub(crate) text: String,
+    /// The comment's part of the source line, highlighted in debug mode.
+    pub(crate) range: ByteRange,
 }
 
 /// One top-level `key: value` line of a Markdown file's frontmatter.
@@ -39,14 +58,20 @@ pub(crate) struct OutlineLine {
     pub(crate) range: ByteRange,
     /// The part of the source that debug mode highlights.
     pub(crate) highlight: ByteRange,
+    /// How deep the declaration is nested: 0 at the top level, 1 for a class member. Each level
+    /// indents the printed line by [`INDENT_PER_DEPTH`].
+    pub(crate) depth: usize,
 }
+
+/// The indentation of one nesting level of outline lines.
+const INDENT_PER_DEPTH: &str = "  ";
 
 /// The header a glob view prints for one file.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct FileSummary(pub(crate) Option<Header>);
 
 /// Printed in a glob view for a file without a header.
-const NO_HEADER: &str = "(no header comment available)";
+const NO_HEADER: &str = "(no header available)";
 
 /// Renders a file mode outline: the path, the header, then one outline line per declaration.
 pub(crate) fn render_outline(path: &str, outline: &Outline, line_index: &LineIndex) -> String {
@@ -58,37 +83,51 @@ pub(crate) fn render_outline(path: &str, outline: &Outline, line_index: &LineInd
         }
     }
     for line in &outline.lines {
+        let indent = INDENT_PER_DEPTH.repeat(line.depth);
         // Writing into a `String` cannot fail.
-        let _ = writeln!(text, "{} {}", line_index.line_range(line.range), line.text);
+        let _ = writeln!(
+            text,
+            "{indent}{} {}",
+            line_index.line_range(line.range),
+            line.text
+        );
     }
     text
 }
 
 /// Renders the one line a glob view prints for a file, without its newline.
 pub(crate) fn render_file_summary(path: &str, summary: &FileSummary) -> String {
-    let header_text: Vec<String> = summary.0.iter().flat_map(header_lines).collect();
-    if header_text.is_empty() {
-        return format!("{path}: {NO_HEADER}");
-    }
-    format!("{path}: {}", header_text.join(", "))
+    let printed = summary.0.as_ref().and_then(|header| {
+        let lines = header_lines(header);
+        (!lines.is_empty()).then(|| lines.join(header.summary_separator()))
+    });
+    format!("{path}: {}", printed.as_deref().unwrap_or(NO_HEADER))
 }
 
-/// The header as printed lines, one per frontmatter field.
-fn header_lines(header: &Header) -> impl Iterator<Item = String> + '_ {
+/// The header as printed lines: one per frontmatter field, or one per comment line with text.
+fn header_lines(header: &Header) -> Vec<String> {
     match header {
         Header::Frontmatter(fields) => fields
             .iter()
-            .map(|field| format!("{}: {}", field.key, field.value)),
+            .map(|field| format!("{}: {}", field.key, field.value))
+            .collect(),
+        Header::Comment(lines) => lines
+            .iter()
+            .filter(|line| !line.text.is_empty())
+            .map(|line| line.text.clone())
+            .collect(),
     }
 }
 
 /// Every source range debug mode highlights, in no particular order.
 pub(crate) fn highlights(outline: &Outline) -> Vec<ByteRange> {
-    let header_ranges = outline.header.iter().flat_map(|header| match header {
-        Header::Frontmatter(fields) => fields.iter().map(|field| field.range),
-    });
-    let line_ranges = outline.lines.iter().map(|line| line.highlight);
-    header_ranges.chain(line_ranges).collect()
+    let mut ranges: Vec<ByteRange> = match &outline.header {
+        None => Vec::new(),
+        Some(Header::Frontmatter(fields)) => fields.iter().map(|field| field.range).collect(),
+        Some(Header::Comment(lines)) => lines.iter().map(|line| line.range).collect(),
+    };
+    ranges.extend(outline.lines.iter().map(|line| line.highlight));
+    ranges
 }
 
 #[cfg(test)]
@@ -119,7 +158,7 @@ mod tests {
     fn file_summary_without_header_says_so() {
         assert_eq!(
             render_file_summary("a.md", &FileSummary(None)),
-            "a.md: (no header comment available)"
+            "a.md: (no header available)"
         );
     }
 }

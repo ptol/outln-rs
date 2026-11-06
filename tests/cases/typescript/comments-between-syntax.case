@@ -1,0 +1,17 @@
+Comments don't hide syntax: a test block whose title follows a comment is listed, and a member keeps its decorators in its line range when a comment sits between them.
+== args
+input/commented.test.ts
+== file input/commented.test.ts
+class Cache {
+  @memo
+  // Expensive.
+  load() {}
+}
+test(/* slow */ "loads", () => {});
+== stdout
+input/commented.test.ts
+[L1-L5] class Cache
+  [L2-L4] load()
+[L6-L6] test("loads")
+== stderr
+== exit 0

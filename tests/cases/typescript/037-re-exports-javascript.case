@@ -1,0 +1,12 @@
+Ported from ../outln/__tests__/cases/typescript/037-re-exports-javascript.case.yaml; expected output is the TypeScript build's.
+== args
+input/index.js
+== file input/index.js
+export * from './utils.js';
+export { default as Button } from './button.js';
+== stdout
+input/index.js
+[L1-L1] export * from './utils.js'
+[L2-L2] export { default as Button } from './button.js'
+== stderr
+== exit 0
