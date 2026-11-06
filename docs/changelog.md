@@ -9,6 +9,8 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+## 0.3.0 (2026-11-06)
+
 - Glob view: each line prints the file's line count after its path, `src/cli.rs (120 lines): Command-line arguments.` (`1 line`, `0 lines` for an empty file), and the two lines after `glob view:` (`Includes only ... per file.` and `For file-level outlines, use ...`) are gone; the README has a section to paste into an agent's instructions instead ([ADR-019](adr.md)).
 - CSS support in every mode (`.css`), with casefiles in `tests/cases/css/` ([ADR-018](adr.md)):
   - **Outline lines** are rules: a style rule prints its selectors (`.button, .nav > a:hover`), an at-rule its keyword and prelude (`@media (max-width: 600px)`, `@import url("reset.css")`, `@font-face`), on one line. The rules inside a top-level at-rule's block (`@media`, `@supports`, `@layer`, `@container`) are listed one level deeper; rules nested in a style rule and `@keyframes` steps aren't. `@charset` isn't listed.
