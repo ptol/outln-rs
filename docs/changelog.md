@@ -9,6 +9,8 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+- Agents in this repo navigate with the published Rust build instead of the TypeScript one, which is now run only as the reference (`npx --yes outln@0.2.1`, [ADR-014](adr.md)).
+
 ## 0.2.0 (2026-11-06)
 
 - Rust support in every mode (`.rs`), ported from the TypeScript build with its casefiles in `tests/cases/rust/`. Deliberate differences from the TypeScript build:

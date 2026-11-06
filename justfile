@@ -59,6 +59,14 @@ lint:
 test:
     cargo test --locked
 
+# Build the API docs, private items included, into target/doc; any rustdoc warning (a broken intra-doc link, say) fails.
+doc:
+    RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --document-private-items --locked
+
+# Check dependencies against deny.toml: advisories, licenses, duplicate versions, and sources (needs the network).
+deny:
+    cargo deny --locked check
+
 # Run only the casefiles whose path contains `filter` (all of them without one).
 case filter="":
     CASE='{{ filter }}' cargo test --locked --quiet --test casefiles
@@ -77,10 +85,9 @@ check: fix verify
     git status --short
     git diff --stat
 
-# Read-only: every check without changing any file.
+# Read-only: every check and test (the steps in hk.pkl) without changing any file.
 verify:
     hk check --all
-    cargo test --locked
 
 # Release `level` (major, minor, patch, or an exact version like 0.3.0): package the crate as crates.io would, dry-run cargo-release (release.toml) so a failing check changes no file, then bump, commit, tag, and push after you confirm; CI publishes.
 release level:

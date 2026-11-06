@@ -9,7 +9,7 @@ Each record states the decision, why, and what it costs. Add a new ADR rather th
 
 ## ADR-001: Rewrite outln in Rust
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-014 (the published Rust build replaces the installed TypeScript build before full parity)
 
 ### Decision
 
@@ -196,7 +196,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-010: Publish to crates.io from a tag-triggered GitHub Actions workflow
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-014 (agents' machines install this crate instead of keeping the TypeScript build)
 
 ### Decision
 
@@ -281,6 +281,48 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - Releasing needs `mise install` (for cargo-release) and an interactive terminal for the prompt.
 - The release commit runs the pre-commit hook (clippy and every test, since Cargo files are staged), as every commit does.
+
+## ADR-014: Agents navigate with the published Rust build
+
+**Status**: Accepted (2026-11-06)
+
+### Decision
+
+- The `outln` on agents' `PATH` is this crate's latest crates.io release, installed by the maintainer's machine setup (mise's `cargo` backend), in place of the TypeScript build.
+- The TypeScript build is run only as the behavioural reference, without installing it: `npx --yes outln@0.2.1`, the release `docs/overview.md` names.
+
+### Rationale
+
+- Release 0.2.0 outlines Markdown, TypeScript, JavaScript, and Rust, every language this repo is written in, and it reads `//!` headers, which the TypeScript build couldn't (the paid-off "Installed outln can't show `//!` headers" debt).
+- The maintainer chose to replace the TypeScript build before full parity: the Go, Java, Kotlin, and C# engines don't matter for navigating this repo.
+
+### Consequences
+
+- Supersedes ADR-001's "The TypeScript build stays the installed `outln` until the rewrite reaches feature parity" and ADR-010's advice to keep the TypeScript build installed.
+- The installed build can lag this repo's code by a release; `just run <args>` runs the working copy.
+- Porting an engine's cases takes the expected output from `npx --yes outln@0.2.1`, which needs Node and network access on first use.
+
+## ADR-015: Gate rustdoc warnings and the dependency policy in the hook
+
+**Status**: Accepted (2026-11-06); extends ADR-002's checks
+
+### Decision
+
+- An hk step renders the docs (`cargo doc --no-deps --document-private-items` with `RUSTDOCFLAGS=-D warnings`) when Rust or Cargo files are staged; `just doc` runs it alone.
+- cargo-deny, pinned in `mise.toml`, checks `deny.toml` when `Cargo.toml`, `Cargo.lock`, or `deny.toml` is staged, and in every `just check` and `just verify`; `just deny` runs it alone. The policy: no known vulnerabilities, no crate RustSec marks unmaintained, no yanked versions, only licenses on the allow list, one version per crate, no `*` requirements, crates.io only.
+
+### Rationale
+
+- Agents learn the API from doc comments, and clippy and the tests don't render them, so a broken intra-doc link would go unnoticed.
+- AGENTS.md asks agents to stop before adding an unmaintained crate or one with many transitive dependencies; nothing enforced that, and an advisory against an existing dependency would go unseen.
+- cargo-deny covers advisories, licenses, duplicates, and sources in one tool with one config, ships as a single binary through mise, and adds no crate dependency. cargo-audit covers only advisories.
+
+### Consequences
+
+- Committing a dependency change, and `just check`, need the network: cargo-deny fetches the advisory database on every run.
+- A new advisory against an unchanged `Cargo.lock` surfaces at the next `just check`, not at commit time.
+- A dependency under a license not on the allow list, or one that pulls in a second version of a crate, fails until the maintainer approves an entry in `deny.toml`; every exception there carries a `reason`.
+- With `--document-private-items`, rustdoc doesn't warn about public docs that link to private items (`private_intra_doc_links`), which would render as plain text on docs.rs.
 
 ## Dependencies
 

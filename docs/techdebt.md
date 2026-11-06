@@ -7,12 +7,6 @@ readWhen: 'taking a shortcut, or before changing an area to check its known weak
 
 Each entry: what, impact, and the way out. Remove an entry when it's paid off.
 
-## Installed outln can't show `//!` headers
-
-- **What**: the TypeScript `outln` on `PATH` reads only plain `//` header comments, so `outln <dir>` shows no header for this repo's `.rs` files.
-- **Impact**: agents read the first lines of Rust files by hand instead of navigating by header.
-- **Way out**: this build's Rust engine reads `//!` headers ([ADR-012](adr.md)); install it in place of the TypeScript build once it also covers the TypeScript build's Go, Java, Kotlin, and C# engines.
-
 ## The TypeScript grammar is frozen at 0.23.2
 
 - **What**: `tree-sitter-typescript` has had no crates.io release since November 2024 ([ADR-008](adr.md)), so newer syntax such as `using` declarations parses as errors in `.ts`, `.mts`, `.cts`, and `.tsx` files.

@@ -22,7 +22,7 @@ Default sequence, cheapest first. Each step is its own tool call, because its ou
 4. **Find the file**: `outln <dir>` prints one line per file, taken from its header (header comment or frontmatter).
 5. **Find the section**: `outln <file>...` prints declarations with line ranges like `[L1-L10]`; read only those ranges with `Read` `offset`/`limit`.
 
-The `outln` on `PATH` is the installed TypeScript build, not this repo's binary (run that with `just run <args>`). It does not read `//!` header comments yet, in either mode: step 4 shows `(no header comment available)` for `.rs` files, so read the first lines of a Rust file instead (`Read` with `limit: 10`). Step 5 works for `.rs` declarations. It rejects `.toml` files.
+The `outln` on `PATH` is this crate's latest crates.io release ([ADR-014](docs/adr.md)), which can lag the code here; run the working copy with `just run <args>`. It rejects `.toml` files.
 
 `outln` prints its own error for a missing path, so read its full output and stderr. When the output is too long, narrow the path or glob.
 
@@ -41,7 +41,7 @@ Name domain concepts in code, docs, and CLI output only with terms from [docs/GL
 
 ## Dependencies
 
-Prefer the standard library. Add a well-established crate when std falls clearly short (tree-sitter grammars, `ignore` for gitignore-aware walking, `clap`, `thiserror`): turn off default features you don't need, and record why in [docs/adr.md](docs/adr.md). Stop and ask the maintainer before adding a crate that is unmaintained, large (many transitive dependencies), or brings `unsafe`-heavy native code beyond tree-sitter grammars. `Cargo.lock` is committed; change it only through `cargo`.
+Prefer the standard library. Add a well-established crate when std falls clearly short (tree-sitter grammars, `ignore` for gitignore-aware walking, `clap`, `thiserror`): turn off default features you don't need, and record why in [docs/adr.md](docs/adr.md). Stop and ask the maintainer before adding a crate that is unmaintained, large (many transitive dependencies), or brings `unsafe`-heavy native code beyond tree-sitter grammars. `cargo deny` (`deny.toml`, run by the hook and `just deny`) fails on advisories, unmaintained or yanked crates, licenses off its allow list, and duplicate versions; don't add exceptions there without the maintainer. `Cargo.lock` is committed; change it only through `cargo`.
 
 ## Editing
 
@@ -61,7 +61,7 @@ Side effects belong to `src/main.rs`, the imperative shell, and library code rec
 
 - Run `just check` before reporting work as done, and fix every failure until it passes. It applies automatic fixes first (clippy suggestions, formatting, whitespace), then runs every check and test, and ends by listing the files that changed; review those changes as your own.
 - `just verify` runs the same checks without changing any file.
-- CI only publishes releases (`.github/workflows/publish.yml`, on a version tag): the pre-commit hook is the only automatic gate on commits. It checks formatting and conventions on every commit, runs clippy and every test when Rust or Cargo files are staged, and runs every test when casefiles are. Never bypass the hook (`git commit --no-verify`, `-n`, `HK=0`); when it fails, fix the cause.
+- CI only publishes releases (`.github/workflows/publish.yml`, on a version tag): the pre-commit hook is the only automatic gate on commits. It checks formatting and conventions on every commit, runs clippy, rustdoc, and every test when Rust or Cargo files are staged, runs every test when casefiles are, and runs `cargo deny` when the dependencies or `deny.toml` change. Never bypass the hook (`git commit --no-verify`, `-n`, `HK=0`); when it fails, fix the cause.
 
 ## Priorities
 

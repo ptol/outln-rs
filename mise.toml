@@ -2,6 +2,8 @@
 [tools]
 # Bumps the version, commits, tags, and pushes for `just release` (release.toml, ADR-013).
 cargo-release = "1.1.7"
+# Checks dependencies against deny.toml: advisories, licenses, duplicates, sources (ADR-015).
+cargo-deny = "0.20.2"
 dprint = "0.64.3"
 hk = "2.11.1"
 just = "1.59.0"

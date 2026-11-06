@@ -39,4 +39,4 @@ The format, with an example, is the `//!` header of `tests/support/casefile.rs`;
 
 ### Ported casefiles
 
-Casefiles whose description starts with `Ported from ../outln/__tests__/cases/...` came from the TypeScript build's `.case.yaml` cases. Their expected output is what the TypeScript build printed, unless the description says why it differs. Cases for other languages are ported with their engines: write each as a casefile in this format, and get its expected output from the installed TypeScript `outln` on the same inputs.
+Casefiles whose description starts with `Ported from ../outln/__tests__/cases/...` came from the TypeScript build's `.case.yaml` cases. Their expected output is what the TypeScript build printed, unless the description says why it differs. Cases for other languages are ported with their engines: write each as a casefile in this format, and get its expected output from the TypeScript build on the same inputs (`npx --yes outln@0.2.1`, [ADR-014](adr.md)).

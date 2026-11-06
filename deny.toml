@@ -1,0 +1,36 @@
+# Dependency policy, checked by `cargo deny check` (the `cargo_deny` step in hk.pkl, ADR-015).
+# Reference: https://embarkstudios.github.io/cargo-deny/checks/cfg.html
+# Every exception below needs a `reason`, like `#[expect]` does for lints.
+
+[advisories]
+# Security vulnerabilities always fail. Also fail on crates the RustSec database marks as
+# unmaintained (AGENTS.md: ask before adding one) and on yanked versions in Cargo.lock.
+unmaintained = "all"
+yanked = "deny"
+ignore = []
+
+[licenses]
+# Permissive licenses compatible with shipping everything in one MIT-licensed static binary.
+# A new dependency under another license fails until the maintainer approves adding it here.
+allow = [
+  "Apache-2.0",
+  "MIT",
+  # unicode-ident's Unicode data tables.
+  "Unicode-3.0",
+  # foldhash, through hashbrown.
+  "Zlib",
+]
+confidence-threshold = 0.8
+
+[bans]
+# Two versions of one crate means double the compile time and binary size. Prefer bumping the
+# dependency that lags; if it can't move yet, add `skip = [{ crate = "name@version", reason = "..." }]`.
+multiple-versions = "deny"
+# `*` version requirements make builds unreproducible for users of the published crate.
+wildcards = "deny"
+
+[sources]
+# Only crates.io: a git dependency can't be published, and an unknown registry is a supply-chain
+# risk.
+unknown-registry = "deny"
+unknown-git = "deny"

@@ -52,11 +52,29 @@ local sharedSteps = new Mapping<String, Step> {
     check = "cargo test --locked --quiet"
     env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
   }
+  // Broken intra-doc links and doc markup only surface when rustdoc renders the docs, which
+  // neither clippy nor the tests do. Private items too: most doc comments are on them.
+  ["rustdoc"] {
+    glob = rustFiles
+    depends = List("tests")
+    check = "cargo doc --no-deps --document-private-items --locked --quiet"
+    env {
+      ["CARGO_TERM_PROGRESS_WHEN"] = "never"
+      ["RUSTDOCFLAGS"] = "-D warnings"
+    }
+  }
+  // Dependency policy in deny.toml: advisories, licenses, duplicate versions, sources (ADR-015).
+  // Fetches the RustSec advisory database, so it needs the network; it runs only when the
+  // dependency set or the policy changes, and in `hk check --all` (`just check`, `just verify`).
+  ["cargo_deny"] {
+    glob = List("**/Cargo.toml", "Cargo.lock", "deny.toml")
+    check = "cargo deny --locked check"
+  }
   // Header comments, frontmatter, links, and version pins (tests/repo_conventions.rs).
   // No glob: renaming any file can break a link, and any pinned file can drift.
   ["repo_conventions"] {
     // After the cargo steps: they share target/, and cargo serializes on its lock anyway.
-    depends = List("rustfmt", "dprint", "clippy", "tests")
+    depends = List("rustfmt", "dprint", "clippy", "tests", "rustdoc")
     check = "cargo test --locked --quiet --test repo_conventions"
     env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
   }

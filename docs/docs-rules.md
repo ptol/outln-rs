@@ -79,7 +79,7 @@ Each doc is mainly one of these kinds. Split off a part when the readers of the 
 ## Out of docs
 
 - The plan for a change and its TODOs go in the commit message, or in `techdebt.md` once a shortcut is committed; session notes and investigation logs are not kept. What the rewrite still lacks is status, kept in `overview.md`.
-- To learn how the TypeScript build behaves, read `../outln` or run the installed `outln` on the same input. Docs describe that behaviour only to explain a decision, a deliberate divergence (`changelog.md`), or a gotcha of the installed tool.
+- To learn how the TypeScript build behaves, read `../outln` or run it on the same input with `npx --yes outln@0.2.1` ([ADR-014](adr.md)). Docs describe that behaviour only to explain a decision, a deliberate divergence (`changelog.md`), or a gotcha of the installed tool.
 
 ## Checks
 
