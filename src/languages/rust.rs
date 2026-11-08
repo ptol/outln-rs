@@ -202,6 +202,11 @@ fn continues_module_run(
     name: &str,
     text: &str,
 ) -> bool {
+    // A module's own members come after its line too, inside its range: only a module at the
+    // same depth that ends before this one can start a run.
+    if previous.depth != line.depth || previous.range.end > line.highlight.start {
+        return false;
+    }
     let Some(head) = line.text.strip_suffix(name) else {
         return false;
     };
@@ -217,10 +222,7 @@ fn continues_module_run(
     let is_right_above = text[..previous.range.end].ends_with(';')
         && gap.trim().is_empty()
         && gap.matches('\n').count() == 1;
-    previous.depth == line.depth
-        && previous.range.start == previous.highlight.start
-        && is_module_run
-        && is_right_above
+    previous.range.start == previous.highlight.start && is_module_run && is_right_above
 }
 
 /// Where a declaration's signature ends, or `None` for a node that isn't a listed declaration

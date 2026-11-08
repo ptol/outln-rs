@@ -1,0 +1,19 @@
+A bodiless module declared inside an inline module is listed one level deeper and never joins the inline module's own line, which once panicked on a backwards byte range (tokio's `tests/signal_drop_recv.rs`).
+== args
+input/lib.rs
+== file input/lib.rs
+//! Library.
+
+mod support {
+    pub mod signal;
+    pub mod process;
+}
+mod after;
+== stdout
+input/lib.rs (7 lines)
+Library.
+[L3-L6] mod support
+  [L4-L5] pub mod signal, process
+[L7-L7] mod after
+== stderr
+== exit 0
