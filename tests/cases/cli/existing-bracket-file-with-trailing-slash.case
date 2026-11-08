@@ -1,0 +1,9 @@
+An existing file whose name has glob characters (`x[1].rs`), given with a trailing `/`, is reported as not a directory, as any file with a trailing `/` is: the failed lookup of the literal path decides, so the argument doesn't turn into a glob pattern that matches nothing. outln exits 1.
+== args
+input/x[1].rs/
+== file input/x[1].rs
+//! x
+== stdout
+== stderr
+File input/x[1].rs/ is not a directory; remove the trailing /
+== exit 1

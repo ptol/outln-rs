@@ -240,11 +240,14 @@ fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
 
     let dir = ScratchDir::new("usage-unsearchable").expect("temp dir");
     dir.write("secret/b.rs", b"//! b\n").expect("write");
+    dir.write("secret/[id].rs", b"//! id\n").expect("write");
     let secret = dir.path().join("secret");
     fs::set_permissions(&secret, Permissions::from_mode(0o000)).expect("chmod");
     let searchable_anyway = fs::metadata(secret.join("b.rs")).is_ok();
 
     let result = run_in(&dir, &["secret/b.rs"]);
+    // Glob characters don't make it a glob pattern that silently matches nothing.
+    let bracket_result = run_in(&dir, &["secret/[id].rs"]);
     fs::set_permissions(&secret, Permissions::from_mode(0o755)).expect("chmod back");
     if searchable_anyway {
         skip_because_permissions_are_ignored("a_file_in_an_unsearchable_directory");
@@ -259,6 +262,12 @@ fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
         "File secret/b.rs could not be read: permission denied\n"
     );
     assert_eq!(status, ExitStatus::Failure);
+    let (_, bracket_err, bracket_status) = bracket_result.expect("writing to a Vec cannot fail");
+    assert_eq!(
+        bracket_err,
+        "File secret/[id].rs could not be read: permission denied\n"
+    );
+    assert_eq!(bracket_status, ExitStatus::Failure);
 }
 
 /// A FIFO named like a source file would block a read until something writes to it, so outln

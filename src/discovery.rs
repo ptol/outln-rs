@@ -57,7 +57,9 @@ impl ArgumentKind {
 
 /// Classifies an argument. An existing path is always literal, even when it contains glob
 /// characters such as `[id]`; a missing one is a glob if it uses glob syntax, else a missing
-/// directory if it ends in `/`, else a missing file.
+/// directory if it ends in `/`, else a missing file. A path whose lookup fails for another
+/// reason stays literal and unusable, glob syntax or not: `x[1].rs/` for an existing file
+/// `x[1].rs`, or a path below a directory that can't be searched, may name a real file.
 ///
 /// Reads the path's metadata once, rather than asking `Path::is_dir` and `Path::exists`, which
 /// answer `false` for every error and so report a file in an unsearchable directory as missing.
@@ -67,8 +69,18 @@ pub(crate) fn classify(cwd: &Path, argument: &str) -> ArgumentKind {
         Ok(metadata) if metadata.is_file() => ArgumentKind::File,
         // Reading a FIFO would wait for a writer forever, and a device may never end.
         Ok(_) => ArgumentKind::Unusable(InputError::NotRegularFile(argument.to_owned())),
-        Err(_) if has_glob_magic(argument) => ArgumentKind::Glob,
-        Err(error) => classify_failed_lookup(cwd, argument, error.kind()),
+        Err(error) => {
+            let literal = classify_failed_lookup(cwd, argument, error.kind());
+            let is_missing = matches!(
+                literal,
+                ArgumentKind::MissingFile | ArgumentKind::MissingDirectory
+            );
+            if is_missing && has_glob_magic(argument) {
+                ArgumentKind::Glob
+            } else {
+                literal
+            }
+        }
     }
 }
 
