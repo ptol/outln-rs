@@ -6,5 +6,5 @@ input/raw.txt
 plain text
 == stdout
 == stderr
-File input/raw.txt has an unsupported file type; supported: .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .toml, .yaml, .yml
+File input/raw.txt has an unsupported file type; supported: .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .jsonc, .toml, .yaml, .yml
 == exit 1

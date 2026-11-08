@@ -11,5 +11,5 @@ function greet() {}
 input/valid.ts (1 line)
 [L1-L1] function greet()
 == stderr
-File input/script.py has an unsupported file type; supported: .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .toml, .yaml, .yml
+File input/script.py has an unsupported file type; supported: .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .jsonc, .toml, .yaml, .yml
 == exit 1

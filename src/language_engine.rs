@@ -110,6 +110,7 @@ mod tests {
             "a.rs",
             "a.CSS",
             "a.json",
+            "knip.jsonc",
             "Cargo.toml",
             "a.yaml",
             "a.YML",
@@ -118,5 +119,7 @@ mod tests {
         }
         assert!(engine_for("notes.txt").is_none());
         assert!(engine_for("Makefile").is_none());
+        // JSON5's unquoted keys and single quotes aren't JSON's grammar.
+        assert!(engine_for("a.json5").is_none());
     }
 }

@@ -1,0 +1,17 @@
+A `.jsonc` file (JSON with comments, like `knip.jsonc`) is outlined by the JSON engine: its `//` header comment, and its keys, with the comment above `ignore` starting that key's line range and the trailing comma allowed.
+== args
+input/knip.jsonc
+== file input/knip.jsonc
+// Knip settings for the monorepo.
+{
+  "entry": ["src/index.ts"],
+  // Generated code.
+  "ignore": ["dist/**"],
+}
+== stdout
+input/knip.jsonc (6 lines)
+Knip settings for the monorepo.
+[L3-L3] entry
+[L4-L5] ignore
+== stderr
+== exit 0
