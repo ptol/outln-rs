@@ -14,7 +14,7 @@ use crate::comment_syntax::{BlockComments, CommentSyntax, LineMarker, OUTER_DOC_
 use crate::header_comment::{HeaderChoice, directive_comment_end};
 use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
-use crate::signature::Signature;
+use crate::signature::{Signature, signature_head};
 use crate::source_text::{ByteRange, line_end};
 use crate::syntax_tree::{
     OneLineRules, child_of_kind, children, first_syntax_child, has_child_of_kind, source,
@@ -61,6 +61,7 @@ const fn script(extensions: &'static [&'static str], grammar: fn() -> Language) 
             member_lists: &["object_type"],
         },
         declaration_lines: statement_or_member_lines,
+        summary_text: signature_head,
     }
 }
 

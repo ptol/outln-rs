@@ -87,13 +87,18 @@ _Avoid_: Metadata block, YAML header
 
 ### File summary
 
-The single line a file contributes to a glob view: its path, its line count, and its header, or, for a data file without a header comment, its field summary, and for a Markdown file without frontmatter fields, its first heading.
+The single line a file contributes to a glob view: its path, its line count, and its header, or, for a data file without a header comment, its field summary, for a code file without one, its declaration summary, and for a Markdown file without frontmatter fields, its first heading.
 _Avoid_: Outline, description
 
 ### Field summary
 
 What a glob view prints for a data file without a header comment: its first top-level keys with scalar values, as their outline lines print them, such as `{name: "outln", version: "0.2.0", private: true, ...}` (for a TOML file whose scalar keys are all in tables, the first table's, as `[package] {name = "outln", ...}`).
 _Avoid_: Preview, metadata
+
+### Declaration summary
+
+What a glob view prints for a code file without a header comment: its first distinct top-level declarations, each as its outline line starts up to its parameter list, a repeated one with its count, such as `pub struct Arg, impl Arg ×6, impl Clone for Arg, ...`.
+_Avoid_: Symbol list, table of contents, preview
 
 ## Positions
 

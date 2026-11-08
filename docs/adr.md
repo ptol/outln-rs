@@ -463,6 +463,27 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - `declaration_lines` is a plain function pointer, so a language's rules can't capture state; anything it needs comes from the `OutlineLevel` or the node.
 - Rust reads doc comments from their markers instead of tree-sitter-rust's `outer` and `inner` fields; both follow rustc's rules, and outlines of 15 000 crates.io files were unchanged.
 
+## ADR-024: Summarize code files without a header by their declarations
+
+**Status**: Accepted (2026-11-08)
+
+### Decision
+
+- In the glob view, a code file (any `CodeLanguage`) without a header comment with text prints a declaration summary instead of `(no header available)`: its first five distinct top-level declarations, each as `CodeLanguage::summary_text` cuts its outline line (`signature::signature_head`: up to the parameter list and its type parameters; a test block keeps its title; CSS keeps the whole prelude), cut at 48 characters, a repeated one with its count (`impl Arg ×6`), then `...` when more may follow.
+- Only a file without a header is parsed, and only its first 4 KiB (`DECLARATION_SUMMARY_PREFIX_BYTES`), cut before the last line in them that starts at column 0 with neither whitespace nor a closing bracket, so the parse rarely ends inside a declaration, which tree-sitter would drop as a syntax error. A cut file's summary ends with `...`.
+- `source_text::summary_prefix` cuts a text to a byte budget at a line break, for this and for the data file engine's field summary, which still has its own copy.
+
+### Rationale
+
+- 52% of the crates.io registry's `.rs` files and 77% of a `node_modules` tree's script files have no header comment, so their glob view lines said nothing; their first declarations say what they hold, as a data file's field summary does.
+- Parsing is the cost: tree-sitter parses about 15 to 20 MB/s here, so whole files (generated bindings of several megabytes) took the registry's glob view from 0.57 s to 8.3 s. A 4 KiB prefix holds five declarations for most files; 2 KiB left 500 more registry files without any.
+
+### Consequences
+
+- The glob view is slower on code without headers. With hyperfine: the registry (18,136 files, 9,368 headerless `.rs`) 0.62 s before, 2.28 s after (1.73 s with a 2 KiB prefix); a 24,158-file `node_modules` tree (18,569 headerless) 0.44 s before, 2.67 s after. Documented code is unchanged: its header is still found without parsing.
+- Counts (`×3`) are of the declarations in the prefix read, not the whole file.
+- A declaration whose source starts inside the 4 KiB but runs past the cut may be missing or printed from a partial parse.
+
 ## Dependencies
 
 One line per crate: why std was not enough.

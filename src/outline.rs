@@ -90,17 +90,14 @@ pub(crate) enum FileSummary {
     Header(Header),
     /// A data file without a header comment summarizes its first fields instead.
     Fields(FieldSummary),
+    /// A code file without a header comment summarizes its first top-level declarations
+    /// instead.
+    Declarations(DeclarationSummary),
     /// A Markdown file without frontmatter fields is summarized by its first heading, as its outline
     /// line prints it (`# Guide`).
     FirstHeading(String),
     /// No header, fields, or heading to summarize.
     Empty,
-}
-
-impl From<Option<Header>> for FileSummary {
-    fn from(header: Option<Header>) -> Self {
-        header.map_or(FileSummary::Empty, FileSummary::Header)
-    }
 }
 
 /// A data file's first top-level keys with scalar values, as `{name: "outln", ...}`, which a
@@ -124,10 +121,80 @@ pub(crate) enum FieldsShown {
     First,
 }
 
+/// A code file's first top-level declarations, as `pub struct Arg, impl Arg ×6, mod tests`,
+/// which a glob view prints for a code file without a header comment.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct DeclarationSummary {
+    /// Each distinct declaration in the order they first appear, with how many times it occurs.
+    pub(crate) declarations: Vec<SummarizedDeclaration>,
+    /// Whether more distinct declarations follow those listed.
+    pub(crate) shown: DeclarationsShown,
+}
+
+/// One entry of a [`DeclarationSummary`]: the start of a declaration's outline line, such as
+/// `pub fn parse` or `impl Arg`, and how many top-level declarations print it.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct SummarizedDeclaration {
+    pub(crate) text: String,
+    pub(crate) count: usize,
+}
+
+/// Whether a declaration summary lists every distinct declaration of its file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DeclarationsShown {
+    All,
+    /// More distinct declarations follow; printed as `...`.
+    First,
+}
+
+/// How many distinct declarations a declaration summary lists.
+const SUMMARIZED_DECLARATIONS: usize = 5;
+
+/// How many characters of a declaration a declaration summary prints before cutting it with
+/// `…`, so one long `pub use a::{…}` or selector list can't take over the line.
+const SUMMARIZED_DECLARATION_CHARS: usize = 48;
+
+impl DeclarationSummary {
+    /// The summary of declarations printing `texts`, in source order, or `None` without any.
+    /// Repeated texts (several `impl Arg` blocks) are counted instead of listed again.
+    pub(crate) fn of<'a>(texts: impl IntoIterator<Item = &'a str>) -> Option<Self> {
+        let mut summary = DeclarationSummary {
+            declarations: Vec::new(),
+            shown: DeclarationsShown::All,
+        };
+        for text in texts {
+            let text = shortened(text);
+            if let Some(seen) = summary
+                .declarations
+                .iter_mut()
+                .find(|declaration| declaration.text == text)
+            {
+                seen.count += 1;
+            } else if summary.declarations.len() < SUMMARIZED_DECLARATIONS {
+                summary
+                    .declarations
+                    .push(SummarizedDeclaration { text, count: 1 });
+            } else {
+                summary.shown = DeclarationsShown::First;
+            }
+        }
+        (!summary.declarations.is_empty()).then_some(summary)
+    }
+}
+
+/// `text`, cut to [`SUMMARIZED_DECLARATION_CHARS`] characters with `…` after them.
+fn shortened(text: &str) -> String {
+    match text.char_indices().nth(SUMMARIZED_DECLARATION_CHARS) {
+        Some((cut, _)) => format!("{}…", text[..cut].trim_end()),
+        None => text.to_owned(),
+    }
+}
+
 /// Printed in a glob view for a file without a header.
 const NO_HEADER: &str = "(no header available)";
 
-/// Printed after the shown fields of a [`FieldSummary`] when more may follow.
+/// Printed after the shown fields of a [`FieldSummary`], or the declarations of a
+/// [`DeclarationSummary`], when more may follow.
 const MORE_FIELDS: &str = "...";
 
 /// Renders a file mode outline: the path and line count (`src/cli.rs (120 lines)`), the header,
@@ -167,6 +234,7 @@ pub(crate) fn render_file_summary(
             (!lines.is_empty()).then(|| lines.join(header.summary_separator()))
         }
         FileSummary::Fields(fields) => Some(render_field_summary(fields)),
+        FileSummary::Declarations(declarations) => Some(render_declaration_summary(declarations)),
         FileSummary::FirstHeading(heading) => Some(heading.clone()),
         FileSummary::Empty => None,
     };
@@ -193,6 +261,22 @@ fn render_field_summary(summary: &FieldSummary) -> String {
         Some(table) => format!("{table} {fields}"),
         None => fields,
     }
+}
+
+/// A declaration summary as `pub struct Arg, impl Arg ×6, ...`.
+fn render_declaration_summary(summary: &DeclarationSummary) -> String {
+    let mut parts: Vec<String> = summary
+        .declarations
+        .iter()
+        .map(|declaration| match declaration.count {
+            1 => declaration.text.clone(),
+            count => format!("{} ×{count}", declaration.text),
+        })
+        .collect();
+    if summary.shown == DeclarationsShown::First {
+        parts.push(MORE_FIELDS.to_owned());
+    }
+    parts.join(", ")
 }
 
 /// The header as printed lines: one per frontmatter field, or one per comment line with text.
@@ -276,5 +360,27 @@ mod tests {
             render_file_summary("a.yaml", LineCount::of("a: 1\n"), &all),
             "a.yaml (1 line): {a: 1}"
         );
+    }
+
+    #[test]
+    fn declaration_summary_counts_repeats_and_lists_five_distinct_declarations() {
+        let texts = [
+            "pub struct Arg",
+            "impl Arg",
+            "impl Arg",
+            "pub fn a",
+            "pub use crate::builder::{Arg, ArgGroup, Command, ValueHint}",
+            "fn b",
+            "impl Arg",
+            "fn c",
+            "fn d",
+        ];
+        let summary = FileSummary::Declarations(DeclarationSummary::of(texts).unwrap());
+        assert_eq!(
+            render_file_summary("arg.rs", LineCount::of(""), &summary),
+            "arg.rs (0 lines): pub struct Arg, impl Arg ×3, pub fn a, \
+             pub use crate::builder::{Arg, ArgGroup, Command,…, fn b, ..."
+        );
+        assert_eq!(DeclarationSummary::of([]), None);
     }
 }

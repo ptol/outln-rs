@@ -1,4 +1,4 @@
-The glob view prints a Rust file's `//` header comment with its lines joined by a space, `(no header available)` for a file without one, and skips the unsupported `raw.txt`.
+The glob view prints a Rust file's `//` header comment with its lines joined by a space, a declaration summary of its first declarations (`fn ping`) for a file without one, and skips the unsupported `raw.txt`.
 == args
 input/**/*
 == file input/src/with-header.rs
@@ -12,7 +12,7 @@ fn ping() {}
 plain text
 == stdout
 glob view: input/**/*
-input/src/no-header.rs (1 line): (no header available)
+input/src/no-header.rs (1 line): fn ping
 input/src/with-header.rs (4 lines): Rust service worker. Handles background jobs.
 == stderr
 == exit 0

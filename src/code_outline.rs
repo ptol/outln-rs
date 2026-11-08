@@ -11,9 +11,11 @@ use crate::comment_syntax::CommentSyntax;
 use crate::header_comment::{HeaderChoice, find_header_comment};
 use crate::language_engine::LanguageEngine;
 use crate::leading_annotations::{Annotations, PrecedingNode, leading_annotations_start};
-use crate::outline::{FileSummary, Header, Outline, OutlineLine};
+use crate::outline::{
+    DeclarationSummary, DeclarationsShown, FileSummary, Header, Outline, OutlineLine,
+};
 use crate::signature::Signature;
-use crate::source_text::{ByteRange, SourceText};
+use crate::source_text::{ByteRange, Cut, SourceText, summary_prefix};
 use crate::syntax_tree::{OneLineRules, children, one_line_source, parse};
 
 /// A code language, as the data its language engine needs.
@@ -36,6 +38,9 @@ pub(crate) struct CodeLanguage {
     /// Appends the outline lines of one node with its line range; nothing for a node that isn't
     /// a declaration. Gets every node that isn't a leading annotation, at every level.
     pub(crate) declaration_lines: DeclarationLines,
+    /// The part of a top-level outline line that a declaration summary prints, such as
+    /// [`signature::signature_head`](crate::signature::signature_head).
+    pub(crate) summary_text: fn(&str) -> &str,
 }
 
 /// How a [`CodeLanguage`] turns one node with its line range into outline lines, written into
@@ -53,6 +58,17 @@ impl CodeLanguage {
             self.header_choice,
             self.preamble_end,
         )
+    }
+
+    /// The declaration summary of `text`'s top-level declarations, or `None` without any.
+    fn declaration_summary(&self, text: &str) -> Option<DeclarationSummary> {
+        let outline = self.outline(&SourceText::new(text));
+        let top_level = outline
+            .lines
+            .iter()
+            .filter(|line| line.depth == TOP_LEVEL_DEPTH)
+            .map(|line| (self.summary_text)(&line.text));
+        DeclarationSummary::of(top_level)
     }
 
     /// What `node`, before a declaration, is to the walk over its leading annotations.
@@ -80,15 +96,58 @@ impl LanguageEngine for CodeLanguage {
         Outline { header, lines }
     }
 
+    /// The header, found line by line; only a file without one is parsed, for its declaration
+    /// summary, and only its start ([`declaration_summary_prefix`]), so the glob view stays fast.
     fn file_summary(&self, text: &str) -> FileSummary {
-        // The header is found line by line, so the glob view never parses a code file.
-        FileSummary::from(self.header(text))
+        if let Some(header) = self.header(text).filter(Header::has_text) {
+            return FileSummary::Header(header);
+        }
+        let (prefix, cut) = declaration_summary_prefix(text);
+        let Some(mut summary) = self.declaration_summary(prefix) else {
+            return FileSummary::Empty;
+        };
+        // More declarations may follow what was read.
+        if cut == Cut::Prefix {
+            summary.shown = DeclarationsShown::First;
+        }
+        FileSummary::Declarations(summary)
     }
 
     #[cfg(test)]
     fn grammar(&self) -> Option<Language> {
         Some((self.grammar)())
     }
+}
+
+/// How much of a code file without a header a declaration summary parses, at most. A glob
+/// view summarizes every file, and parsing is most of its time on code without headers, so it
+/// parses only enough for the summary's first declarations; a generated file of several
+/// megabytes is never parsed whole.
+const DECLARATION_SUMMARY_PREFIX_BYTES: usize = 4 * 1024;
+
+/// The start of a code file without a header that its declaration summary parses: all of it, or
+/// its first [`DECLARATION_SUMMARY_PREFIX_BYTES`] cut before the last line among them that
+/// starts at column 0 with neither whitespace nor a closing bracket, which usually starts a
+/// top-level declaration. Cutting there keeps the parse from ending inside a declaration, which
+/// tree-sitter would then turn into a syntax error and the summary would lose.
+fn declaration_summary_prefix(text: &str) -> (&str, Cut) {
+    let (prefix, cut) = summary_prefix(text, DECLARATION_SUMMARY_PREFIX_BYTES);
+    if cut == Cut::WholeFile {
+        return (prefix, cut);
+    }
+    let starts_top_level = |line: &str| {
+        line.starts_with(|character: char| {
+            !character.is_whitespace() && !matches!(character, '}' | ')' | ']')
+        })
+    };
+    let last_top_level_start = prefix
+        .match_indices('\n')
+        .map(|(newline, _)| newline + 1)
+        .rfind(|&line_start| starts_top_level(&prefix[line_start..]));
+    (
+        last_top_level_start.map_or(prefix, |start| &prefix[..start]),
+        cut,
+    )
 }
 
 /// The depth of top-level declarations; each [`OutlineLevel::declarations_inside`] goes one

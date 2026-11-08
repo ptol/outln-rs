@@ -10,7 +10,7 @@ use crate::comment_syntax::{
 use crate::header_comment::HeaderChoice;
 use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
-use crate::signature::{before_semicolon, body_start};
+use crate::signature::{before_semicolon, body_start, signature_head};
 use crate::source_text::{ByteRange, after_whitespace, line_end, quoted_len};
 use crate::syntax_tree::{OneLineRules, child_of_kind, has_child_of_kind};
 
@@ -50,6 +50,7 @@ pub(crate) static RUST: CodeLanguage = CodeLanguage {
         member_lists: &[],
     },
     declaration_lines,
+    summary_text: signature_head,
 };
 
 /// Where the preamble starting at byte `start` ends: a shebang at the start of the file, or an

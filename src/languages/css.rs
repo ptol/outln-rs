@@ -33,6 +33,8 @@ pub(crate) static CSS: CodeLanguage = CodeLanguage {
         member_lists: &[],
     },
     declaration_lines: rule_lines,
+    // A rule's selectors or prelude, as its outline line prints them.
+    summary_text: |text| text,
 };
 
 /// Where the preamble starting at byte `start` ends: the `@charset` rule, if the file starts

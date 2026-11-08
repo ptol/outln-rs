@@ -1,4 +1,4 @@
-The glob view skips a `'use client'` directive to find the `/** */` header comment below it; a file with only a `'use server'` directive and no comment shows `(no header available)`.
+The glob view skips a `'use client'` directive to find the `/** */` header comment below it; a file with only a `'use server'` directive and no comment shows a declaration summary instead.
 == args
 input
 == file input/page.tsx
@@ -11,6 +11,6 @@ export async function save() {}
 == stdout
 glob view: input
 input/page.tsx (3 lines): Client-side product page.
-input/server.ts (2 lines): (no header available)
+input/server.ts (2 lines): export async function save
 == stderr
 == exit 0
