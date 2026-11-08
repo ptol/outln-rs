@@ -1,0 +1,16 @@
+A declaration summary cuts each declaration before its parameter list, not at the first `(`: parentheses inside type parameters (a Rust `Fn()` bound, a TypeScript function type, whose `=>` and `->` close no `<…>`) belong to the type parameters, which go too. An `impl` block with such a bound has no parameter list and prints whole.
+== args
+input
+== file input/a.rs
+fn f<F: Fn()>(f: F) {}
+fn g<F: Fn(u8) -> u8>(f: F) -> u8 { f(1) }
+impl<F: Fn()> Handler for Wrapper<F> {}
+== file input/b.ts
+function f<T extends (x: number) => void>(a: T) {}
+export const g = <T,>(a: T): T => a;
+== stdout
+glob view: input
+input/a.rs (3 lines): fn f, fn g, impl<F: Fn()> Handler for Wrapper<F>
+input/b.ts (2 lines): function f, export const g
+== stderr
+== exit 0
