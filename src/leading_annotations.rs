@@ -89,15 +89,16 @@ pub(crate) enum PrecedingNode {
 /// `declaration_start` without one.
 ///
 /// `preceding` are the nodes before the declaration among its siblings, in source order, and
-/// `classify` says what each is. `header_end` is where the file's header ends (0 without one):
-/// the comment a header was read from is never a leading annotation. A comment right after code
+/// `classify` says what each is. `header_end` is where the file's header ends, for a top-level
+/// declaration of a file with one: the comment a header was read from is never a leading
+/// annotation. A comment right after code
 /// on its line (`const A: u8 = 1; // one`) belongs to that code, so it ends the walk.
 pub(crate) fn leading_annotations_start(
     preceding: &[Node<'_>],
     declaration_start: usize,
     source: &SourceText<'_>,
-    header_end: usize,
-    classify: impl Fn(Node<'_>, &str) -> PrecedingNode,
+    header_end: Option<usize>,
+    classify: impl Fn(Node<'_>) -> PrecedingNode,
 ) -> usize {
     let text = source.text;
     let mut start = declaration_start;
@@ -107,14 +108,14 @@ pub(crate) fn leading_annotations_start(
     let mut next_start = declaration_start;
     let mut blank_line_after = false;
     for (index, &node) in preceding.iter().enumerate().rev() {
-        if node.start_byte() < header_end {
+        if header_end.is_some_and(|end| node.start_byte() < end) {
             break;
         }
-        let role = classify(node, text);
+        let role = classify(node);
         let follows_code = index.checked_sub(1).is_some_and(|previous_index| {
             let previous = preceding[previous_index];
             ends_on_line_of(source, previous, node.start_byte())
-                && classify(previous, text) == PrecedingNode::Other
+                && classify(previous) == PrecedingNode::Other
         });
         let blank_line_before_next = blank_line_between(text, node.end_byte(), next_start);
         match role {

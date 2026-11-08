@@ -2,7 +2,8 @@
 
 use tree_sitter::Node;
 
-use super::{Statement, one_line, statement_line};
+use super::{Statement, statement_line};
+use crate::code_outline::OutlineLevel;
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
 use crate::syntax_tree::{first_syntax_child, source};
@@ -22,36 +23,36 @@ const TEST_MODIFIERS: [&str; 3] = ["only", "skip", "each"];
 pub(super) fn test_block_line(
     statement: Statement<'_>,
     call: Node<'_>,
-    text: &str,
+    level: &OutlineLevel<'_>,
 ) -> Option<OutlineLine> {
     let function = call.child_by_field_name("function")?;
     let callee = match function.kind() {
         "call_expression" => function
             .child_by_field_name("function")
-            .filter(|inner| is_test_callee(*inner, text) && ends_with_each(*inner, text))?,
-        _ if is_test_callee(function, text) && !ends_with_each(function, text) => function,
+            .filter(|inner| is_test_callee(*inner, level) && ends_with_each(*inner, level))?,
+        _ if is_test_callee(function, level) && !ends_with_each(function, level) => function,
         _ => return None,
     };
     let title = first_syntax_child(call.child_by_field_name("arguments")?)
         .filter(|title| matches!(title.kind(), "string" | "template_string"))?;
     let signature = Signature {
-        text: format!("{}({})", one_line(callee, text), one_line(title, text)),
+        text: format!("{}({})", level.one_line(callee), level.one_line(title)),
         highlight_end: title.end_byte(),
     };
-    Some(statement_line(statement, "", signature))
+    Some(statement_line(level, statement, "", signature))
 }
 
 /// Whether the node names a test function, possibly with modifiers: `it`, `describe.skip`.
-fn is_test_callee(node: Node<'_>, text: &str) -> bool {
+fn is_test_callee(node: Node<'_>, level: &OutlineLevel<'_>) -> bool {
     match node.kind() {
-        "identifier" => TEST_FUNCTIONS.contains(&source(node, text)),
+        "identifier" => TEST_FUNCTIONS.contains(&source(node, level.text())),
         "member_expression" => {
             let modifier = node
                 .child_by_field_name("property")
-                .is_some_and(|property| TEST_MODIFIERS.contains(&source(property, text)));
+                .is_some_and(|property| TEST_MODIFIERS.contains(&source(property, level.text())));
             let object = node
                 .child_by_field_name("object")
-                .is_some_and(|object| is_test_callee(object, text));
+                .is_some_and(|object| is_test_callee(object, level));
             modifier && object
         }
         _ => false,
@@ -60,8 +61,8 @@ fn is_test_callee(node: Node<'_>, text: &str) -> bool {
 
 /// Whether a test callee is a table test, such as `test.each` or `describe.only.each`, which
 /// is called with its table first.
-fn ends_with_each(callee: Node<'_>, text: &str) -> bool {
+fn ends_with_each(callee: Node<'_>, level: &OutlineLevel<'_>) -> bool {
     callee
         .child_by_field_name("property")
-        .is_some_and(|property| source(property, text) == "each")
+        .is_some_and(|property| source(property, level.text()) == "each")
 }

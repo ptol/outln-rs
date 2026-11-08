@@ -71,6 +71,11 @@ impl LanguageEngine for DataFile {
         let source = self.format.summary_source(tree.root_node(), prefix);
         field_summary(source, prefix, cut).map_or(FileSummary::Empty, FileSummary::Fields)
     }
+
+    #[cfg(test)]
+    fn grammar(&self) -> Option<Language> {
+        Some(self.format.language())
+    }
 }
 
 impl Format {

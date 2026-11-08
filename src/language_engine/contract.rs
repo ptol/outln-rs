@@ -1,4 +1,4 @@
-//! The checks every registered language engine must pass: one engine per extension, an engine sample per engine, and output that stays inside the text on any input, half-edited files included.
+//! The checks every registered language engine must pass: one engine per extension, an engine sample per engine that parses without syntax errors, and output that stays inside the text on any input, half-edited files included.
 //!
 //! These run over `ENGINES`, so a new engine is checked as soon as it's registered; its own
 //! behaviour is tested in its module and its casefiles.
@@ -15,6 +15,7 @@ use crate::outline::{
 };
 use crate::source_file::load;
 use crate::source_text::{ByteRange, LineCount, SourceText};
+use crate::syntax_tree::parse;
 
 /// The engine samples, relative to the crate root: one per engine, named `sample.<extension>`
 /// after the engine's first extension. `just build-static` outlines them too.
@@ -115,6 +116,24 @@ fn every_engine_sample_has_a_header_and_declarations() {
         assert!(
             !matches!(engine.file_summary(&text), FileSummary::Empty),
             "{name} needs a file summary"
+        );
+    }
+}
+
+/// A syntax error in a sample would hide its declarations behind error recovery, and it shows a
+/// grammar that doesn't load or doesn't parse the language it's registered for.
+#[test]
+fn every_engine_sample_parses_without_syntax_errors() {
+    for &engine in ENGINES {
+        let Some(grammar) = engine.grammar() else {
+            continue;
+        };
+        let tree = parse(&sample_text(engine), &grammar);
+        assert!(
+            !tree.root_node().has_error(),
+            "{} has a syntax error: {}",
+            sample_name(engine),
+            tree.root_node().to_sexp()
         );
     }
 }

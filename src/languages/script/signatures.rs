@@ -2,7 +2,7 @@
 
 use tree_sitter::Node;
 
-use super::one_line;
+use crate::code_outline::OutlineLevel;
 use crate::signature::Signature;
 use crate::syntax_tree::{child_of_kind, children, first_syntax_child, has_child_of_kind, source};
 
@@ -13,7 +13,7 @@ pub(super) const FUNCTION_SIGNATURE_FIELDS: [&str; 3] =
 
 /// `async function* name<T>(parameters): Return` for a function declaration, a function
 /// expression, or an overload signature; parts the source doesn't have are left out.
-pub(super) fn function(node: Node<'_>, text: &str) -> Signature {
+pub(super) fn function(node: Node<'_>, level: &OutlineLevel<'_>) -> Signature {
     let keyword = child_of_kind(node, "function");
     let mut signature = Signature {
         text: String::new(),
@@ -29,10 +29,10 @@ pub(super) fn function(node: Node<'_>, text: &str) -> Signature {
     }
     if let Some(name) = node.child_by_field_name("name") {
         signature.text.push(' ');
-        signature.text.push_str(source(name, text));
+        signature.text.push_str(source(name, level.text()));
         signature.highlight_end = name.end_byte();
     }
-    push_fields(&mut signature, node, &FUNCTION_SIGNATURE_FIELDS, text);
+    push_fields(&mut signature, node, &FUNCTION_SIGNATURE_FIELDS, level);
     signature
 }
 
@@ -40,9 +40,9 @@ pub(super) fn function(node: Node<'_>, text: &str) -> Signature {
 /// other values. An arrow function prints without its keyword or `=>`: `async <T>(parameters):
 /// Return`, and a lone parameter without parentheses gets them (`x => x` prints as `(x)`). A
 /// function expression prints like a function declaration, `function` included.
-pub(super) fn function_value(value: Node<'_>, text: &str) -> Option<Signature> {
+pub(super) fn function_value(value: Node<'_>, level: &OutlineLevel<'_>) -> Option<Signature> {
     match value.kind() {
-        "function_expression" | "generator_function" => Some(function(value, text)),
+        "function_expression" | "generator_function" => Some(function(value, level)),
         "arrow_function" => {
             let mut signature = Signature {
                 text: String::new(),
@@ -52,14 +52,14 @@ pub(super) fn function_value(value: Node<'_>, text: &str) -> Option<Signature> {
                 signature.text.push_str("async ");
                 signature.highlight_end = keyword.end_byte();
             }
-            push_fields(&mut signature, value, &["type_parameters"], text);
+            push_fields(&mut signature, value, &["type_parameters"], level);
             if let Some(parameter) = value.child_by_field_name("parameter") {
                 signature.text.push('(');
-                signature.text.push_str(source(parameter, text));
+                signature.text.push_str(source(parameter, level.text()));
                 signature.text.push(')');
                 signature.highlight_end = parameter.end_byte();
             }
-            push_fields(&mut signature, value, &["parameters", "return_type"], text);
+            push_fields(&mut signature, value, &["parameters", "return_type"], level);
             Some(signature)
         }
         _ => None,
@@ -70,8 +70,12 @@ pub(super) fn function_value(value: Node<'_>, text: &str) -> Option<Signature> {
 /// that isn't a function or class: a function value's signature, an identifier as written, a
 /// call's callee with `(…)` (`()` without arguments), `{…}` for an object, `[…]` for an array
 /// (`{}` and `[]` when empty), and `…` for anything else, highlighted up to `default_keyword_end`.
-pub(super) fn default_value(value: Node<'_>, default_keyword_end: usize, text: &str) -> Signature {
-    if let Some(function) = function_value(value, text) {
+pub(super) fn default_value(
+    value: Node<'_>,
+    default_keyword_end: usize,
+    level: &OutlineLevel<'_>,
+) -> Signature {
+    if let Some(function) = function_value(value, level) {
         return function;
     }
     // An empty object or array has no children but its brackets and comments; an array hole
@@ -81,7 +85,7 @@ pub(super) fn default_value(value: Node<'_>, default_keyword_end: usize, text: &
         .all(|child| child.is_extra() || matches!(child.kind(), "{" | "}" | "[" | "]"));
     let opening_bracket_end = value.start_byte() + 1;
     let (printed, highlight_end) = match value.kind() {
-        "identifier" => (source(value, text).to_owned(), value.end_byte()),
+        "identifier" => (source(value, level.text()).to_owned(), value.end_byte()),
         "call_expression" => {
             let callee = value.child_by_field_name("function").unwrap_or(value);
             let has_arguments = value
@@ -89,7 +93,7 @@ pub(super) fn default_value(value: Node<'_>, default_keyword_end: usize, text: &
                 .is_some_and(|arguments| first_syntax_child(arguments).is_some());
             let arguments = if has_arguments { "(…)" } else { "()" };
             (
-                format!("{}{arguments}", one_line(callee, text)),
+                format!("{}{arguments}", level.one_line(callee)),
                 callee.end_byte(),
             )
         }
@@ -122,7 +126,7 @@ pub(super) fn without_wrappers(mut expression: Node<'_>) -> Node<'_> {
 
 /// `class Name<T>`, `abstract class Name`, `interface Name<T>`, `type Name<T>`, `enum Name`, or
 /// `const enum Name`. An anonymous class (`export default class {}`) prints as `class`.
-pub(super) fn type_like(node: Node<'_>, text: &str) -> Signature {
+pub(super) fn type_like(node: Node<'_>, level: &OutlineLevel<'_>) -> Signature {
     let (keyword, last_keyword_token) = match node.kind() {
         "abstract_class_declaration" => ("abstract class", "class"),
         "interface_declaration" => ("interface", "interface"),
@@ -139,15 +143,15 @@ pub(super) fn type_like(node: Node<'_>, text: &str) -> Signature {
     let name = child_of_kind(node, "type_identifier").or_else(|| child_of_kind(node, "identifier"));
     if let Some(name) = name {
         signature.text.push(' ');
-        signature.text.push_str(source(name, text));
+        signature.text.push_str(source(name, level.text()));
         signature.highlight_end = name.end_byte();
     }
-    push_fields(&mut signature, node, &["type_parameters"], text);
+    push_fields(&mut signature, node, &["type_parameters"], level);
     signature
 }
 
 /// `namespace Name` or `module Name`; a dotted name (`namespace A.B`) prints as written.
-pub(super) fn namespace(node: Node<'_>, text: &str) -> Signature {
+pub(super) fn namespace(node: Node<'_>, level: &OutlineLevel<'_>) -> Signature {
     let keyword = if node.kind() == "internal_module" {
         "namespace"
     } else {
@@ -155,7 +159,7 @@ pub(super) fn namespace(node: Node<'_>, text: &str) -> Signature {
     };
     match node.child_by_field_name("name") {
         Some(name) => Signature {
-            text: format!("{keyword} {}", one_line(name, text)),
+            text: format!("{keyword} {}", level.one_line(name)),
             highlight_end: name.end_byte(),
         },
         None => Signature {
@@ -167,10 +171,15 @@ pub(super) fn namespace(node: Node<'_>, text: &str) -> Signature {
 
 /// Appends the source of each field the node has, on one line, and moves the highlight's end
 /// past it.
-pub(super) fn push_fields(signature: &mut Signature, node: Node<'_>, fields: &[&str], text: &str) {
+pub(super) fn push_fields(
+    signature: &mut Signature,
+    node: Node<'_>,
+    fields: &[&str],
+    level: &OutlineLevel<'_>,
+) {
     for field in fields {
         if let Some(child) = node.child_by_field_name(field) {
-            signature.text.push_str(&one_line(child, text));
+            signature.text.push_str(&level.one_line(child));
             signature.highlight_end = child.end_byte();
         }
     }

@@ -281,15 +281,7 @@ fn strip_closing_hashes(text: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn outline_texts(text: &str) -> Vec<String> {
-        Markdown
-            .outline(&SourceText::new(text))
-            .lines
-            .into_iter()
-            .map(|line| line.text)
-            .collect()
-    }
+    use crate::language_engine::outline_texts;
 
     #[test]
     fn yaml_scalars_become_json_literals() {
@@ -353,13 +345,16 @@ mod tests {
     #[test]
     fn headings_in_code_html_quotes_and_lists_are_skipped() {
         let text = "# One\n~~~\n```\n# fenced\n~~~\n    # indented\n<!--\n# html\n-->\n> # quoted\n- # listed\n## Two ##\n";
-        assert_eq!(outline_texts(text), ["# One", "## Two"]);
+        assert_eq!(outline_texts(&Markdown, text), ["# One", "## Two"]);
     }
 
     #[test]
     fn setext_headings_get_hashes_for_their_level() {
         assert_eq!(
-            outline_texts("Title\n=====\n\nSub\n---\n\n####### Seven\n---\n"),
+            outline_texts(
+                &Markdown,
+                "Title\n=====\n\nSub\n---\n\n####### Seven\n---\n"
+            ),
             ["# Title", "## Sub", "## ####### Seven"]
         );
     }
@@ -367,7 +362,7 @@ mod tests {
     #[test]
     fn closing_hashes_need_whitespace_before_them() {
         assert_eq!(
-            outline_texts("# C# ##\n# #\n# a#b\n"),
+            outline_texts(&Markdown, "# C# ##\n# #\n# a#b\n"),
             ["# C#", "#", "# a#b"]
         );
     }
