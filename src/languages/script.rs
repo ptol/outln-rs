@@ -152,9 +152,9 @@ fn statement_lines(level: &OutlineLevel<'_>, statement: Statement<'_>) -> Vec<Ou
     match node.kind() {
         "export_statement" => export_lines(statement, level),
         "expression_statement" => expression_statement_lines(statement, level),
-        "import_statement" | "import_alias" => {
-            import_alias_line(statement, level).into_iter().collect()
-        }
+        "import_statement" => import_alias_line(node, statement, "", level)
+            .into_iter()
+            .collect(),
         _ => declaration_lines(node, statement, "", level),
     }
 }
@@ -210,6 +210,10 @@ fn declaration_lines(
             variable_lines(declaration, statement, prefix, level)
         }
         "ambient_declaration" => ambient_lines(declaration, statement, prefix, level),
+        // `export import Name = Namespace.member`.
+        "import_alias" => import_alias_line(declaration, statement, prefix, level)
+            .into_iter()
+            .collect(),
         _ => Vec::new(),
     }
 }
@@ -425,19 +429,25 @@ fn expression_statement_lines(
     }
 }
 
-/// `import Name = require('...')` and `import Name = Namespace.member` print as `import Name`;
-/// other imports aren't declarations.
-fn import_alias_line(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Option<OutlineLine> {
-    let owner = if statement.node.kind() == "import_statement" {
-        child_of_kind(statement.node, "import_require_clause")?
+/// `import Name = require('...')` and `import Name = Namespace.member` print as `import Name`,
+/// after `prefix` (`export import Name`); other imports aren't declarations. `import` is the
+/// import statement, or the `import_alias` the grammar makes of the second form.
+fn import_alias_line(
+    import: Node<'_>,
+    statement: Statement<'_>,
+    prefix: &str,
+    level: &OutlineLevel<'_>,
+) -> Option<OutlineLine> {
+    let owner = if import.kind() == "import_statement" {
+        child_of_kind(import, "import_require_clause")?
     } else {
-        statement.node
+        import
     };
     let name = child_of_kind(owner, "identifier")?;
     Some(statement_line(
         level,
         statement,
-        "import",
+        &prefixed(prefix, "import".to_owned()),
         Signature {
             text: source(name, level.text()).to_owned(),
             highlight_end: name.end_byte(),
