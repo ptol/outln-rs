@@ -1,0 +1,19 @@
+A CSS rule whose block never closes swallows the rest of the file: tree-sitter puts the unclosed
+rule and every rule after it, the `@media` block's included, in one `ERROR` node, so only the
+rule before it is listed (techdebt.md, "Declarations inside syntax errors are dropped").
+== args
+input/broken.css
+== file input/broken.css
+/* Styles. */
+.before { color: red; }
+.broken { color: blue;
+.inner { margin: 0; }
+@media print {
+  .x { color: black; }
+.after { color: green; }
+== stdout
+input/broken.css (7 lines)
+Styles.
+[L2-L2] .before
+== stderr
+== exit 0

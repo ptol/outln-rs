@@ -15,8 +15,8 @@ const ANSI_GREEN: &str = "\x1b[32m";
 const ANSI_RESET: &str = "\x1b[0m";
 /// Marks a highlight without a terminal. Guillemets rarely occur in source code, unlike
 /// brackets, and each is one character.
-const MARKER_START: &str = "«";
-const MARKER_END: &str = "»";
+pub(crate) const MARKER_START: &str = "«";
+pub(crate) const MARKER_END: &str = "»";
 
 impl HighlightStyle {
     /// What goes before and after each highlighted part of a line.

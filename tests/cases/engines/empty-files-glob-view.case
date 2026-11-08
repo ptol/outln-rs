@@ -1,0 +1,26 @@
+In a glob view an empty file of every supported extension has nothing to summarize, so each
+prints `(0 lines): (no header available)`.
+== args
+input
+== file input/empty.md
+== file input/empty.ts
+== file input/empty.tsx
+== file input/empty.js
+== file input/empty.rs
+== file input/empty.css
+== file input/empty.json
+== file input/empty.toml
+== file input/empty.yaml
+== stdout
+glob view: input
+input/empty.css (0 lines): (no header available)
+input/empty.js (0 lines): (no header available)
+input/empty.json (0 lines): (no header available)
+input/empty.md (0 lines): (no header available)
+input/empty.rs (0 lines): (no header available)
+input/empty.toml (0 lines): (no header available)
+input/empty.ts (0 lines): (no header available)
+input/empty.tsx (0 lines): (no header available)
+input/empty.yaml (0 lines): (no header available)
+== stderr
+== exit 0

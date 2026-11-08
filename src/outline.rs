@@ -331,7 +331,7 @@ fn render_declaration_summary(summary: &DeclarationSummary) -> String {
 }
 
 /// The header as printed lines: one per frontmatter field, or one per comment line with text.
-fn header_lines(header: &Header) -> Vec<String> {
+pub(crate) fn header_lines(header: &Header) -> Vec<String> {
     match header {
         Header::Frontmatter(fields) => fields.iter().map(field_line).collect(),
         Header::Comment(lines) => lines

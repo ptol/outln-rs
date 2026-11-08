@@ -1,0 +1,20 @@
+A JSON object with a missing comma, as in a half-edited file, still lists every key: the parser
+holds the keys before the gap in an `ERROR` node inside the object, which are read as the
+object's own.
+== args
+input/broken.json
+== file input/broken.json
+{
+  "name": "demo",
+  "version": "1.0.0"
+  "private": true,
+  "scripts": {}
+}
+== stdout
+input/broken.json (6 lines)
+[L2-L2] name: "demo"
+[L3-L3] version: "1.0.0"
+[L4-L4] private: true
+[L5-L5] scripts
+== stderr
+== exit 0

@@ -93,6 +93,18 @@ case filter="":
 update-cases filter="":
     CASE='{{ filter }}' UPDATE_CASES=1 cargo test --locked --quiet --test casefiles
 
+# Fuzz the language engines: check the output contract on `iterations` seeded mutations of each engine sample (a random seed without one), then time adversarial inputs. A failure prints its seed, input number, and shrunk input; rerun with that seed to reproduce (docs/testing.md).
+fuzz iterations="10000" seed="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    seed='{{ seed }}'
+    if [ -z "$seed" ]; then
+        seed=$(( (RANDOM << 30) | (RANDOM << 15) | RANDOM ))
+    fi
+    echo "fuzzing {{ iterations }} mutations per engine with seed $seed"
+    # One thread, so the fuzzing doesn't slow the timing test down.
+    FUZZ_ITERATIONS='{{ iterations }}' FUZZ_SEED="$seed" cargo test --locked --quiet --lib language_engine::contract:: -- --include-ignored --nocapture --test-threads=1
+
 # Apply every automatic fix: clippy suggestions, then formatting and hygiene (they can touch files you didn't change).
 fix:
     cargo clippy --all-targets --locked --fix --allow-dirty --allow-staged --quiet

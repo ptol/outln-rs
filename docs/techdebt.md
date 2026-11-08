@@ -17,7 +17,7 @@ Each entry: what, impact, and the way out. Remove an entry when it's paid off.
 
 - **What**: tree-sitter wraps code it can't parse in `ERROR` nodes, and the Script, Rust, CSS, and data file engines list only the top-level nodes they recognize, so a declaration caught inside an `ERROR` node isn't listed (the data file engine reads a JSON root object that never closes up to its first broken key, [ADR-016](adr.md)).
 - **Impact**: outlines of half-edited files can miss declarations around the broken spot.
-- **Way out**: for the code-language engines, have `code_outline::code_outline` apply the engine's rules to an `ERROR` node's children (with that node's children as the siblings for leading annotations); the data file engine needs rules per format, since a broken JSON object flattens nested keys into its `ERROR` node. Add a broken-file casefile per engine.
+- **Way out**: for the code-language engines, have `code_outline::code_outline` apply the engine's rules to an `ERROR` node's children (with that node's children as the siblings for leading annotations); the data file engine needs rules per format, since a broken JSON object flattens nested keys into its `ERROR` node. The casefiles of broken files show what each engine drops today and change when this is paid off: `tests/cases/engines/half-edited-*.case` (Markdown, TSX, JavaScript, Rust, CSS, JSON, TOML), `typescript/syntax-errors.case`, `json/root-array-and-broken.case`, `toml/half-edited-table-header.case`, `yaml/broken-mapping-keeps-its-first-keys.case`, and `markdown/broken-frontmatter-keeps-its-first-fields.case`.
 
 ## Data file keys find their leading comments with a walk of their own
 
@@ -28,5 +28,11 @@ Each entry: what, impact, and the way out. Remove an entry when it's paid off.
 ## Parsing deeply nested code can take seconds
 
 - **What**: tree-sitter's parser takes time quadratic in the nesting depth for some deeply nested code, such as a TypeScript parameter default nested 20 000 `[` deep or a Rust type nested 20 000 `Vec<` deep with a comment or extra whitespace inside (3 to 9 s; 200 s at 100 000 levels). The time is spent in tree-sitter's reductions (`ts_parser__reduce`, `ts_parser__do_all_potential_reductions`), not in outln's walks, which are iterative and linear.
-- **Impact**: file mode and debug mode stall on such a file (generated or adversarial input); the glob view doesn't parse code files, so it is unaffected.
+- **Impact**: file mode and debug mode stall on such a file (generated or adversarial input); the glob view parses at most the first 4 KiB of a code file without a header ([ADR-024](adr.md)), too little to nest that deep, so it is unaffected.
 - **Way out**: parse with `Parser::parse_with_options` and a progress callback that cancels after a time or byte budget, and report a cancelled parse as a new `InputError` (or outline the file without declarations).
+
+## Deep YAML nesting is guarded by an estimate
+
+- **What**: tree-sitter-yaml 0.7.2's scanner overflows tree-sitter's 1024-byte state buffer from 254 open block nodes, and a C assertion aborts the process. `data_file::yaml::parsable_part` counts open block nodes line by line, over-approximating, and parses only the lines before the count passes 200. A line inside a multi-line flow collection (`[`, `{`) indented less than its parent closes nodes in the count that the scanner keeps open, so a file built for it can still abort outln.
+- **Impact**: such a file ends the whole run, glob views included; a real file nested more than about 100 levels deep loses its keys after the deep lines.
+- **Way out**: a tree-sitter-yaml release whose `serialize` checks the buffer size (report it upstream); then remove `parsable_part` and check that `just fuzz` still passes.

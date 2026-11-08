@@ -1,0 +1,78 @@
+A UTF-8 byte order mark at the start of a file is stripped before any engine sees the text, so
+the header comment, a JavaScript shebang, a Markdown heading, and the first key of a JSON object
+are found on line 1 as without it.
+== args
+input/bom.md
+input/bom.ts
+input/bom.tsx
+input/bom.js
+input/bom.rs
+input/bom.css
+input/bom.json
+input/bom.toml
+input/bom.yaml
+== file input/bom.md escaped
+\xef\xbb\xbf# Title
+
+## Section
+== file input/bom.ts escaped
+\xef\xbb\xbf// Header after a BOM.
+export const a = 1;
+== file input/bom.tsx escaped
+\xef\xbb\xbf/** Header after a BOM. */
+export function App() {}
+== file input/bom.js escaped
+\xef\xbb\xbf#!/usr/bin/env node
+// Header after a BOM and a shebang.
+function a() {}
+== file input/bom.rs escaped
+\xef\xbb\xbf//! Header after a BOM.
+pub fn a() {}
+== file input/bom.css escaped
+\xef\xbb\xbf/* Header after a BOM. */
+.a { color: red }
+== file input/bom.json escaped
+\xef\xbb\xbf{"name": "bom"}
+== file input/bom.toml escaped
+\xef\xbb\xbf# Header after a BOM.
+name = "bom"
+== file input/bom.yaml escaped
+\xef\xbb\xbf# Header after a BOM.
+name: bom
+== stdout
+input/bom.md (3 lines)
+[L1-L3] # Title
+[L3-L3] ## Section
+
+input/bom.ts (2 lines)
+Header after a BOM.
+[L2-L2] export const a
+
+input/bom.tsx (2 lines)
+Header after a BOM.
+[L2-L2] export function App()
+
+input/bom.js (3 lines)
+Header after a BOM and a shebang.
+[L3-L3] function a()
+
+input/bom.rs (2 lines)
+Header after a BOM.
+[L2-L2] pub fn a()
+
+input/bom.css (2 lines)
+Header after a BOM.
+[L2-L2] .a
+
+input/bom.json (1 line)
+[L1-L1] name: "bom"
+
+input/bom.toml (2 lines)
+Header after a BOM.
+[L2-L2] name = "bom"
+
+input/bom.yaml (2 lines)
+Header after a BOM.
+[L2-L2] name: bom
+== stderr
+== exit 0
