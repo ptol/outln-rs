@@ -1,4 +1,4 @@
-//! Test blocks: top-level `describe`, `it`, `test`, and `suite` calls of Jest, Vitest, Mocha, and node:test, listed by their title.
+//! Test blocks: `describe`, `it`, `test`, and `suite` calls of Jest, Vitest, Mocha, and node:test, listed by their title, top-level ones and, one level deeper each, those in a test block's callback.
 
 use tree_sitter::Node;
 
@@ -14,13 +14,51 @@ const TEST_FUNCTIONS: [&str; 4] = ["describe", "it", "test", "suite"];
 /// Properties that select or skip test blocks: `describe.only`, `it.skip`, `test.each`.
 const TEST_MODIFIERS: [&str; 3] = ["only", "skip", "each"];
 
+/// The outline lines of a test block: its own line, then the test blocks in its callback's body
+/// one level deeper (the `it` calls in a `describe`), down to the deepest level outlines list.
+/// Nothing for any other call.
+pub(super) fn test_block_lines(
+    statement: Statement<'_>,
+    call: Node<'_>,
+    level: &OutlineLevel<'_>,
+) -> Vec<OutlineLine> {
+    let Some(line) = test_block_line(statement, call, level) else {
+        return Vec::new();
+    };
+    let mut lines = vec![line];
+    if let Some(body) = callback_body(call) {
+        level.declarations_inside(body, &mut lines);
+    }
+    lines
+}
+
+/// The body of a test block's callback: its last argument when that is a function with a block
+/// body (`() => { … }`, `function () { … }`).
+fn callback_body(call: Node<'_>) -> Option<Node<'_>> {
+    let arguments = call.child_by_field_name("arguments")?;
+    let mut cursor = arguments.walk();
+    let callback = arguments
+        .named_children(&mut cursor)
+        .filter(|argument| !argument.is_extra())
+        .last()?;
+    if !matches!(
+        callback.kind(),
+        "arrow_function" | "function_expression" | "function"
+    ) {
+        return None;
+    }
+    callback
+        .child_by_field_name("body")
+        .filter(|body| body.kind() == "statement_block")
+}
+
 /// The outline line of a test block, such as `describe('parser')` or `test.each('adds %i')`, or
 /// `None` for any other call.
 ///
 /// The title is the first argument and must be a string or template literal. A table test
 /// (`test.each(table)('title', fn)`, or with a tagged template table) prints its callee and
 /// title without the table.
-pub(super) fn test_block_line(
+fn test_block_line(
     statement: Statement<'_>,
     call: Node<'_>,
     level: &OutlineLevel<'_>,

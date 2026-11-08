@@ -1,4 +1,4 @@
-//! TypeScript and JavaScript language engine: header comments, top-level declarations, and class members, parsed with tree-sitter.
+//! TypeScript and JavaScript language engine: header comments, top-level declarations, class members, and test blocks with the test blocks nested in them, parsed with tree-sitter.
 //!
 //! Three grammars (`.ts`, `.tsx`, and JavaScript files) share every rule below; the grammars
 //! differ only in syntax one of them lacks.
@@ -129,28 +129,40 @@ fn is_directive(line: &str) -> bool {
         && !statement[1..statement.len() - 1].contains(['\'', '"'])
 }
 
-/// A top-level statement with its line range, which starts at the statement's first leading
-/// annotation. Every outline line of the statement itself gets this range; its class members
-/// get their own.
+/// A statement with its line range, which starts at the statement's first leading annotation:
+/// a top-level one, or one in a test block's callback. Every outline line of the statement
+/// itself gets this range; its class members and nested test blocks get their own.
 #[derive(Clone, Copy)]
 struct Statement<'tree> {
     node: Node<'tree>,
     range: ByteRange,
 }
 
-/// The outline lines of a node with line range `range`: a top-level statement's, or, one level
-/// deeper, a class member's, since only class bodies list the declarations inside them.
+/// The outline lines of a node with line range `range`: a top-level statement's, or, deeper, a
+/// class member's or a nested test block's, since only class bodies and test blocks' callbacks
+/// list the declarations inside them.
 fn statement_or_member_lines(
     level: &OutlineLevel<'_>,
     node: Node<'_>,
     range: ByteRange,
     lines: &mut Vec<OutlineLine>,
 ) {
+    let statement = Statement { node, range };
     if level.is_top_level() {
-        lines.extend(statement_lines(level, Statement { node, range }));
+        lines.extend(statement_lines(level, statement));
+    } else if node.kind() == "expression_statement" {
+        lines.extend(nested_test_block_lines(statement, level));
     } else {
         lines.extend(class_members::member_line(level, node, range));
     }
+}
+
+/// The outline lines of a statement in a test block's callback: a test block, or nothing.
+fn nested_test_block_lines(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Vec<OutlineLine> {
+    first_syntax_child(statement.node)
+        .filter(|expression| expression.kind() == "call_expression")
+        .map(|call| test_blocks::test_block_lines(statement, call, level))
+        .unwrap_or_default()
 }
 
 /// The outline lines of one top-level statement; most statements give none.
@@ -429,9 +441,7 @@ fn expression_statement_lines(
     };
     match expression.kind() {
         "internal_module" => declaration_lines(expression, statement, "", level),
-        "call_expression" => test_blocks::test_block_line(statement, expression, level)
-            .into_iter()
-            .collect(),
+        "call_expression" => test_blocks::test_block_lines(statement, expression, level),
         _ => Vec::new(),
     }
 }

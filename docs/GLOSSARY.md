@@ -52,7 +52,7 @@ _Avoid_: Child, nested declaration, associated item (Rust's own word, fine in Ru
 
 ### Test block
 
-A top-level call that opens a group of tests or one test, such as `describe('parser', …)`, listed by its title.
+A call that opens a group of tests or one test, such as `describe('parser', …)`, listed by its title: at the top level, or one level under the test block whose callback holds it.
 _Avoid_: Test case, spec, suite
 
 ### Key

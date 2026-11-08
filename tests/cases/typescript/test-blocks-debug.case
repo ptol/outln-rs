@@ -9,7 +9,7 @@ describe("math", () => {
 test.each([[1, 2]])("adds %i", (a, b) => {});
 == stdout
 \x1b[32mdescribe("math"\x1b[0m, () => {
-  it("adds", () => {});
+  \x1b[32mit("adds"\x1b[0m, () => {});
 });
 \x1b[32mtest.each([[1, 2]])("adds %i"\x1b[0m, (a, b) => {});
 == stderr

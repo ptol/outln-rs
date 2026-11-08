@@ -1,0 +1,38 @@
+Test blocks inside a test block's callback are listed one level deeper, each with its own line range from its leading annotations, so an agent can read one test of a long `describe`.
+- Nesting is listed down to depth 2: the `it` inside `it('renders')` isn't listed.
+- Hooks (`beforeEach`) and other calls aren't test blocks, and a test block in a callback without a block body (`() => it(...)`), or inside an expression such as a `const`, isn't listed.
+- Table tests (`describe.each(table)('step %i', fn)`) list the blocks in their callback too.
+== args
+input/tutorial.test.ts
+== file input/tutorial.test.ts
+import { describe, it } from 'vitest';
+
+describe('tutorial navigation', () => {
+  beforeEach(() => {});
+
+  /** The first step opens on load. */
+  it('opens the first step', () => {
+    expect(1).toBe(1);
+  });
+
+  describe.each([1, 2])('step %i', (n) => {
+    it('renders', function () {
+      it('too deep', () => {});
+    });
+  });
+
+  test.skip(`skipped`, async () => {});
+  const helper = () => it('in an expression');
+});
+
+it('top', () => it('expression body'));
+== stdout
+input/tutorial.test.ts (21 lines)
+[L3-L19] describe('tutorial navigation')
+  [L6-L9] it('opens the first step')
+  [L11-L15] describe.each('step %i')
+    [L12-L14] it('renders')
+  [L17-L17] test.skip(`skipped`)
+[L21-L21] it('top')
+== stderr
+== exit 0
