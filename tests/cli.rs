@@ -3,6 +3,7 @@
 #[path = "support/scratch_dir.rs"]
 mod scratch_dir;
 
+use std::io::{self, Read};
 use std::process::Command;
 
 use scratch_dir::ScratchDir;
@@ -49,4 +50,32 @@ fn usage_errors_exit_with_code_2() {
     assert_eq!(output.status.code(), Some(2));
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("Usage: outln"), "{stderr}");
+}
+
+#[test]
+fn errors_stay_in_order_with_the_output_when_both_streams_share_one_pipe() {
+    let dir = ScratchDir::new("cli-merged-streams").expect("temp dir");
+    dir.write("a.md", b"# A\n").expect("write");
+    dir.write("notes.txt", b"notes\n").expect("write");
+    dir.write("b.md", b"# B\n").expect("write");
+    // One pipe for both streams, as agent tools that merge stdout and stderr read them.
+    let (mut reader, writer) = io::pipe().expect("pipe");
+    let mut command = Command::new(env!("CARGO_BIN_EXE_outln"));
+    command
+        .args(["a.md", "notes.txt", "b.md"])
+        .current_dir(dir.path())
+        .stdout(writer.try_clone().expect("clone the pipe"))
+        .stderr(writer);
+    let mut child = command.spawn().expect("the outln binary should start");
+    // The command holds the pipe's write ends; drop them so reading ends when outln exits.
+    drop(command);
+    let mut merged = String::new();
+    reader.read_to_string(&mut merged).expect("read the pipe");
+    let status = child.wait().expect("wait for outln");
+
+    assert_eq!(status.code(), Some(1));
+    assert_eq!(
+        merged,
+        "a.md (1 line)\n[L1-L1] # A\nFILE notes.txt HAS UNSUPPORTED FILE TYPE\n\nb.md (1 line)\n[L1-L1] # B\n"
+    );
 }
