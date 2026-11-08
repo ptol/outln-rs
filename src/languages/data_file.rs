@@ -1,4 +1,4 @@
-//! Data file language engine (TOML, YAML, JSON): header comments, top-level keys with comment-aware line ranges and values on one line, and the glob view's field summary (describing keys first).
+//! Data file language engine (TOML, YAML, JSON): header comments, top-level keys with comment-aware line ranges and values on one line, the glob view's field summary (describing keys first), and the YAML fields of Markdown frontmatter.
 //!
 //! The formats differ only in their grammar, comment syntax, preamble, and where their keys sit
 //! in the tree, which each format's [`DataFile`] table names; how a key prints, where its line
@@ -9,7 +9,8 @@
 //! value written over several lines has its lines joined by spaces), cut at 40 characters, or
 //! 100 for a describing key (`description`, `title`). A field summary shows up to three scalar
 //! keys, describing keys first, then the others in source order; a file without scalar keys
-//! shows its keys' names.
+//! shows its keys' names. The Markdown engine reads its frontmatter with [`yaml_fields`], so a
+//! frontmatter field is a YAML key by the same rules.
 
 mod json;
 mod toml;
@@ -26,6 +27,8 @@ use crate::outline::{
 };
 use crate::source_text::{ByteRange, SourceText, trim_end};
 use crate::syntax_tree::{byte_range, parse};
+
+pub(crate) use yaml::{YamlField, YamlValue};
 
 /// The language engine for one data file format, as the data that differs between formats.
 pub(crate) struct DataFile {
@@ -102,6 +105,21 @@ impl LanguageEngine for DataFile {
     fn grammar(&self) -> Option<Language> {
         Some((self.grammar)())
     }
+}
+
+/// The fields of the YAML mapping `text` holds, as a Markdown file's frontmatter prints them,
+/// or `None` when it holds no mapping: the YAML engine's own rules decide which pairs are
+/// top-level and how a value is written on one line.
+pub(crate) fn yaml_fields(text: &str) -> Option<Vec<YamlField>> {
+    let tree = parse(text, &(YAML.grammar)());
+    let mut fields = yaml::fields(tree.root_node(), text)?;
+    // The grammar puts the comment lines after a value inside it, as for a key's line range.
+    let source = SourceText::new(text);
+    let comments = comment_ranges(tree.root_node());
+    for field in &mut fields {
+        field.range.end = content_end(&source, field.range.start, field.range.end, &comments);
+    }
+    Some(fields)
 }
 
 impl DataFile {

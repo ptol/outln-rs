@@ -11,6 +11,11 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 - Every engine: a lone CR (a file with classic Mac OS line endings) is a line break, as CRLF already was: such a file's line count, line ranges, and header comment count each CR-ended line, and no raw CR is printed.
 - CSS: a style rule without selectors (`{ color: red }`, in a half-edited file) is no longer listed as a blank outline line.
+- Markdown frontmatter is read as YAML, by the YAML engine's rules ([ADR-022](adr.md)):
+  - **Values written over several lines** (a quoted or plain scalar continued on the next line, a `|` or `>-` block) print their first paragraph on one line, its lines joined by spaces, as a JSON string: `description: "Starts here and continues here"` instead of `description: "\"Starts here and"` or `description: "|"`. File mode still prints every value uncut.
+  - **Lists and mappings** print their key alone (`tags`) instead of `tags: null`, as in a YAML file's outline. Debug mode highlights a field from its key to the end of its value.
+  - **Delimiters**: `---` may be followed by whitespace, and `...` (YAML's document end) closes the block too. A `---` block that holds no YAML mapping (`---`, `# Title`, `Some text.`, `---`) is body text, so its headings are listed; one whose YAML breaks partway keeps the fields before the error.
+  - **Glob view**: a file summary shows at most three fields, `description` first, then `title`, then the others in source order, with `...` when more follow.
 - Data files ([ADR-022](adr.md)):
   - **Field summary**: `description`, then `title`, come first, then the other scalar keys in source order, three in all (`{description: "...", name: "demo", private: true, ...}`, `[package] {description = "...", name = "outln", version = "0.3.0", ...}`); a file without scalar keys prints its keys' names, `{compilerOptions, include}`, instead of `(no header available)`.
   - **Values**: a `description` or `title` value is cut at 100 characters instead of 40, in outline lines too, and a cut quoted value ends with its quote after the `…` (`"Playwright smoke test…"`). A value written over several lines (a YAML `|` block, a TOML `"""` string) prints its first paragraph with its lines joined by spaces instead of only its first line; so does a key (`? [a,\n b]`).

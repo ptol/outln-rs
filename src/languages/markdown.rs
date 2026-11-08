@@ -1,10 +1,11 @@
-//! Markdown language engine: frontmatter fields and headings with the line ranges of their sections, and the first heading as the glob view's summary without frontmatter fields.
+//! Markdown language engine: YAML frontmatter fields, read by the YAML engine's rules, and headings with the line ranges of their sections; the glob view shows the first three fields (description and title first), or the first heading without fields.
 
 use std::fmt::Write as _;
 
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 
 use crate::language_engine::LanguageEngine;
+use crate::languages::data_file::{YamlField, YamlValue, yaml_fields};
 use crate::outline::{FileSummary, FrontmatterField, Header, Outline, OutlineLine};
 use crate::source_text::{ByteRange, SourceText, lines_with_offsets, trim_end};
 
@@ -46,8 +47,12 @@ impl LanguageEngine for Markdown {
     }
 }
 
-/// The line that opens and closes a frontmatter block.
-const FRONTMATTER_DELIMITER: &str = "---";
+/// The line that opens a frontmatter block, maybe followed by whitespace.
+const FRONTMATTER_OPEN: &str = "---";
+
+/// The lines that close a frontmatter block, maybe followed by whitespace: `---`, or YAML's
+/// document end marker `...`.
+const FRONTMATTER_CLOSE: [&str; 2] = ["---", "..."];
 
 /// A terminated frontmatter block at the start of a file.
 struct Frontmatter {
@@ -63,68 +68,50 @@ impl Frontmatter {
     }
 }
 
-/// Finds the frontmatter block: `---` on the first line up to the next `---` line.
+/// Finds the frontmatter block: `---` on the first line up to the next `---` or `...` line,
+/// holding a YAML mapping.
 ///
 /// Detected by hand rather than with pulldown-cmark's metadata option, because that option
-/// also accepts a `---` block in the middle of a document. An unterminated block is body text.
+/// also accepts a `---` block in the middle of a document. An unterminated block is body text,
+/// and so is a block without a mapping (`---`, `# Title`, `Some text.`, `---`): its `---` lines
+/// are thematic breaks.
 fn parse_frontmatter(text: &str) -> Option<Frontmatter> {
     let mut lines = lines_with_offsets(text);
     let (_, first_line) = lines.next()?;
-    if first_line != FRONTMATTER_DELIMITER {
+    if first_line.trim_end() != FRONTMATTER_OPEN {
         return None;
     }
-    let mut fields = Vec::new();
-    for (start, line) in lines {
-        if line == FRONTMATTER_DELIMITER {
-            let body_start = (start + line.len() + 1).min(text.len());
-            return Some(Frontmatter { fields, body_start });
-        }
-        fields.extend(parse_field(line, start));
-    }
-    None
+    let (close_start, close_line) =
+        lines.find(|(_, line)| FRONTMATTER_CLOSE.contains(&line.trim_end()))?;
+    let content_start = first_line.len() + 1;
+    let fields = yaml_fields(&text[content_start..close_start])?
+        .into_iter()
+        .map(|field| frontmatter_field(field, content_start))
+        .collect();
+    let body_start = (close_start + close_line.len() + 1).min(text.len());
+    Some(Frontmatter { fields, body_start })
 }
 
-/// Lines starting with these are never top-level fields: nested YAML and comments.
-const NOT_A_FIELD_START: [char; 3] = [' ', '\t', '#'];
-
-/// Parses a top-level `key: value` line; other lines are skipped.
-fn parse_field(line: &str, start: usize) -> Option<FrontmatterField> {
-    if line.starts_with(NOT_A_FIELD_START) || is_list_item(line) {
-        return None;
+/// A field of the frontmatter's YAML, which starts at `offset` in the file, as printed: a
+/// scalar as a JSON literal, a list or mapping as its key alone.
+fn frontmatter_field(field: YamlField, offset: usize) -> FrontmatterField {
+    let value = match field.value {
+        YamlValue::Plain(plain) => Some(plain_scalar_as_json(&plain)),
+        YamlValue::Text(string) => Some(json_string(&string)),
+        YamlValue::Container => None,
+    };
+    FrontmatterField {
+        key: field.key,
+        value,
+        range: field.range.shifted(offset),
     }
-    let (key, value) = line.split_once(':')?;
-    let key = key.trim();
-    if key.is_empty() {
-        return None;
-    }
-    Some(FrontmatterField {
-        key: key.to_owned(),
-        value: yaml_scalar_as_json(value),
-        range: ByteRange::new(start, start + line.len()),
-    })
 }
 
-/// A YAML list item: `-` alone or followed by whitespace. `-title: x` is a field named `-title`.
-fn is_list_item(line: &str) -> bool {
-    line.strip_prefix('-')
-        .is_some_and(|rest| rest.is_empty() || rest.starts_with([' ', '\t']))
-}
-
-/// Turns a YAML scalar into a JSON literal: quoted text and plain text become JSON strings,
-/// numbers and `true`/`false`/`null` stay as they are, and an empty value or `~` is `null`.
-///
-/// Quoted text is not unescaped: frontmatter fields print as written, not as full YAML reads them.
-fn yaml_scalar_as_json(value: &str) -> String {
-    let value = value.trim();
+/// Turns a plain YAML scalar into a JSON literal: numbers and `true`/`false`/`null` stay as
+/// they are, an empty value or `~` is `null`, and other text becomes a JSON string.
+fn plain_scalar_as_json(value: &str) -> String {
     if value.is_empty() {
         return "null".to_owned();
-    }
-    let is_quoted = [('"', '"'), ('\'', '\'')]
-        .iter()
-        .any(|&(open, close)| value.starts_with(open) && value.ends_with(close));
-    if is_quoted {
-        // A lone quote character is both the opening and the closing quote.
-        return json_string(value.get(1..value.len() - 1).unwrap_or(""));
     }
     let lowercase = value.to_lowercase();
     match lowercase.as_str() {
@@ -281,38 +268,90 @@ fn strip_closing_hashes(text: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::language_engine::outline_texts;
+    use crate::language_engine::{outline_of, outline_texts};
+
+    /// Each field's printed text, `key: value` or `key`.
+    fn printed_fields(text: &str) -> Vec<String> {
+        let Some(Header::Frontmatter(fields)) = outline_of(&Markdown, text).header else {
+            return Vec::new();
+        };
+        fields
+            .into_iter()
+            .map(|field| match field.value {
+                Some(value) => format!("{}: {value}", field.key),
+                None => field.key,
+            })
+            .collect()
+    }
 
     #[test]
-    fn yaml_scalars_become_json_literals() {
+    fn plain_scalars_become_json_literals() {
         let cases = [
             ("", "null"),
-            (" ~ ", "null"),
+            ("~", "null"),
             ("True", "true"),
             ("42", "42"),
             ("-1.5", "-1.5"),
             ("1.", "\"1.\""),
-            ("'single'", "\"single\""),
-            ("\"say \\\"hi\\\"\"", "\"say \\\\\\\"hi\\\\\\\"\""),
-            ("\"", "\"\""),
-            ("[a, b]", "\"[a, b]\""),
+            ("say \"hi\"", "\"say \\\"hi\\\"\""),
         ];
         for (yaml, json) in cases {
-            assert_eq!(yaml_scalar_as_json(yaml), json, "YAML {yaml:?}");
+            assert_eq!(plain_scalar_as_json(yaml), json, "YAML {yaml:?}");
         }
     }
 
     #[test]
     fn frontmatter_keeps_top_level_fields_only() {
-        let summary = Markdown.file_summary(
-            "---\ntitle: Guide\n  nested: x\nno colon\n: no key\n- item: x\n-\n# note: x\n-flag: on\n---\n# Body\n",
+        let text = "---\ntitle: Guide\nnested:\n  key: x\n# note: x\n-flag: on\n---\n# Body\n";
+        assert_eq!(
+            printed_fields(text),
+            ["title: \"Guide\"", "nested", "-flag: \"on\""]
         );
-        let FileSummary::Header(Header::Frontmatter(fields)) = summary else {
-            panic!("expected frontmatter, got {summary:?}");
+        let Some(Header::Frontmatter(fields)) = outline_of(&Markdown, text).header else {
+            panic!("expected frontmatter");
         };
-        let keys: Vec<&str> = fields.iter().map(|field| field.key.as_str()).collect();
-        assert_eq!(keys, ["title", "-flag"]);
         assert_eq!(fields[0].range, ByteRange::new(4, 16));
+        assert_eq!(fields[1].range, ByteRange::new(17, 33));
+    }
+
+    #[test]
+    fn values_written_over_several_lines_print_their_first_paragraph_on_one_line() {
+        let text = "---\ndescription: \"Starts here and\n  continues here\"\nplain: first part\n  second part\nblock: >-\n  folded text\nliteral: |\n  one\n  two\n\n  next paragraph\nquoted: 'it''s'\ntags:\n  - a\nempty:\n---\n# T\n";
+        assert_eq!(
+            printed_fields(text),
+            [
+                "description: \"Starts here and continues here\"",
+                "plain: \"first part second part\"",
+                "block: \"folded text\"",
+                "literal: \"one two\"",
+                "quoted: \"it''s\"",
+                "tags",
+                "empty: null",
+            ]
+        );
+    }
+
+    #[test]
+    fn delimiters_may_have_trailing_whitespace_and_the_block_may_end_with_dots() {
+        assert_eq!(
+            printed_fields("--- \ntitle: x\n---\t\n# H\n"),
+            ["title: \"x\""]
+        );
+        assert_eq!(
+            printed_fields("---\ntitle: x\n...\n# H\n"),
+            ["title: \"x\""]
+        );
+        assert_eq!(
+            outline_texts(&Markdown, "--- \ntitle: x\n...\n# H\n"),
+            ["# H"]
+        );
+    }
+
+    #[test]
+    fn a_block_without_a_mapping_is_body_text_between_thematic_breaks() {
+        let text = "---\n# Title\n\nSome text.\n\n---\n\n## More\n";
+        assert_eq!(outline_of(&Markdown, text).header, None);
+        assert_eq!(outline_texts(&Markdown, text), ["# Title", "## More"]);
     }
 
     #[test]

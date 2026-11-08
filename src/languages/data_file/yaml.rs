@@ -1,9 +1,9 @@
-//! YAML keys for the data file engine: the pairs of the first non-empty document's root mapping, block or flow style.
+//! YAML keys for the data file engine and Markdown frontmatter: the pairs of the first non-empty document's root mapping, block or flow style, with scalar values on one line.
 
 use tree_sitter::Node;
 
-use super::{Key, Pair, Value};
-use crate::source_text::line_end;
+use super::{Key, Pair, Value, first_paragraph};
+use crate::source_text::{ByteRange, line_end};
 use crate::syntax_tree::{byte_range, children, source};
 
 /// The document start marker, which may come before the header comment.
@@ -38,6 +38,46 @@ pub(super) fn keys(root: Node<'_>, text: &str) -> Vec<Key> {
         .iter()
         .map(|pair| written_key(pair, text))
         .collect()
+}
+
+/// One field of a YAML mapping, as a Markdown file's frontmatter prints it.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct YamlField {
+    /// The key as written, on one line.
+    pub(crate) key: String,
+    pub(crate) value: YamlValue,
+    /// From the key to the end of its value, without the comment lines after it.
+    pub(crate) range: ByteRange,
+}
+
+/// What a [`YamlField`] holds. A scalar's text is its first paragraph on one line, as
+/// [`first_paragraph`] folds it, so a value written over several lines (a quoted or plain
+/// scalar continued on the next line, or a `|` or `>` block) prints the way YAML reads it.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum YamlValue {
+    /// A plain scalar, such as `Guide`, `42`, or `true`; empty for a key without a value.
+    Plain(String),
+    /// A quoted or block scalar: always a string. Its text is as written between its quotes
+    /// (escapes are not decoded), or a block's lines without the `|`/`>` indicator line.
+    Text(String),
+    /// A mapping or a list, of which only the key prints, as in the YAML engine's outline.
+    Container,
+}
+
+/// The fields of the root mapping, or `None` when the first non-empty document isn't a
+/// mapping (a list, a scalar, only comments, or nothing).
+pub(super) fn fields(root: Node<'_>, text: &str) -> Option<Vec<YamlField>> {
+    let fields = root_pairs(root)?
+        .iter()
+        .map(|pair| YamlField {
+            key: super::one_line(source(pair.key, text), usize::MAX),
+            value: pair.value.map_or(YamlValue::Plain(String::new()), |value| {
+                field_value(value, text)
+            }),
+            range: byte_range(pair.node),
+        })
+        .collect();
+    Some(fields)
 }
 
 /// One pair of the root mapping.
@@ -124,4 +164,33 @@ fn written_key(pair: &RootPair<'_>, text: &str) -> Key {
         value_source: pair.value.map_or("", |value| source(value, text)),
         node: byte_range(pair.node),
     })
+}
+
+/// A field's value: a collection, or a scalar's text without its quotes or block indicator.
+fn field_value(value: Node<'_>, text: &str) -> YamlValue {
+    if collection_child(value, &COLLECTION_KINDS).is_some() {
+        return YamlValue::Container;
+    }
+    let Some(scalar) = children(value)
+        .into_iter()
+        .find(|child| !matches!(child.kind(), "anchor" | "tag" | "comment"))
+    else {
+        return YamlValue::Plain(String::new());
+    };
+    let written = source(scalar, text);
+    let unquoted = |quote: char| {
+        let inner = written.strip_prefix(quote).unwrap_or(written);
+        inner.strip_suffix(quote).unwrap_or(inner)
+    };
+    match scalar.kind() {
+        "double_quote_scalar" => YamlValue::Text(first_paragraph(unquoted('"')).text),
+        "single_quote_scalar" => YamlValue::Text(first_paragraph(unquoted('\'')).text),
+        // The first line holds the `|` or `>` indicator and maybe a comment.
+        "block_scalar" => {
+            let lines = written.split_once('\n').map_or("", |(_, lines)| lines);
+            YamlValue::Text(first_paragraph(lines).text)
+        }
+        // A plain scalar or an alias (`*default`).
+        _ => YamlValue::Plain(first_paragraph(written).text),
+    }
 }

@@ -133,7 +133,7 @@ The glob view and debug mode walk directories with `ignore::WalkBuilder` default
 
 ## ADR-007: Parse Markdown with pulldown-cmark
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-022 (frontmatter is read as YAML)
 
 ### Decision
 
@@ -321,7 +321,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-016: Outline TOML, YAML, and JSON data files with tree-sitter
 
-**Status**: Accepted (2026-11-06); amends ADR-003 and ADR-012; amended by ADR-019 (the glob view prints no preamble)
+**Status**: Accepted (2026-11-06); amends ADR-003 and ADR-012; amended by ADR-019 (the glob view prints no preamble) and ADR-022 (field summary order and value limits)
 
 ### Decision
 
@@ -462,6 +462,28 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - An engine that isn't a tree-sitter code language (Markdown, the data file engine) still implements `LanguageEngine` itself.
 - `declaration_lines` is a plain function pointer, so a language's rules can't capture state; anything it needs comes from the `OutlineLevel` or the node.
 - Rust reads doc comments from their markers instead of tree-sitter-rust's `outer` and `inner` fields; both follow rustc's rules, and outlines of 15 000 crates.io files were unchanged.
+
+## ADR-022: Read frontmatter with the YAML engine, and describing keys first in file summaries
+
+**Status**: Accepted (2026-11-08); amends ADR-007 and ADR-016
+
+### Decision
+
+- A Markdown file's frontmatter is the block from a `---` first line to the next `---` or `...` line (either may end in whitespace) when its content parses, with tree-sitter-yaml, as a YAML mapping; otherwise it is body text, and its `---` lines are thematic breaks. Its fields are the pairs the YAML engine lists as keys (`data_file::yaml_fields`), so both share which pairs are top-level, which values are containers, and how a value written over several lines folds onto one. A mapping broken by a syntax error, which parses as an `ERROR` root, keeps its pairs before the error, in both.
+- Frontmatter values still print as JSON literals, uncut, and only a scalar's first paragraph (up to a blank line) folded onto one line; a list or mapping prints its key alone. Data file values print as written, folded the same way, then cut.
+- A file summary (a data file's field summary, a Markdown file's frontmatter fields) shows at most three fields: `description`, then `title`, then the others in source order. A data file without scalar keys shows its keys' names. A `description` or `title` value is cut at 100 characters instead of 40, and a cut quoted value gets its quote back after the `…`.
+- YAML outlines the first document with content, so an empty first document is skipped.
+
+### Rationale
+
+- The line scanner read only a key's own line, so `|`, `>-`, an opening `"`, and a value on the next lines became literals (`description: "|"`), and a `---` thematic break at the top of a file swallowed the text up to the next one. The YAML grammar is already a dependency, and sharing the data file engine's YAML rules keeps one definition of a top-level key.
+- A frontmatter is a header: like a header comment's first paragraph, it prints whole; cutting a doc's `description` or `readWhen` at 40 or 100 characters would hide what an agent picks docs by. JSON literals keep values delimited in a glob view's comma-separated line.
+- `description` and `title` are what tell an agent what a file is: a `package.json` summary showed `name`, a cut description, and `private`, and a `Cargo.toml` summary showed `edition` instead of the description.
+
+### Consequences
+
+- The Markdown engine parses a frontmatter block with tree-sitter on every glob view; frontmatter is short, so this costs microseconds per file.
+- Quoted frontmatter text is still not unescaped (`'it''s'` prints `"it''s"`), and a `|` block's line breaks print as spaces.
 
 ## Dependencies
 

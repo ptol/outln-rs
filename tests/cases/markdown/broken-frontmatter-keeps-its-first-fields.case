@@ -1,0 +1,18 @@
+Frontmatter whose YAML breaks partway (a half-edited file, here a list item among the
+mapping's keys) still is the header: the fields before the syntax error print, as a YAML
+file's outline lists its keys before one, and the block's lines don't become body headings.
+== args
+input/broken.md
+== file input/broken.md
+---
+title: Draft
+- stray item
+more: x
+---
+# Body
+== stdout
+input/broken.md (6 lines)
+title: "Draft"
+[L6-L6] # Body
+== stderr
+== exit 0

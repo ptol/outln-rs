@@ -1,0 +1,26 @@
+A glob view shows at most three frontmatter fields, `description` first and then `title`, then
+the others in source order, with `...` when more follow; file mode prints them all, in source
+order. A file with three fields or fewer shows them all, without `...`.
+== args
+input
+== file input/many.md
+---
+b: 1
+c: 2
+title: Guide
+d: 3
+description: What this guide covers.
+e: 4
+---
+# Guide
+== file input/few.md
+---
+name: reviewer
+description: Reviews code.
+---
+== stdout
+glob view: input
+input/few.md (4 lines): description: "Reviews code.", name: "reviewer"
+input/many.md (9 lines): description: "What this guide covers.", title: "Guide", b: 1, ...
+== stderr
+== exit 0

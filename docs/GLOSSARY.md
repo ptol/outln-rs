@@ -82,7 +82,7 @@ _Avoid_: Prologue, prelude (a CSS at-rule's prelude is part of a rule). Preamble
 
 ### Frontmatter
 
-The block of `key: value` fields between `---` lines at the very start of a Markdown file.
+The YAML mapping between `---` lines at the very start of a Markdown file (the closing line may be `...`); its fields are the mapping's top-level keys, which a file summary shows up to three of, describing keys first. A `---` block holding no mapping is body text.
 _Avoid_: Metadata block, YAML header
 
 ### File summary
@@ -97,7 +97,7 @@ _Avoid_: Preview, metadata
 
 ### Describing key
 
-A `description` or `title` key, whose value says what the whole file is: a field summary shows it before other fields, and a data file's outline line cuts its value at 100 characters instead of 40.
+A `description` or `title` key, whose value says what the whole file is: a field summary or a Markdown file summary shows it before other fields, and a data file's outline line cuts its value at 100 characters instead of 40.
 _Avoid_: Preferred key, summary key, main field
 
 ## Positions

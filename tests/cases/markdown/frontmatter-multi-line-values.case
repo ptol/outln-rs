@@ -1,0 +1,35 @@
+Frontmatter is read as YAML, by the YAML engine's rules: a value written over several lines (a
+quoted or plain scalar continued on the next line, or a `|` or `>` block) prints its first
+paragraph on one line, its lines joined by spaces, as a JSON string; a key holding a list or a
+mapping prints alone, as in a YAML file's outline. File mode prints every field uncut, as it
+prints a header comment's whole first paragraph.
+== args
+input/agent.md
+== file input/agent.md
+---
+description: "Starts here and
+  continues here"
+plain: first part
+  second part
+block: >-
+  folded text
+literal: |
+  Use this agent when code changed.
+
+  Examples follow.
+tags:
+  - a
+count: 3
+---
+# Agent
+== stdout
+input/agent.md (16 lines)
+description: "Starts here and continues here"
+plain: "first part second part"
+block: "folded text"
+literal: "Use this agent when code changed."
+tags
+count: 3
+[L16-L16] # Agent
+== stderr
+== exit 0

@@ -1,0 +1,25 @@
+Debug mode highlights a frontmatter field from its key to the end of its value, every line of a
+value written over several lines included, but not a comment line after it.
+== args
+--debug
+input/doc.md
+== file input/doc.md
+---
+description: >
+  Folded over
+  two lines
+# A comment.
+title: Doc
+---
+# Doc
+== stdout
+---
+\x1b[32mdescription: >\x1b[0m
+\x1b[32m  Folded over\x1b[0m
+\x1b[32m  two lines\x1b[0m
+# A comment.
+\x1b[32mtitle: Doc\x1b[0m
+---
+\x1b[32m# Doc\x1b[0m
+== stderr
+== exit 0

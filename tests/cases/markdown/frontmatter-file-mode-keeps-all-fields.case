@@ -1,0 +1,21 @@
+File mode prints every frontmatter field in source order, even when a glob view would show only
+the first three with `description` and `title` first.
+== args
+input/many.md
+== file input/many.md
+---
+b: 1
+c: 2
+title: Guide
+d: 3
+description: What this guide covers.
+---
+== stdout
+input/many.md (7 lines)
+b: 1
+c: 2
+title: "Guide"
+d: 3
+description: "What this guide covers."
+== stderr
+== exit 0
