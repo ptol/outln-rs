@@ -1,0 +1,25 @@
+A describing key written in quotes (`"description"` in YAML or TOML, `'title'` in Markdown frontmatter) is still a describing key: the field summary or frontmatter summary shows it first, and its value is cut at 100 characters instead of 40. The key prints as written, quotes included. The YAML value is a plain scalar in a flow mapping, which ends at its `,`.
+== args
+input
+== file input/c.yaml
+{a: 1, b: 2, c: 3, "description": A long purpose that runs past forty characters, so only a describing key keeps it whole.}
+== file input/d.toml
+a = 1
+b = 2
+c = 3
+"description" = "A long purpose that runs past forty characters, so only a describing key keeps it whole."
+== file input/e.md
+---
+a: 1
+b: 2
+c: 3
+'title': A long purpose that runs past forty characters, so only a describing key keeps it whole.
+---
+# E
+== stdout
+glob view: input
+input/c.yaml (1 line): {"description": A long purpose that runs past forty characters, a: 1, b: 2, ...}
+input/d.toml (4 lines): {"description" = "A long purpose that runs past forty characters, so only a describing key keeps it whole.", a = 1, b = 2, ...}
+input/e.md (7 lines): 'title': "A long purpose that runs past forty characters, so only a describing key keeps it whole.", a: 1, b: 2, ...
+== stderr
+== exit 0

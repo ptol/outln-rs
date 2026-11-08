@@ -1,0 +1,12 @@
+A quoted `"description"` key is a describing key, so its outline line cuts the value at 100 characters, not 40, as for the unquoted key.
+== args
+input/a.yaml
+== file input/a.yaml
+"description": A long purpose that runs past forty characters, so only a describing key keeps it whole. Then it goes on for a while longer, past the limit for describing keys.
+other: A long purpose that runs past forty characters, so only a describing key keeps it whole.
+== stdout
+input/a.yaml (2 lines)
+[L1-L1] "description": A long purpose that runs past forty characters, so only a describing key keeps it whole. Then it goe…
+[L2-L2] other: A long purpose that runs past forty char…
+== stderr
+== exit 0
