@@ -15,7 +15,7 @@ use crate::source_file::load;
 use crate::source_text::LineCount;
 
 /// A glob view that lists more files than this ends with a hint on stderr, unless a depth limit
-/// applied to a directory argument: 300 file summaries are about 15k tokens, more than an agent
+/// cut a directory argument into directory summaries: 300 file summaries are about 15k tokens, more than an agent
 /// wants for an overview.
 const MANY_FILES: usize = 300;
 
@@ -69,7 +69,7 @@ pub(crate) fn run(
         }
     }
     if listing.files.len() > MANY_FILES
-        && let Some(suggestion) = Suggestion::for_arguments(arguments, depth_limit)
+        && let Some(suggestion) = Suggestion::for_listing(arguments, &listing, depth_limit)
     {
         writeln!(err, "{}", many_files_hint(listing.files.len(), suggestion))?;
     }
@@ -87,19 +87,24 @@ enum Suggestion {
 }
 
 impl Suggestion {
-    /// The suggestion for a glob view of `arguments`, or `None` when a depth limit applied to a
-    /// directory argument already.
-    fn for_arguments(
+    /// The suggestion for a glob view of `arguments` that listed `listing`, or `None` when a
+    /// depth limit already cut a directory argument into directory summaries. A depth limit
+    /// that cut nothing can't shorten the listing either, so then only a narrower path helps.
+    fn for_listing(
         arguments: &[(String, ArgumentKind)],
+        listing: &Listing,
         depth_limit: Option<NonZeroUsize>,
     ) -> Option<Self> {
+        if !listing.directories.is_empty() {
+            return None;
+        }
         let has_directory = arguments
             .iter()
             .any(|(_, kind)| *kind == ArgumentKind::Directory);
-        match (has_directory, depth_limit) {
-            (true, Some(_)) => None,
-            (true, None) => Some(Self::DepthLimit),
-            (false, _) => Some(Self::NarrowerPath),
+        if has_directory && depth_limit.is_none() {
+            Some(Self::DepthLimit)
+        } else {
+            Some(Self::NarrowerPath)
         }
     }
 }

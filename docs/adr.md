@@ -541,7 +541,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - `--depth N` (N ≥ 1) limits how many levels of each directory argument a glob view lists: depth 1 is the files directly inside, like `find -maxdepth 1`. Each directory N levels down that holds supported files prints one directory summary instead of its files: its path with a trailing `/`, its supported files below, and their total line count, sorted where its files would have been.
 - The walk itself is not limited: a directory is walked whole, with its ignore rules, and `glob_view` assigns each file below the limit to its directory at the limit (`discovery::directory_at_depth_limit`). The summarized files are loaded on `Context::threads` threads to count their lines; one that fails to load counts as a file without lines and isn't reported.
 - The limit applies to directory arguments only: a glob pattern already walks only as deep as it can match, and a file argument is listed as given. `--depth` conflicts with `--debug`.
-- Without a limit, a glob view of more than 300 files ends with a hint on stderr naming `--depth 1` (or a narrower path or pattern for globs only).
+- A glob view of more than 300 files ends with a hint on stderr, unless a depth limit cut a directory argument into directory summaries: it names `--depth 1` for a directory argument without a limit, and a narrower path or pattern otherwise.
 
 ### Rationale
 

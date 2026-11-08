@@ -105,6 +105,15 @@ fn a_long_glob_view_suggests_a_depth_limit_on_stderr() {
         err,
         "Hint: found 301 files; a narrower path or pattern lists fewer\n"
     );
+
+    // Beside a directory the depth limit cut nothing from, the glob pattern still gets one.
+    dir.write("empty/.keep", b"").expect("write");
+    let (_, err, _) = run_in(&dir, &["--depth", "1", "empty", "docs/**/*.md"])
+        .expect("writing to a Vec cannot fail");
+    assert_eq!(
+        err,
+        "Hint: found 301 files; a narrower path or pattern lists fewer\n"
+    );
 }
 
 /// `src/main.rs` picks the style: green for a terminal, markers for agents and pipes.
@@ -257,6 +266,8 @@ fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
     let result = run_in(&dir, &["secret/b.rs"]);
     // Glob characters don't make it a glob pattern that silently matches nothing.
     let bracket_result = run_in(&dir, &["secret/[id].rs"]);
+    // A depth limit doesn't hide the error behind a usage error about file arguments.
+    let depth_result = run_in(&dir, &["--depth", "1", "secret/b.rs"]);
     fs::set_permissions(&secret, Permissions::from_mode(0o755)).expect("chmod back");
     if searchable_anyway {
         skip_because_permissions_are_ignored("a_file_in_an_unsearchable_directory");
@@ -271,6 +282,14 @@ fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
         "File secret/b.rs could not be read: permission denied\n"
     );
     assert_eq!(status, ExitStatus::Failure);
+    assert_eq!(
+        depth_result.expect("writing to a Vec cannot fail"),
+        (
+            String::new(),
+            "File secret/b.rs could not be read: permission denied\n".to_owned(),
+            ExitStatus::Failure
+        )
+    );
     let (_, bracket_err, bracket_status) = bracket_result.expect("writing to a Vec cannot fail");
     assert_eq!(
         bracket_err,

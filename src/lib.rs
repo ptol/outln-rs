@@ -155,7 +155,13 @@ pub fn run(
     });
     if is_glob_view {
         glob_view::run(&classified, &walker, arguments.depth, out, err)
-    } else if arguments.depth.is_some() {
+    } else if arguments.depth.is_some()
+        // Arguments that only fail (a missing file, a directory that can't be read) report
+        // their own errors instead.
+        && classified
+            .iter()
+            .any(|(_, kind)| *kind == ArgumentKind::File)
+    {
         print_clap_message(
             &cli::depth_limit_without_glob_view(context.version),
             out,

@@ -3,7 +3,7 @@
 use tree_sitter::Node;
 
 use crate::outline::OutlineLine;
-use crate::source_text::{ByteRange, trim_end};
+use crate::source_text::{ByteRange, quoted_len, trim_end};
 use crate::syntax_tree::{OneLineRules, child_of_kind, one_line_source_before};
 
 /// A declaration's signature, such as `function parse(input: string): Ast` or `pub struct
@@ -118,21 +118,44 @@ fn without_trailing_type_parameters(head: &str) -> &str {
     }
 }
 
-/// Each character of `text` with its byte offset and how many `<…>` groups are open after it.
-/// The `>` of `->` and `=>` (a Rust `Fn() -> T` bound, a TypeScript function type) closes no
-/// group.
+/// Each character of `text` outside string literals with its byte offset and how many `<…>`
+/// groups are open after it. The `>` of `->` and `=>` (a Rust `Fn() -> T` bound, a TypeScript
+/// function type) closes no group, and the `<` of a string-literal type (`T extends "<"`)
+/// opens none.
 fn with_angle_depth(text: &str) -> impl Iterator<Item = (usize, char, usize)> {
     let mut depth = 0_usize;
     let mut previous = None;
-    text.char_indices().map(move |(index, character)| {
+    let mut string_end = 0;
+    text.char_indices().filter_map(move |(index, character)| {
+        if index < string_end {
+            return None;
+        }
+        if let Some(length) = string_literal_len(&text[index..], character) {
+            string_end = index + length;
+            previous = None;
+            return None;
+        }
         match character {
             '<' => depth += 1,
             '>' if !matches!(previous, Some('-' | '=')) => depth = depth.saturating_sub(1),
             _ => {}
         }
         previous = Some(character);
-        (index, character, depth)
+        Some((index, character, depth))
     })
+}
+
+/// The length of the string literal `rest` starts with, quotes included, if `first` (its first
+/// character) opens one: `"…"` and `` `…` `` strings, and a `'…'` one only when it closes before
+/// any whitespace, `,` or `>`, so a Rust lifetime (`<'a, 'b>`, `&'a str`) isn't one.
+fn string_literal_len(rest: &str, first: char) -> Option<usize> {
+    if !matches!(first, '"' | '\'' | '`') {
+        return None;
+    }
+    let length = quoted_len(rest, first)?;
+    let is_lifetime = first == '\''
+        && rest[1..length - 1].contains(|c: char| c.is_whitespace() || matches!(c, ',' | '>'));
+    (!is_lifetime).then_some(length)
 }
 
 #[cfg(test)]
@@ -160,6 +183,10 @@ mod tests {
                 "impl<T: Display> Render for Wrapper<T>",
             ),
             ("describe('parser')", "describe('parser')"),
+            ("function f<T extends \"<\">(x: T)", "function f"),
+            ("function g<T extends '<'>(x: T)", "function g"),
+            ("fn borrow<'a, 'b: 'a>(x: &'a str) -> &'b str", "fn borrow"),
+            ("fn lifetime<'a>(x: &'a str)", "fn lifetime"),
             ("pub struct Pair<T>(T, T)", "pub struct Pair"),
             ("pub(in crate::a) struct S", "pub(in crate::a) struct S"),
             ("fn f<F: Fn()>(f: F)", "fn f"),

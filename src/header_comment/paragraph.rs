@@ -4,6 +4,7 @@
 //! code example before its summary; a license banner says nothing about what the file is for.
 
 use crate::outline::CommentLine;
+use crate::source_text::quoted_len;
 
 /// The lines of the comment `lines` that make its header: its first prose paragraph, or `None`
 /// when that paragraph is a license notice ([`is_license_notice`]) or the comment has text but
@@ -134,24 +135,37 @@ fn is_link_definition(text: &str) -> bool {
             .is_some_and(|close| !text[1..close].contains(']'))
 }
 
-/// Whether a line is HTML tags and whitespace only: `<br>` is, `<b>Purpose.</b>` isn't, since
-/// its text prints.
+/// Whether a line is HTML tags and whitespace only: `<br>` and `<img alt="a > b">` are,
+/// `<b>Purpose.</b>` isn't, since its text prints.
 fn is_html_tags_only(text: &str) -> bool {
     let mut rest = text.trim_start();
     if rest.is_empty() {
         return false;
     }
     while !rest.is_empty() {
-        let Some(after_tag) = rest
-            .strip_prefix('<')
-            .and_then(|tag| tag.split_once('>'))
-            .map(|(_, after)| after)
-        else {
+        let Some(tag_len) = html_tag_len(rest) else {
             return false;
         };
-        rest = after_tag.trim_start();
+        rest = rest[tag_len..].trim_start();
     }
     true
+}
+
+/// The length of the HTML tag `text` starts with, through its `>`, or `None` if it doesn't start
+/// with a tag that closes. A `>` inside a quoted attribute value (`alt="a > b"`) doesn't close it.
+fn html_tag_len(text: &str) -> Option<usize> {
+    if !text.starts_with('<') {
+        return None;
+    }
+    let mut offset = 1;
+    while let Some(character) = text[offset..].chars().next() {
+        match character {
+            '>' => return Some(offset + 1),
+            '"' | '\'' => offset += quoted_len(&text[offset..], character)?,
+            _ => offset += character.len_utf8(),
+        }
+    }
+    None
 }
 
 /// Whether a line holds nothing but Markdown images and links around images, separated by
@@ -329,6 +343,14 @@ mod tests {
         assert_eq!(header_texts(&info_after_close), Some(owned(&["Docs."])));
         let closed_longer = ["```", "code", "`````", "", "Docs."];
         assert_eq!(header_texts(&closed_longer), Some(owned(&["Docs."])));
+    }
+
+    #[test]
+    fn a_quoted_greater_than_sign_stays_inside_its_html_tag() {
+        assert_eq!(
+            header_texts(&["<img alt=\"a > b\" src='x>y.svg'>", "", "Purpose."]),
+            Some(owned(&["Purpose."]))
+        );
     }
 
     #[test]
