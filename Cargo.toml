@@ -68,3 +68,7 @@ allow_attributes_without_reason = "warn"
 lto = "fat"
 codegen-units = 1
 strip = true
+# A panic is a bug, and the binary catches none, so it may as well abort: no unwinding tables or
+# landing pads, 140 KB smaller and no slower. Cargo ignores this for test targets, which need
+# unwinding (the engine contract test catches panics), even under `cargo test --release`.
+panic = "abort"
