@@ -25,7 +25,7 @@ use crate::outline::{
     FieldSummary, FieldsShown, FileSummary, Header, Outline, OutlineLine, is_describing_key,
     summary_fields,
 };
-use crate::source_text::{ByteRange, SourceText, trim_end};
+use crate::source_text::{ByteRange, Cut, SourceText, summary_prefix, trim_end};
 use crate::syntax_tree::{byte_range, parse};
 
 pub(crate) use yaml::{YamlField, YamlValue};
@@ -143,10 +143,11 @@ impl DataFile {
         )
     }
 
-    /// The part of `text` a field summary reads ([`summary_prefix`]), no more than its grammar
-    /// can parse, and whether that is the whole file.
+    /// The part of `text` a field summary reads (its first [`SUMMARY_PREFIX_BYTES`], cut by
+    /// [`summary_prefix`]), no more than its grammar can parse, and whether that is the whole
+    /// file.
     fn summary_prefix<'text>(&self, text: &'text str) -> (&'text str, Cut) {
-        let (prefix, cut) = summary_prefix(text);
+        let (prefix, cut) = summary_prefix(text, SUMMARY_PREFIX_BYTES);
         let parsed = (self.parsable_part)(prefix);
         if parsed.len() < prefix.len() {
             (parsed, Cut::Prefix)
@@ -329,27 +330,6 @@ struct SummarySource {
 /// How much of a file a field summary reads. A file's first fields almost always fit, and a
 /// glob view parses every data file, so a lockfile of several megabytes isn't parsed whole.
 const SUMMARY_PREFIX_BYTES: usize = 64 * 1024;
-
-/// Whether a field summary read the whole file or only its start.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Cut {
-    WholeFile,
-    Prefix,
-}
-
-/// The part of `text` a field summary reads: all of it, or its first
-/// [`SUMMARY_PREFIX_BYTES`] up to the last line break among them (or a character boundary,
-/// for a file on one line).
-fn summary_prefix(text: &str) -> (&str, Cut) {
-    if text.len() <= SUMMARY_PREFIX_BYTES {
-        return (text, Cut::WholeFile);
-    }
-    let limit = text.floor_char_boundary(SUMMARY_PREFIX_BYTES);
-    let end = text[..limit]
-        .rfind('\n')
-        .map_or(limit, |newline| newline + 1);
-    (&text[..end], Cut::Prefix)
-}
 
 /// The field summary of a file's scalar keys, picked and ordered by [`summary_fields`]
 /// (`description` and `title` first), or, in a file without scalar keys, of its keys' names
@@ -681,19 +661,6 @@ mod tests {
             value_text("name", &format!("\"\"\"{long}\"\"\"")),
             format!("\"\"\"{}…\"\"\"", "x".repeat(MAX_VALUE_CHARS - 3))
         );
-    }
-
-    #[test]
-    fn summary_prefix_cuts_large_files_at_a_line_break() {
-        let line = "\"key\": \"value\",\n";
-        let text = line.repeat(SUMMARY_PREFIX_BYTES / line.len() + 2);
-        let (prefix, cut) = summary_prefix(&text);
-        assert_eq!(cut, Cut::Prefix);
-        assert!(prefix.ends_with('\n') && prefix.len() <= SUMMARY_PREFIX_BYTES);
-        let one_line = "é".repeat(SUMMARY_PREFIX_BYTES);
-        let (prefix, _) = summary_prefix(&one_line);
-        assert!(one_line.is_char_boundary(prefix.len()));
-        assert_eq!(summary_prefix("a: 1\n"), ("a: 1\n", Cut::WholeFile));
     }
 
     #[test]
