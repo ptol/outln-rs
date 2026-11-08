@@ -1,0 +1,26 @@
+A frontmatter delimiter may be followed by whitespace (`--- `), and the block may close with
+YAML's document end marker `...` instead of `---`. Either way the fields are the header and the
+closing line is no setext heading underline, so the body's headings start after it.
+== args
+input/trailing-space.md
+input/dots.md
+== file input/trailing-space.md escaped
+--- \n\
+title: trailing space\n\
+---\t\n\
+# H1\n\
+== file input/dots.md
+---
+title: dots
+...
+# H1
+== stdout
+input/trailing-space.md (4 lines)
+title: "trailing space"
+[L4-L4] # H1
+
+input/dots.md (4 lines)
+title: "dots"
+[L4-L4] # H1
+== stderr
+== exit 0

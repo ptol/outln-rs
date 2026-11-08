@@ -34,15 +34,6 @@ impl Header {
         };
         last_range.map_or(0, |range| range.end)
     }
-
-    /// What a glob view puts between the header's printed lines: fields are a list, while
-    /// comment lines are one sentence wrapped over several lines.
-    fn summary_separator(&self) -> &'static str {
-        match self {
-            Header::Frontmatter(_) => ", ",
-            Header::Comment(_) => " ",
-        }
-    }
 }
 
 /// One non-blank source line of a header comment.
@@ -55,13 +46,15 @@ pub(crate) struct CommentLine {
     pub(crate) range: ByteRange,
 }
 
-/// One top-level `key: value` line of a Markdown file's frontmatter.
+/// One top-level field of a Markdown file's frontmatter, printed as `key: value`, or as `key`
+/// alone for a list or mapping.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct FrontmatterField {
     pub(crate) key: String,
-    /// The value as a JSON literal (`"text"`, `42`, `true`, `null`).
-    pub(crate) value: String,
-    /// The whole source line, highlighted in debug mode.
+    /// The value as a JSON literal (`"text"`, `42`, `true`, `null`), or `None` for a list or
+    /// mapping.
+    pub(crate) value: Option<String>,
+    /// From the key to the end of its value, highlighted in debug mode.
     pub(crate) range: ByteRange,
 }
 
@@ -123,6 +116,43 @@ pub(crate) enum FieldsShown {
     First,
 }
 
+/// How many fields a file summary shows: a data file's field summary, or a Markdown file's
+/// frontmatter fields.
+const MAX_SUMMARY_FIELDS: usize = 3;
+
+/// Keys whose value says what the whole file is, which a file summary shows first, in this
+/// order.
+const DESCRIBING_KEYS: [&str; 2] = ["description", "title"];
+
+/// Whether a field's key is one of the [`DESCRIBING_KEYS`].
+pub(crate) fn is_describing_key(key: &str) -> bool {
+    DESCRIBING_KEYS.contains(&key)
+}
+
+/// The fields a file summary shows: the [`DESCRIBING_KEYS`] first, then the others in source
+/// order, at most [`MAX_SUMMARY_FIELDS`], and whether some were left out. `key` gives each
+/// field's key.
+pub(crate) fn summary_fields<T>(
+    fields: impl IntoIterator<Item = T>,
+    key: impl Fn(&T) -> &str,
+) -> (Vec<T>, FieldsShown) {
+    let mut fields: Vec<T> = fields.into_iter().collect();
+    // A stable sort, so fields of the same rank keep their source order.
+    fields.sort_by_key(|field| {
+        DESCRIBING_KEYS
+            .iter()
+            .position(|describing| *describing == key(field))
+            .unwrap_or(DESCRIBING_KEYS.len())
+    });
+    let shown = if fields.len() > MAX_SUMMARY_FIELDS {
+        fields.truncate(MAX_SUMMARY_FIELDS);
+        FieldsShown::First
+    } else {
+        FieldsShown::All
+    };
+    (fields, shown)
+}
+
 /// Printed in a glob view for a file without a header.
 const NO_HEADER: &str = "(no header available)";
 
@@ -161,9 +191,11 @@ pub(crate) fn render_file_summary(
     summary: &FileSummary,
 ) -> String {
     let printed = match summary {
-        FileSummary::Header(header) => {
+        FileSummary::Header(Header::Frontmatter(fields)) => Some(frontmatter_summary(fields)),
+        FileSummary::Header(header @ Header::Comment(_)) => {
+            // A header comment's lines are one sentence wrapped over several lines.
             let lines = header_lines(header);
-            (!lines.is_empty()).then(|| lines.join(header.summary_separator()))
+            (!lines.is_empty()).then(|| lines.join(" "))
         }
         FileSummary::Fields(fields) => Some(render_field_summary(fields)),
         FileSummary::FirstHeading(heading) => Some(heading.clone()),
@@ -179,6 +211,25 @@ pub(crate) fn render_file_summary(
 /// its file summary, so file mode and glob view print a file's size the same way.
 fn path_and_line_count(path: &str, line_count: LineCount) -> String {
     format!("{path} ({line_count})")
+}
+
+/// Frontmatter fields as a file summary prints them, picked by [`summary_fields`]:
+/// `description: "Guide", draft: true, ...`.
+fn frontmatter_summary(fields: &[FrontmatterField]) -> String {
+    let (shown_fields, shown) = summary_fields(fields, |field| field.key.as_str());
+    let mut parts: Vec<String> = shown_fields.into_iter().map(field_line).collect();
+    if shown == FieldsShown::First {
+        parts.push(MORE_FIELDS.to_owned());
+    }
+    parts.join(", ")
+}
+
+/// A frontmatter field as printed: `key: value`, or `key` for a list or mapping.
+fn field_line(field: &FrontmatterField) -> String {
+    match &field.value {
+        Some(value) => format!("{}: {value}", field.key),
+        None => field.key.clone(),
+    }
 }
 
 /// A field summary as `[table] {a: 1, b: 2, ...}`.
@@ -197,10 +248,7 @@ fn render_field_summary(summary: &FieldSummary) -> String {
 /// The header as printed lines: one per frontmatter field, or one per comment line with text.
 fn header_lines(header: &Header) -> Vec<String> {
     match header {
-        Header::Frontmatter(fields) => fields
-            .iter()
-            .map(|field| format!("{}: {}", field.key, field.value))
-            .collect(),
+        Header::Frontmatter(fields) => fields.iter().map(field_line).collect(),
         Header::Comment(lines) => lines
             .iter()
             .filter(|line| !line.text.is_empty())
@@ -227,7 +275,7 @@ mod tests {
     fn field(key: &str, value: &str) -> FrontmatterField {
         FrontmatterField {
             key: key.to_owned(),
-            value: value.to_owned(),
+            value: Some(value.to_owned()),
             range: ByteRange::new(0, 0),
         }
     }

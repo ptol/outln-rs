@@ -1,9 +1,16 @@
-//! Data file language engine (TOML, YAML, JSON): header comments, top-level keys with comment-aware line ranges, and the glob view's field summary; each format's child module finds its keys in its syntax tree.
+//! Data file language engine (TOML, YAML, JSON): header comments, top-level keys with comment-aware line ranges and values on one line, the glob view's field summary (describing keys first), and the YAML fields of Markdown frontmatter.
 //!
 //! The formats differ only in their grammar, comment syntax, preamble, and where their keys sit
 //! in the tree, which each format's [`DataFile`] table names; how a key prints, where its line
 //! range starts and ends, and which keys a field summary shows are the same for all three, so
 //! they live here.
+//!
+//! A key's outline line prints a scalar value as written, its first paragraph on one line (a
+//! value written over several lines has its lines joined by spaces), cut at 40 characters, or
+//! 100 for a describing key (`description`, `title`). A field summary shows up to three scalar
+//! keys, describing keys first, then the others in source order; a file without scalar keys
+//! shows its keys' names. The Markdown engine reads its frontmatter with [`yaml_fields`], so a
+//! frontmatter field is a YAML key by the same rules.
 
 mod json;
 mod toml;
@@ -14,9 +21,14 @@ use tree_sitter::{Language, Node};
 use crate::comment_syntax::CommentSyntax;
 use crate::header_comment::{HeaderChoice, find_header_comment};
 use crate::language_engine::LanguageEngine;
-use crate::outline::{FieldSummary, FieldsShown, FileSummary, Header, Outline, OutlineLine};
+use crate::outline::{
+    FieldSummary, FieldsShown, FileSummary, Header, Outline, OutlineLine, is_describing_key,
+    summary_fields,
+};
 use crate::source_text::{ByteRange, SourceText, trim_end};
 use crate::syntax_tree::{byte_range, parse};
+
+pub(crate) use yaml::{YamlField, YamlValue};
 
 /// The language engine for one data file format, as the data that differs between formats.
 pub(crate) struct DataFile {
@@ -95,6 +107,21 @@ impl LanguageEngine for DataFile {
     }
 }
 
+/// The fields of the YAML mapping `text` holds, as a Markdown file's frontmatter prints them,
+/// or `None` when it holds no mapping: the YAML engine's own rules decide which pairs are
+/// top-level and how a value is written on one line.
+pub(crate) fn yaml_fields(text: &str) -> Option<Vec<YamlField>> {
+    let tree = parse(text, &(YAML.grammar)());
+    let mut fields = yaml::fields(tree.root_node(), text)?;
+    // The grammar puts the comment lines after a value inside it, as for a key's line range.
+    let source = SourceText::new(text);
+    let comments = comment_ranges(tree.root_node());
+    for field in &mut fields {
+        field.range.end = content_end(&source, field.range.start, field.range.end, &comments);
+    }
+    Some(fields)
+}
+
 impl DataFile {
     /// The header comment: the first comment at the top of the file, after any preamble.
     fn header(&self, text: &str) -> Option<Header> {
@@ -121,6 +148,9 @@ impl DataFile {
 /// One key of a data file, as its format's module finds it.
 #[derive(Debug, PartialEq, Eq)]
 struct Key {
+    /// The key as printed (`name`, a TOML table's `[package]`), which a field summary orders
+    /// its fields by.
+    name: String,
     /// What its outline line prints: `name: "outln"`, `jobs`, or a TOML table's `[package]`.
     text: String,
     value: Value,
@@ -162,14 +192,15 @@ impl Key {
         let key = one_line(pair.key, usize::MAX);
         let text = match pair.value {
             Value::Scalar => {
-                let value = value_text(pair.value_source);
+                let value = value_text(&key, pair.value_source);
                 format!("{key}{}{value}", pair.separator)
                     .trim_end()
                     .to_owned()
             }
-            Value::Container => key,
+            Value::Container => key.clone(),
         };
         Key {
+            name: key,
             text,
             value: pair.value,
             node: pair.node,
@@ -182,25 +213,77 @@ impl Key {
 /// [`CUT_MARKER`].
 const MAX_VALUE_CHARS: usize = 40;
 
-/// Printed where a value was cut: after its first line, or after [`MAX_VALUE_CHARS`].
+/// The most characters of a `description` or `title` value ([`is_describing_key`]) an outline
+/// line prints: it tells an agent what the file is, so it gets more room than other values.
+const MAX_DESCRIBING_VALUE_CHARS: usize = 100;
+
+/// Printed where a value was cut: after its first paragraph, or after its most characters.
 const CUT_MARKER: char = '…';
 
-/// A scalar value as written, on one line, cut to [`MAX_VALUE_CHARS`].
-fn value_text(source: &str) -> String {
-    one_line(source, MAX_VALUE_CHARS)
+/// The scalar value of `key` as written, on one line, cut to [`MAX_VALUE_CHARS`], or to
+/// [`MAX_DESCRIBING_VALUE_CHARS`] for a describing key's.
+fn value_text(key: &str, source: &str) -> String {
+    let max_chars = if is_describing_key(key) {
+        MAX_DESCRIBING_VALUE_CHARS
+    } else {
+        MAX_VALUE_CHARS
+    };
+    one_line(source, max_chars)
 }
 
-/// `source` as written, on one line: its first line, cut to `max_chars` characters (not bytes,
-/// so a character is never split), with [`CUT_MARKER`] where it was cut. A key may span lines
-/// too (a YAML `? [a,\n b]` key), and an outline line must not.
+/// `source` as written, on one line: its [`first_paragraph`], cut to `max_chars` characters
+/// (not bytes, so a character is never split), with [`CUT_MARKER`] where anything was left
+/// out. A key may span lines too (a YAML `? [a,\n b]` key, a half-edited TOML table header),
+/// and an outline line must not.
+///
+/// A cut quoted value gets its quote again after the marker (`"Starts here…"`), so the quote
+/// still closes; a TOML `"""` string gets all three.
 fn one_line(source: &str, max_chars: usize) -> String {
-    let source = source.trim();
-    let first_line = source.lines().next().unwrap_or_default().trim_end();
-    let mut text: String = first_line.chars().take(max_chars).collect();
-    if text.len() < source.len() {
+    let folded = first_paragraph(source);
+    let mut text: String = folded.text.chars().take(max_chars).collect();
+    if folded.has_more || text.len() < folded.text.len() {
         text.push(CUT_MARKER);
+        text.push_str(opening_quote(&folded.text));
     }
     text
+}
+
+/// The quote a value opens with: `"`, `'`, or a TOML multi-line string's `"""` or `'''`;
+/// empty for an unquoted value.
+fn opening_quote(value: &str) -> &str {
+    let Some(quote) = value
+        .chars()
+        .next()
+        .filter(|first| matches!(first, '"' | '\''))
+    else {
+        return "";
+    };
+    let run = value.len() - value.trim_start_matches(quote).len();
+    &value[..run.min(MULTI_LINE_QUOTE_LEN)]
+}
+
+/// How many quote characters open a TOML multi-line string (`"""`).
+const MULTI_LINE_QUOTE_LEN: usize = 3;
+
+/// A text's first paragraph on one line, as [`first_paragraph`] makes it.
+struct Folded {
+    text: String,
+    /// Whether non-blank text follows the first paragraph.
+    has_more: bool,
+}
+
+/// The first paragraph of `source`: its lines up to the first blank line, each trimmed and
+/// joined with one space, as YAML folds a scalar written over several lines.
+fn first_paragraph(source: &str) -> Folded {
+    let mut lines = source
+        .lines()
+        .map(str::trim)
+        .skip_while(|line| line.is_empty());
+    let paragraph: Vec<&str> = lines.by_ref().take_while(|line| !line.is_empty()).collect();
+    Folded {
+        text: paragraph.join(" "),
+        has_more: lines.any(|line| !line.is_empty()),
+    }
 }
 
 /// The keys a field summary is made from, and the TOML table they belong to.
@@ -208,9 +291,6 @@ struct SummarySource {
     table: Option<String>,
     keys: Vec<Key>,
 }
-
-/// How many fields a field summary shows.
-const MAX_SUMMARY_FIELDS: usize = 3;
 
 /// How much of a file a field summary reads. A file's first fields almost always fit, and a
 /// glob view parses every data file, so a lockfile of several megabytes isn't parsed whole.
@@ -237,33 +317,37 @@ fn summary_prefix(text: &str) -> (&str, Cut) {
     (&text[..end], Cut::Prefix)
 }
 
-/// The field summary of a file's first scalar keys, or `None` without any.
+/// The field summary of a file's scalar keys, picked and ordered by [`summary_fields`]
+/// (`description` and `title` first), or, in a file without scalar keys, of its keys' names
+/// (`{compilerOptions, include}`); `None` without any key.
 ///
 /// After a [`Cut::Prefix`], a key that runs to the end of what was read may continue past it
 /// (its value cut short, or its parse recovered from the missing rest), so only keys ending
 /// before that count, and more fields may follow.
 fn field_summary(source: SummarySource, prefix: &str, cut: Cut) -> Option<FieldSummary> {
     let content_end = prefix.trim_end().len();
-    let mut scalars = source.keys.into_iter().filter(|key| {
-        key.value == Value::Scalar && (cut == Cut::WholeFile || key.node.end < content_end)
-    });
-    let fields: Vec<String> = scalars
-        .by_ref()
-        .take(MAX_SUMMARY_FIELDS)
-        .map(|key| key.text)
+    let complete: Vec<Key> = source
+        .keys
+        .into_iter()
+        .filter(|key| cut == Cut::WholeFile || key.node.end < content_end)
         .collect();
-    if fields.is_empty() {
+    let has_scalars = complete.iter().any(|key| key.value == Value::Scalar);
+    // A key without a scalar value prints only its name, so the fallback is the keys' names.
+    let candidates = complete
+        .into_iter()
+        .filter(|key| !has_scalars || key.value == Value::Scalar);
+    let (keys, shown) = summary_fields(candidates, |key| &key.name);
+    if keys.is_empty() {
         return None;
     }
-    let shown = if cut == Cut::Prefix || scalars.next().is_some() {
-        FieldsShown::First
-    } else {
-        FieldsShown::All
-    };
     Some(FieldSummary {
         table: source.table,
-        fields,
-        shown,
+        fields: keys.into_iter().map(|key| key.text).collect(),
+        shown: if cut == Cut::Prefix {
+            FieldsShown::First
+        } else {
+            shown
+        },
     })
 }
 
@@ -425,7 +509,7 @@ mod tests {
 
     #[test]
     fn yaml_keys_print_on_one_line_and_flow_keys_may_lack_a_value() {
-        assert_eq!(outline_texts(&YAML, "? [a,\n   b]\n: 1\n"), ["[a,…: 1"]);
+        assert_eq!(outline_texts(&YAML, "? [a,\n   b]\n: 1\n"), ["[a, b]: 1"]);
         assert_eq!(outline_texts(&YAML, "{a, b: 2}\n"), ["a:", "b: 2"]);
     }
 
@@ -460,13 +544,35 @@ mod tests {
     }
 
     #[test]
-    fn value_text_keeps_the_first_line_and_cuts_long_values_by_characters() {
-        assert_eq!(value_text("\"outln\""), "\"outln\"");
-        assert_eq!(value_text("|\n  block\n"), "|…");
-        let long = "é".repeat(MAX_VALUE_CHARS + 1);
+    fn value_text_folds_the_first_paragraph_and_cuts_long_values_by_characters() {
+        assert_eq!(value_text("name", "\"outln\""), "\"outln\"");
         assert_eq!(
-            value_text(&long),
+            value_text("run", "|\n  one\n  two\n\n  three\n"),
+            "| one two…"
+        );
+        let long = "é".repeat(MAX_DESCRIBING_VALUE_CHARS + 1);
+        assert_eq!(
+            value_text("name", &long),
             format!("{}…", "é".repeat(MAX_VALUE_CHARS))
+        );
+        assert_eq!(
+            value_text("description", &long),
+            format!("{}…", "é".repeat(MAX_DESCRIBING_VALUE_CHARS))
+        );
+    }
+
+    #[test]
+    fn a_cut_quoted_value_still_closes_its_quote() {
+        let long = "x".repeat(MAX_VALUE_CHARS);
+        let cut = format!("\"{}…\"", "x".repeat(MAX_VALUE_CHARS - 1));
+        assert_eq!(value_text("name", &format!("\"{long}\"")), cut);
+        assert_eq!(
+            value_text("name", "'para one\n\n  para two'"),
+            "'para one…'"
+        );
+        assert_eq!(
+            value_text("name", &format!("\"\"\"{long}\"\"\"")),
+            format!("\"\"\"{}…\"\"\"", "x".repeat(MAX_VALUE_CHARS - 3))
         );
     }
 

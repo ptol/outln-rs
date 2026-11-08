@@ -1,0 +1,15 @@
+A root mapping broken by a syntax error (here a list item among its keys, as in a half-edited
+file) still lists its keys before the error; before, the file had no keys at all.
+== args
+input/broken.yaml
+== file input/broken.yaml
+name: CI
+on: push
+- stray item
+jobs: {}
+== stdout
+input/broken.yaml (4 lines)
+[L1-L1] name: CI
+[L2-L2] on: push
+== stderr
+== exit 0

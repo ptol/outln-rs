@@ -1,0 +1,54 @@
+Files whose lines end with a lone CR (classic Mac OS) are read as if each CR were a line break,
+in every engine: line counts and line ranges count them, the header comment ends at its line,
+and no raw CR is printed. A CR before an LF is one line break, so a mix of both counts each once.
+== args
+input/cr.js
+input/cr.md
+input/cr.yaml
+input/cr.rs
+input/cr.css
+input/mixed.toml
+== file input/cr.js escaped
+// Header\rfunction a() {}\rfunction b() {}\r\
+== file input/cr.md escaped
+---\rdescription: CR doc\r---\r# Title\r\r## Section\r\
+== file input/cr.yaml escaped
+# Workflow\rname: CI\ron: push\r\
+== file input/cr.rs escaped
+//! Crate.\r\rpub fn a() {}\rpub struct B;\r\
+== file input/cr.css escaped
+/* Styles */\r.a { color: red }\r.b { color: blue }\r\
+== file input/mixed.toml escaped
+a = 1\r\nb = 2\rc = 3\n\
+== stdout
+input/cr.js (3 lines)
+Header
+[L2-L2] function a()
+[L3-L3] function b()
+
+input/cr.md (6 lines)
+description: "CR doc"
+[L4-L6] # Title
+[L6-L6] ## Section
+
+input/cr.yaml (3 lines)
+Workflow
+[L2-L2] name: CI
+[L3-L3] on: push
+
+input/cr.rs (4 lines)
+Crate.
+[L3-L3] pub fn a()
+[L4-L4] pub struct B
+
+input/cr.css (3 lines)
+Styles
+[L2-L2] .a
+[L3-L3] .b
+
+input/mixed.toml (3 lines)
+[L1-L1] a = 1
+[L2-L2] b = 2
+[L3-L3] c = 3
+== stderr
+== exit 0

@@ -109,7 +109,9 @@ fn lists_nested_rules(node: Node<'_>, text: &str) -> bool {
 
 /// The outline line of a rule, printing its prelude ([`prelude_signature`]): a style rule's
 /// selectors, or an at-rule's keyword and what follows it up to its block or `;`. `None` for a
-/// node that isn't a rule (a comment, `@charset`, a stray CSS declaration, a syntax error).
+/// node that isn't a rule (a comment, `@charset`, a stray CSS declaration, a syntax error), and
+/// for a style rule without selectors (`{ color: red }`, as a half-edited file has), which
+/// would print a blank outline line.
 fn rule_line(level: &OutlineLevel<'_>, node: Node<'_>, range: ByteRange) -> Option<OutlineLine> {
     if !RULE_KINDS.contains(&node.kind()) {
         return None;
@@ -121,6 +123,9 @@ fn rule_line(level: &OutlineLevel<'_>, node: Node<'_>, range: ByteRange) -> Opti
         .map_or(node.end_byte(), |child| child.start_byte());
     let prelude = ByteRange::new(node.start_byte(), prelude_end);
     let signature = prelude_signature(level.text(), prelude);
+    if signature.text.is_empty() {
+        return None;
+    }
     Some(level.outline_line(signature, range, node.start_byte()))
 }
 

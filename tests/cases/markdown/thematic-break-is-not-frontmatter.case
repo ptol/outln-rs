@@ -1,0 +1,20 @@
+A file that opens with a `---` thematic break, and has another `---` further down, has no
+frontmatter when the lines between hold no YAML mapping (here a comment and a plain scalar, as
+YAML reads `# Title` and `Some text.`): they are body text, so `# Title` is listed.
+== args
+input/breaks.md
+== file input/breaks.md
+---
+# Title
+
+Some text.
+
+---
+
+## More
+== stdout
+input/breaks.md (8 lines)
+[L2-L8] # Title
+[L8-L8] ## More
+== stderr
+== exit 0

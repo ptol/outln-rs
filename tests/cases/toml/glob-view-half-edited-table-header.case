@@ -1,0 +1,16 @@
+A field summary names a table whose header never closes on its line (`[[bin`, in a half-edited
+file) by that line alone, even when the parser recovers it with the brackets of a later header,
+so the file summary stays on one line; its fields are the keys the parser put in that table.
+== args
+input
+== file input/Cargo.toml
+[[bin
+
+name = "x"
+[[bin]]
+name = "y"
+== stdout
+glob view: input
+input/Cargo.toml (5 lines): [[bin {name = "y"}
+== stderr
+== exit 0

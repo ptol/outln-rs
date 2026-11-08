@@ -1,0 +1,18 @@
+YAML outlines the first document with content: an empty document (a `---` right before another
+`---`) is skipped, so the keys of the document after it are listed (the glob view's field
+summary reads the same keys). Later documents still aren't outlined.
+== args
+input/a.yaml
+== file input/a.yaml
+---
+---
+name: second
+size: 2
+---
+other: 3
+== stdout
+input/a.yaml (6 lines)
+[L3-L3] name: second
+[L4-L4] size: 2
+== stderr
+== exit 0

@@ -1,5 +1,6 @@
-Only top-level `key: value` lines are frontmatter fields: list items and comments are skipped,
-even unindented.
+Frontmatter fields are the top-level keys of its YAML mapping: comments and the items of a
+list are skipped, even unindented, and a key holding a list prints alone, as a YAML file's
+outline prints it.
 == args
 input/doc.md
 == file input/doc.md
@@ -13,7 +14,7 @@ authors:
 == stdout
 input/doc.md (7 lines)
 title: "Doc"
-authors: null
+authors
 [L7-L7] # Doc
 == stderr
 == exit 0
