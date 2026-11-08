@@ -3,12 +3,13 @@
 use tree_sitter::Node;
 
 use crate::code_outline::{code_outline, with_line_ranges};
-use crate::header_comment::{CommentSyntax, find_header_comment};
+use crate::comment_syntax::{BLOCK_COMMENT_OPEN, BlockComments, CommentSyntax, block_comment_end};
+use crate::header_comment::{HeaderChoice, find_header_comment};
 use crate::language_engine::LanguageEngine;
-use crate::leading_annotations::PrecedingNode;
+use crate::leading_annotations::{Annotations, PlainComments, PrecedingNode};
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
-use crate::source_text::{ByteRange, SourceText, line_end};
+use crate::source_text::{ByteRange, SourceText, line_end, quoted_len};
 use crate::syntax_tree::{child_of_kind, children, source};
 
 /// The language engine for CSS.
@@ -38,33 +39,42 @@ impl LanguageEngine for Css {
 /// The header comment: the first `/* */` comment, which only an `@charset` rule may precede,
 /// because CSS requires `@charset` to be the file's first bytes, written in lowercase.
 fn header(text: &str) -> Option<Header> {
-    find_header_comment(text, CommentSyntax::Block, |text, start| {
-        if start != 0 || !text.starts_with(CHARSET) {
-            return None;
-        }
-        // The preamble ends after the rule's `;`, so a comment or rule after it on its line is
-        // still seen; an encoding name never contains a `;`. Without one, the line ends it.
-        let line_end = line_end(text, start);
-        Some(
-            text[..line_end]
-                .find(';')
-                .map_or(line_end, |semicolon| semicolon + 1),
-        )
-    })
+    find_header_comment(
+        text,
+        &COMMENT_SYNTAX,
+        HeaderChoice::FirstComment,
+        |text, start| {
+            if start != 0 || !text.starts_with(CHARSET) {
+                return None;
+            }
+            // The preamble ends after the rule's `;`, so a comment or rule after it on its line is
+            // still seen; an encoding name never contains a `;`. Without one, the line ends it.
+            let line_end = line_end(text, start);
+            Some(
+                text[..line_end]
+                    .find(';')
+                    .map_or(line_end, |semicolon| semicolon + 1),
+            )
+        },
+    )
 }
 
 /// How an `@charset` rule starts.
 const CHARSET: &str = "@charset ";
 
-/// What a node before a rule is to its leading annotations. CSS has no doc comments, so any
-/// comment directly above a rule documents it, as a data file's comments document its keys;
-/// a blank line detaches it.
-fn preceding_node(node: Node<'_>, _text: &str) -> PrecedingNode {
-    if node.kind() == "comment" {
-        PrecedingNode::DocComment
-    } else {
-        PrecedingNode::Other
-    }
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax::BLOCK;
+
+/// CSS has no doc comments, so any comment directly above a rule documents it, as a data file's
+/// comments document its keys; a blank line detaches it.
+const ANNOTATIONS: Annotations = Annotations {
+    comment_kinds: &["comment"],
+    attribute_kinds: &[],
+    plain_comments: PlainComments::Annotate,
+};
+
+/// What a node before a rule is to its leading annotations.
+fn preceding_node(node: Node<'_>, text: &str) -> PrecedingNode {
+    ANNOTATIONS.classify(node, text, &COMMENT_SYNTAX)
 }
 
 const TOP_LEVEL_DEPTH: usize = 0;
@@ -167,11 +177,10 @@ fn prelude_signature(text: &str, prelude: ByteRange) -> Signature {
     let mut index = 0;
     while let Some(character) = prelude_source[index..].chars().next() {
         let rest = &prelude_source[index..];
-        if let Some(body) = rest.strip_prefix(COMMENT_OPEN) {
-            // Searched after the `/*`, so `/*/` doesn't close the comment it opens.
-            index += body.find(COMMENT_CLOSE).map_or(rest.len(), |close| {
-                COMMENT_OPEN.len() + close + COMMENT_CLOSE.len()
-            });
+        if rest.starts_with(BLOCK_COMMENT_OPEN) {
+            // A comment that never closes runs to the end of the prelude.
+            index = block_comment_end(prelude_source, index, BlockComments::Flat)
+                .unwrap_or(prelude_source.len());
             gap_has_comment = true;
             gap_is_layout = true;
             continue;
@@ -207,9 +216,6 @@ fn prelude_signature(text: &str, prelude: ByteRange) -> Signature {
     }
 }
 
-const COMMENT_OPEN: &str = "/*";
-const COMMENT_CLOSE: &str = "*/";
-
 /// Whitespace as CSS defines it; other Unicode spaces, such as U+00A0, are name characters.
 fn is_css_whitespace(character: char) -> bool {
     matches!(character, ' ' | '\t' | '\n' | '\r' | '\x0c')
@@ -226,7 +232,8 @@ fn is_name_character(character: char) -> bool {
 /// whether a name character comes right before it, so `url(` starts no URL inside a longer name.
 fn verbatim_token_len(rest: &str, character: char, after_name: bool) -> Option<usize> {
     match character {
-        '"' | '\'' => Some(string_len(rest, character)),
+        // A string that never closes runs to the end of the prelude.
+        '"' | '\'' => Some(quoted_len(rest, character).unwrap_or(rest.len())),
         '\\' => Some(1 + rest[1..].chars().next().map_or(0, char::len_utf8)),
         _ if !after_name => unquoted_url_len(rest),
         _ => None,
@@ -251,21 +258,6 @@ fn unquoted_url_len(rest: &str) -> Option<usize> {
         return None;
     }
     Some(rest.find(')').map_or(rest.len(), |close| close + 1))
-}
-
-/// The length of the string at the start of `rest`, which opens with `quote`, up to its closing
-/// quote (`\` escapes the next character), or all of `rest` when it never closes.
-fn string_len(rest: &str, quote: char) -> usize {
-    let mut escaped = false;
-    for (offset, character) in rest.char_indices().skip(1) {
-        match character {
-            _ if escaped => escaped = false,
-            '\\' => escaped = true,
-            _ if character == quote => return offset + character.len_utf8(),
-            _ => {}
-        }
-    }
-    rest.len()
 }
 
 #[cfg(test)]

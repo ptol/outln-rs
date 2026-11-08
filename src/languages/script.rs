@@ -10,11 +10,10 @@ mod test_blocks;
 use tree_sitter::{Language, Node};
 
 use crate::code_outline::code_outline;
-use crate::header_comment::{
-    BlockComments, CommentSyntax, DocMarkers, find_header_comment, is_outer_doc_block_comment,
-};
+use crate::comment_syntax::{BlockComments, CommentSyntax, LineMarker, OUTER_DOC_BLOCK};
+use crate::header_comment::{HeaderChoice, find_header_comment};
 use crate::language_engine::LanguageEngine;
-use crate::leading_annotations::PrecedingNode;
+use crate::leading_annotations::{Annotations, PlainComments, PrecedingNode};
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
 use crate::source_text::{ByteRange, SourceText, line_end};
@@ -86,31 +85,38 @@ impl LanguageEngine for Script {
 /// The header comment: the first comment that starts a line, if nothing but a shebang, blank
 /// lines, and directives (`'use strict';`) come before it.
 fn header(text: &str) -> Option<Header> {
-    find_header_comment(text, COMMENT_SYNTAX, |text, start| {
-        let line_end = line_end(text, start);
-        let line_text = &text[start..line_end];
-        let is_shebang = start == 0 && line_text.starts_with("#!");
-        (is_shebang || is_directive(line_text)).then_some(line_end)
-    })
+    find_header_comment(
+        text,
+        &COMMENT_SYNTAX,
+        HeaderChoice::FirstComment,
+        |text, start| {
+            let line_end = line_end(text, start);
+            let line_text = &text[start..line_end];
+            let is_shebang = start == 0 && line_text.starts_with("#!");
+            (is_shebang || is_directive(line_text)).then_some(line_end)
+        },
+    )
 }
 
-/// `///` is a directive in TypeScript, and doc comments don't say whether they document the
-/// file, so the header is the first comment; block comments don't nest.
-const COMMENT_SYNTAX: CommentSyntax = CommentSyntax::CFamily {
-    doc_markers: DocMarkers::Ignored,
-    block_comments: BlockComments::Flat,
+/// A `/** */` (`JSDoc`) comment documents what follows it; `///` is a directive in TypeScript,
+/// not a doc comment. Block comments don't nest.
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+    line: Some(LineMarker::Slashes),
+    block: Some(BlockComments::Flat),
+    doc_markers: &[OUTER_DOC_BLOCK],
 };
 
-/// What a node before a statement or class member is to its leading annotations: a `/** */`
-/// comment documents what follows it, and a decorator (a sibling of its class member in the
-/// TypeScript grammar) belongs to it.
+/// A decorator (a sibling of its class member in the TypeScript grammar) belongs to what
+/// follows it, as a `/** */` comment does.
+const ANNOTATIONS: Annotations = Annotations {
+    comment_kinds: &["comment"],
+    attribute_kinds: &["decorator"],
+    plain_comments: PlainComments::SteppedOver,
+};
+
+/// What a node before a statement or class member is to its leading annotations.
 pub(super) fn preceding_node(node: Node<'_>, text: &str) -> PrecedingNode {
-    match node.kind() {
-        "decorator" => PrecedingNode::Attribute,
-        "comment" if is_outer_doc_block_comment(source(node, text)) => PrecedingNode::DocComment,
-        "comment" => PrecedingNode::PlainComment,
-        _ => PrecedingNode::Other,
-    }
+    ANNOTATIONS.classify(node, text, &COMMENT_SYNTAX)
 }
 
 /// A top-level statement with its line range, which starts at the statement's first leading

@@ -10,7 +10,8 @@ mod yaml;
 
 use tree_sitter::{Language, Node};
 
-use crate::header_comment::{CommentSyntax, find_header_comment};
+use crate::comment_syntax::CommentSyntax;
+use crate::header_comment::{HeaderChoice, find_header_comment};
 use crate::language_engine::LanguageEngine;
 use crate::outline::{FieldSummary, FieldsShown, FileSummary, Header, Outline, OutlineLine};
 use crate::source_text::{ByteRange, SourceText, trim_end};
@@ -83,7 +84,8 @@ impl Format {
 
     /// The header comment: the first comment at the top of the file, after any preamble.
     fn header(self, text: &str) -> Option<Header> {
-        find_header_comment(text, self.comment_syntax(), |text, start| {
+        let syntax = self.comment_syntax();
+        find_header_comment(text, &syntax, HeaderChoice::FirstComment, |text, start| {
             self.preamble_end(text, start)
         })
     }
@@ -91,7 +93,7 @@ impl Format {
     fn comment_syntax(self) -> CommentSyntax {
         match self {
             Format::Json => json::COMMENT_SYNTAX,
-            Format::Toml | Format::Yaml => CommentSyntax::Hash,
+            Format::Toml | Format::Yaml => CommentSyntax::HASH,
         }
     }
 

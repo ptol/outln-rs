@@ -2,19 +2,73 @@
 //!
 //! Grammars parse these as siblings before the declaration (tree-sitter-rust's attributes and
 //! comments, the TypeScript grammar's class member decorators, every grammar's comments), so the
-//! declaration's own node doesn't cover them; each engine says which node is which, and
-//! [`leading_annotations_start`] walks back over them.
+//! declaration's own node doesn't cover them; each engine's [`Annotations`] table says which
+//! node is which, and [`leading_annotations_start`] walks back over them.
 
 use tree_sitter::Node;
 
+use crate::comment_syntax::{CommentKind, CommentSyntax};
 use crate::source_text::SourceText;
+use crate::syntax_tree::source;
+
+/// Which nodes before a declaration may be its leading annotations, by node kind: the table
+/// [`Annotations::classify`] reads.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Annotations {
+    /// The grammar's comment node kinds; a comment's marker says what it documents
+    /// ([`CommentSyntax::kind_of`]).
+    pub(crate) comment_kinds: &'static [&'static str],
+    /// The grammar's attribute and decorator node kinds.
+    pub(crate) attribute_kinds: &'static [&'static str],
+    /// What a plain comment directly above a declaration is to it.
+    pub(crate) plain_comments: PlainComments,
+}
+
+/// What a plain comment (one without a doc marker) directly above a declaration is to it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PlainComments {
+    /// Stepped over: it neither starts the line range nor separates annotations from their
+    /// declaration, as in languages with doc comments (Rust, TypeScript).
+    SteppedOver,
+    /// A leading annotation, as a doc comment is: a language without doc comments (CSS)
+    /// documents a declaration with the comment directly above it.
+    Annotate,
+}
+
+impl Annotations {
+    /// What `node`, before a declaration, is to the walk over its leading annotations. A comment
+    /// documenting the enclosing file or module (Rust's `//!`) belongs to no declaration, so it
+    /// is [`PrecedingNode::Other`].
+    pub(crate) fn classify(
+        &self,
+        node: Node<'_>,
+        text: &str,
+        comment_syntax: &CommentSyntax,
+    ) -> PrecedingNode {
+        let kind = node.kind();
+        if self.attribute_kinds.contains(&kind) {
+            return PrecedingNode::Attribute;
+        }
+        if !self.comment_kinds.contains(&kind) {
+            return PrecedingNode::Other;
+        }
+        match comment_syntax.kind_of(source(node, text)) {
+            CommentKind::OuterDoc => PrecedingNode::DocComment,
+            CommentKind::InnerDoc => PrecedingNode::Other,
+            CommentKind::Plain => match self.plain_comments {
+                PlainComments::SteppedOver => PrecedingNode::PlainComment,
+                PlainComments::Annotate => PrecedingNode::DocComment,
+            },
+        }
+    }
+}
 
 /// What a node before a declaration is to the walk that finds its leading annotations.
 ///
 /// Only `Other` nodes can be declarations: a node classified as a comment or attribute belongs
-/// to what follows it (an engine classifies a comment or attribute that doesn't, such as
-/// Rust's `//!`, as `Other`). `code_outline::code_outline` relies on this to skip every other
-/// node without asking the engine for its outline lines.
+/// to what follows it (a comment that doesn't, such as Rust's `//!`, is `Other`).
+/// `code_outline` relies on this to skip every other node without asking the engine for its
+/// outline lines.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PrecedingNode {
     /// A doc comment (`///`, `/** */`, or any comment in CSS, which has no doc comments): a

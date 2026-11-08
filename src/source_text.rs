@@ -190,6 +190,22 @@ pub(crate) fn after_whitespace(text: &str, offset: usize) -> usize {
     text.len() - text[offset..].trim_start().len()
 }
 
+/// The length of the quoted string at the start of `rest`, which opens with the ASCII `quote`,
+/// through its closing quote (`\` escapes the next character), or `None` when it never closes.
+pub(crate) fn quoted_len(rest: &str, quote: char) -> Option<usize> {
+    debug_assert!(quote.is_ascii() && rest.starts_with(quote));
+    let mut escaped = false;
+    for (offset, character) in rest.char_indices().skip(1) {
+        match character {
+            _ if escaped => escaped = false,
+            '\\' => escaped = true,
+            _ if character == quote => return Some(offset + quote.len_utf8()),
+            _ => {}
+        }
+    }
+    None
+}
+
 /// Shrinks a range so it ends at its last non-whitespace character.
 pub(crate) fn trim_end(text: &str, range: ByteRange) -> ByteRange {
     let trimmed = text[range.as_range()].trim_end();

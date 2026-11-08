@@ -3,14 +3,16 @@
 use tree_sitter::Node;
 
 use crate::code_outline::code_outline;
-use crate::header_comment::{
-    BlockComments, CommentSyntax, DocMarkers, block_comment_end, find_header_comment,
+use crate::comment_syntax::{
+    BLOCK_COMMENT_OPEN, BlockComments, CommentSyntax, INNER_DOC_BLOCK, INNER_DOC_LINE, LineMarker,
+    OUTER_DOC_BLOCK, OUTER_DOC_LINE, block_comment_end,
 };
+use crate::header_comment::{HeaderChoice, find_header_comment};
 use crate::language_engine::LanguageEngine;
-use crate::leading_annotations::PrecedingNode;
+use crate::leading_annotations::{Annotations, PlainComments, PrecedingNode};
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
-use crate::source_text::{ByteRange, SourceText, after_whitespace, line_end, trim_end};
+use crate::source_text::{ByteRange, SourceText, after_whitespace, line_end, quoted_len, trim_end};
 use crate::syntax_tree::{child_of_kind, has_child_of_kind, one_line_source_before};
 
 /// The language engine for Rust.
@@ -41,13 +43,33 @@ impl LanguageEngine for Rust {
 /// among the comments before the first declaration. A shebang and inner attributes
 /// (`#![...]`) may come before or between them.
 fn header(text: &str) -> Option<Header> {
-    find_header_comment(text, COMMENT_SYNTAX, preamble_end)
+    find_header_comment(
+        text,
+        &COMMENT_SYNTAX,
+        HeaderChoice::InnerDocElseFirstPlain,
+        preamble_end,
+    )
 }
 
 /// Rust's doc comments say what they document, and its block comments nest.
-const COMMENT_SYNTAX: CommentSyntax = CommentSyntax::CFamily {
-    doc_markers: DocMarkers::InnerAndOuter,
-    block_comments: BlockComments::Nested,
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+    line: Some(LineMarker::Slashes),
+    block: Some(BlockComments::Nested),
+    doc_markers: &[
+        INNER_DOC_LINE,
+        OUTER_DOC_LINE,
+        INNER_DOC_BLOCK,
+        OUTER_DOC_BLOCK,
+    ],
+};
+
+/// `///` and `/** */` doc comments and `#[...]` attributes belong to the declaration below
+/// them; a `#![...]` attribute (`inner_attribute_item`), like a `//!` comment, belongs to the
+/// enclosing module instead.
+const ANNOTATIONS: Annotations = Annotations {
+    comment_kinds: &["line_comment", "block_comment"],
+    attribute_kinds: &["attribute_item"],
+    plain_comments: PlainComments::SteppedOver,
 };
 
 /// Where the preamble starting at byte `start` ends: a shebang at the start of the file, or an
@@ -72,9 +94,9 @@ fn attribute_end(text: &str, open: usize) -> Option<usize> {
     let mut index = open;
     while let Some(character) = text[index..].chars().next() {
         let rest = &text[index..];
-        index += if rest.starts_with("//") {
+        index += if rest.starts_with(LineMarker::Slashes.text()) {
             line_end(text, index) - index
-        } else if rest.starts_with("/*") {
+        } else if rest.starts_with(BLOCK_COMMENT_OPEN) {
             block_comment_end(text, index, BlockComments::Nested)? - index
         } else if rest.starts_with('"') || is_raw_string_start(rest) {
             string_literal_len(rest)?
@@ -111,16 +133,7 @@ fn string_literal_len(rest: &str) -> Option<usize> {
         let body_start = 1 + hashes + 1;
         return Some(body_start + rest.get(body_start..)?.find(&closing)? + closing.len());
     }
-    let mut escaped = false;
-    for (offset, character) in rest.char_indices().skip(1) {
-        match character {
-            _ if escaped => escaped = false,
-            '\\' => escaped = true,
-            '"' => return Some(offset + 1),
-            _ => {}
-        }
-    }
-    None
+    quoted_len(rest, '"')
 }
 
 /// The length of the character literal at the start of `rest` (`'['`, `'\''`, `'\u{5d}'`), or
@@ -140,23 +153,9 @@ fn char_literal_len(rest: &str) -> Option<usize> {
         .then_some(1 + literal_len + 1)
 }
 
-/// What a node before a declaration is to its leading annotations: `///` and `/** */` doc
-/// comments and `#[...]` attributes belong to it. A `//!` comment or `#![...]` attribute
-/// belongs to the enclosing module instead, so it ends the walk.
-fn preceding_node(node: Node<'_>, _text: &str) -> PrecedingNode {
-    match node.kind() {
-        "attribute_item" => PrecedingNode::Attribute,
-        "line_comment" | "block_comment" => {
-            if node.child_by_field_name("outer").is_some() {
-                PrecedingNode::DocComment
-            } else if node.child_by_field_name("inner").is_some() {
-                PrecedingNode::Other
-            } else {
-                PrecedingNode::PlainComment
-            }
-        }
-        _ => PrecedingNode::Other,
-    }
+/// What a node before a declaration is to its leading annotations.
+fn preceding_node(node: Node<'_>, text: &str) -> PrecedingNode {
+    ANNOTATIONS.classify(node, text, &COMMENT_SYNTAX)
 }
 
 /// Literal node kinds kept as written when source is put on one line, such as the ABI string

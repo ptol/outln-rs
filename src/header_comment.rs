@@ -1,95 +1,29 @@
-//! Header comments, shared by every engine but Markdown's: `//` lines or one `/* */` block in C-family syntax, one `/* */` block in CSS, or `#` lines in TOML and YAML.
+//! Header comments, shared by every engine but Markdown's: which comment at the top of a file is its header, and the header's first paragraph.
 //!
-//! Each engine says which lines may come before its header comment (a shebang, directives,
-//! inner attributes) and which [`CommentSyntax`] it uses, then calls [`find_header_comment`];
-//! reading the comments at the top of a file, choosing one, and stripping its markers is the
-//! same for every language.
+//! Each engine says how it writes comments ([`CommentSyntax`]), which comment is the header
+//! ([`HeaderChoice`]), and which lines may come before it (a shebang, directives, inner
+//! attributes), then calls [`find_header_comment`]; reading the comments at the top of a file
+//! and choosing one is the same for every language.
 
+use crate::comment_syntax::{
+    BLOCK_COMMENT_OPEN, BlockCommentLine, BlockComments, CommentKind, CommentSyntax, LineMarker,
+    block_comment_end, strip_block_markers, strip_line_marker,
+};
 use crate::outline::{CommentLine, Header};
 use crate::source_text::{ByteRange, after_whitespace, lines_with_offsets};
 
-const BLOCK_COMMENT_OPEN: &str = "/*";
-const BLOCK_COMMENT_CLOSE: &str = "*/";
-
-/// The marker that starts a line comment.
+/// Which of the comments at the top of a file is its header comment. A language whose rule none
+/// of these states gets a new variant, such as one for Go's comment attached to `package`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum LineMarker {
-    /// `//`, and its doc forms `///` and `//!`.
-    Slashes,
-    /// `#`.
-    Hash,
-}
-
-impl LineMarker {
-    fn text(self) -> &'static str {
-        match self {
-            LineMarker::Slashes => "//",
-            LineMarker::Hash => "#",
-        }
-    }
-
-    /// The character the marker repeats; a longer run of it (`////`, `##`) is still the marker.
-    fn character(self) -> char {
-        match self {
-            LineMarker::Slashes => '/',
-            LineMarker::Hash => '#',
-        }
-    }
-}
-
-/// How a language writes comments, as far as finding its header comment goes.
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum CommentSyntax {
-    /// `//` line comments and `/* */` block comments, as in C, JavaScript, Rust, and JSON.
-    CFamily {
-        doc_markers: DocMarkers,
-        block_comments: BlockComments,
-    },
-    /// `/* */` block comments only, as in CSS; no doc markers, and they don't nest.
-    Block,
-    /// `#` line comments only, as in TOML and YAML; no doc markers.
-    Hash,
-}
-
-impl CommentSyntax {
-    /// What doc markers mean in this syntax; `/* */`-only and `#` comments have none.
-    fn doc_markers(self) -> DocMarkers {
-        match self {
-            CommentSyntax::CFamily { doc_markers, .. } => doc_markers,
-            CommentSyntax::Block | CommentSyntax::Hash => DocMarkers::Ignored,
-        }
-    }
-}
-
-/// What a language's doc comment markers (`///`, `//!`, `/**`, `/*!`) mean for its header comment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum DocMarkers {
-    /// The markers say nothing about the file, as in TypeScript and JavaScript (where `///` is
-    /// also a directive), so the header comment is the first comment.
-    Ignored,
-    /// Rust: `//!` and `/*!` comments document the file and `///` and `/**` comments the
-    /// declaration after them, so the header comment is the first inner doc comment, or else the
-    /// first plain comment (a license comment comes before the `//!` comment it then loses to).
-    InnerAndOuter,
-}
-
-/// Whether a `/*` inside a block comment opens another one.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum BlockComments {
-    /// The first `*/` closes the comment, as in C and JavaScript.
-    Flat,
-    /// Each `/*` needs its own `*/`, as in Rust: `/* a /* b */ c */` is one comment.
-    Nested,
-}
-
-/// What a comment documents, from its marker.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CommentKind {
-    Plain,
-    /// `//!` or `/*!`: documents the enclosing file or module.
-    InnerDoc,
-    /// `///` or `/**`: documents the declaration after it.
-    OuterDoc,
+pub(crate) enum HeaderChoice {
+    /// The first comment, whatever its markers say: in TypeScript and JavaScript (where `///` is
+    /// also a directive) doc comments don't say whether they document the file, and CSS and data
+    /// files have none.
+    FirstComment,
+    /// The first inner doc comment (`//!`, `/*!`), or else the first plain comment, as in Rust:
+    /// `///` and `/** */` comments document the declaration after them, and a license comment
+    /// comes before the `//!` comment it then loses to.
+    InnerDocElseFirstPlain,
 }
 
 /// One comment at the top of a file: a run of `//` or `#` lines of the same kind, or one block
@@ -103,9 +37,9 @@ struct CommentRun {
     end: usize,
 }
 
-/// The header comment of `text`: the first paragraph of the comment [`DocMarkers`] chooses among
-/// the comments at the top of the file, before which only whitespace, other comments, and
-/// preamble may come.
+/// The header comment of `text`: the first paragraph of the comment `choice` picks among the
+/// comments at the top of the file, before which only whitespace, other comments, and preamble
+/// may come.
 ///
 /// `preamble_end(text, offset)` is called where no whitespace starts, before the header and
 /// before looking for a comment there (so a directive written as a comment, such as TOML's
@@ -114,11 +48,12 @@ struct CommentRun {
 /// there.
 pub(crate) fn find_header_comment(
     text: &str,
-    syntax: CommentSyntax,
+    syntax: &CommentSyntax,
+    choice: HeaderChoice,
     preamble_end: impl Fn(&str, usize) -> Option<usize>,
 ) -> Option<Header> {
-    let runs = leading_comment_runs(text, syntax, preamble_end);
-    let chosen = choose_run(runs, syntax.doc_markers())?;
+    let runs = leading_comment_runs(text, syntax, choice, preamble_end);
+    let chosen = choose_run(runs, choice)?;
     let lines = first_paragraph(chosen.lines)
         .into_iter()
         .filter(|line| line.range.start < line.range.end)
@@ -128,11 +63,12 @@ pub(crate) fn find_header_comment(
 
 /// The comments at the top of `text`, up to the first code. Scanning goes on right after each
 /// comment or preamble, so code or another comment on the same line counts. Preamble is checked
-/// first, because a directive may look like a comment. With [`DocMarkers::Ignored`] only the
-/// first comment is needed, so the scan stops there.
+/// first, because a directive may look like a comment. With [`HeaderChoice::FirstComment`] only
+/// the first comment is needed, so the scan stops there.
 fn leading_comment_runs(
     text: &str,
-    syntax: CommentSyntax,
+    syntax: &CommentSyntax,
+    choice: HeaderChoice,
     preamble_end: impl Fn(&str, usize) -> Option<usize>,
 ) -> Vec<CommentRun> {
     let mut runs = Vec::new();
@@ -152,18 +88,18 @@ fn leading_comment_runs(
         };
         offset = run.end;
         runs.push(run);
-        if syntax.doc_markers() == DocMarkers::Ignored {
+        if choice == HeaderChoice::FirstComment {
             break;
         }
     }
     runs
 }
 
-/// The comment that is the header, as [`DocMarkers`] describes.
-fn choose_run(mut runs: Vec<CommentRun>, doc_markers: DocMarkers) -> Option<CommentRun> {
-    match doc_markers {
-        DocMarkers::Ignored => runs.into_iter().next(),
-        DocMarkers::InnerAndOuter => {
+/// The comment that is the header, as `choice` describes.
+fn choose_run(mut runs: Vec<CommentRun>, choice: HeaderChoice) -> Option<CommentRun> {
+    match choice {
+        HeaderChoice::FirstComment => runs.into_iter().next(),
+        HeaderChoice::InnerDocElseFirstPlain => {
             let chosen = runs
                 .iter()
                 .position(|run| run.kind == CommentKind::InnerDoc)
@@ -201,45 +137,26 @@ fn first_paragraph(mut lines: Vec<CommentLine>) -> Vec<CommentLine> {
 /// unterminated block comment.
 ///
 /// A block comment ends at its `*/`. A line comment is the run of consecutive lines starting
-/// with `//` (or `#`) whose markers give the same [`CommentKind`].
-fn comment_run_at(text: &str, start: usize, syntax: CommentSyntax) -> Option<CommentRun> {
+/// with the line marker whose markers give the same [`CommentKind`].
+fn comment_run_at(text: &str, start: usize, syntax: &CommentSyntax) -> Option<CommentRun> {
     let rest = &text[start..];
-    match syntax {
-        CommentSyntax::CFamily {
-            doc_markers,
-            block_comments,
-        } => {
-            if rest.starts_with(BLOCK_COMMENT_OPEN) {
-                block_comment_run(text, start, doc_markers, block_comments)
-            } else if rest.starts_with(LineMarker::Slashes.text()) {
-                Some(line_comment_run(
-                    text,
-                    start,
-                    LineMarker::Slashes,
-                    doc_markers,
-                ))
-            } else {
-                None
-            }
-        }
-        CommentSyntax::Block => {
-            if rest.starts_with(BLOCK_COMMENT_OPEN) {
-                block_comment_run(text, start, DocMarkers::Ignored, BlockComments::Flat)
-            } else {
-                None
-            }
-        }
-        CommentSyntax::Hash => rest
-            .starts_with(LineMarker::Hash.text())
-            .then(|| line_comment_run(text, start, LineMarker::Hash, DocMarkers::Ignored)),
+    if let Some(block_comments) = syntax
+        .block
+        .filter(|_| rest.starts_with(BLOCK_COMMENT_OPEN))
+    {
+        return block_comment_run(text, start, syntax, block_comments);
     }
+    let marker = syntax
+        .line
+        .filter(|marker| rest.starts_with(marker.text()))?;
+    Some(line_comment_run(text, start, marker, syntax))
 }
 
 /// The block comment that opens at byte `start`.
 fn block_comment_run(
     text: &str,
     start: usize,
-    doc_markers: DocMarkers,
+    syntax: &CommentSyntax,
     block_comments: BlockComments,
 ) -> Option<CommentRun> {
     let end = block_comment_end(text, start, block_comments)?;
@@ -252,56 +169,11 @@ fn block_comment_run(
             comment_line(start + line_start, line, printed)
         })
         .collect();
-    let kind = if doc_markers == DocMarkers::Ignored {
-        CommentKind::Plain
-    } else if text[start..].starts_with("/*!") {
-        CommentKind::InnerDoc
-    } else if is_outer_doc_block_comment(&text[start..]) {
-        CommentKind::OuterDoc
-    } else {
-        CommentKind::Plain
-    };
-    Some(CommentRun { kind, lines, end })
-}
-
-/// Where the block comment opening at byte `start` ends, after its closing `*/`.
-pub(crate) fn block_comment_end(
-    text: &str,
-    start: usize,
-    block_comments: BlockComments,
-) -> Option<usize> {
-    let after_open = start + BLOCK_COMMENT_OPEN.len();
-    if block_comments == BlockComments::Flat {
-        let close = text[after_open..].find(BLOCK_COMMENT_CLOSE)?;
-        return Some(after_open + close + BLOCK_COMMENT_CLOSE.len());
-    }
-    // `/` and `*` are ASCII, so stepping byte by byte never matches inside a UTF-8 character.
-    let bytes = text.as_bytes();
-    let mut depth = 1_usize;
-    let mut index = after_open;
-    while index + 1 < bytes.len() {
-        match &bytes[index..index + 2] {
-            b"/*" => {
-                depth += 1;
-                index += 2;
-            }
-            b"*/" => {
-                depth -= 1;
-                index += 2;
-                if depth == 0 {
-                    return Some(index);
-                }
-            }
-            _ => index += 1,
-        }
-    }
-    None
-}
-
-/// Whether a block comment starting at the start of `comment` is a doc comment for what follows
-/// it: `/**`, but not `/***` (or more) or the empty `/**/`, as Rust and `JSDoc` read them.
-pub(crate) fn is_outer_doc_block_comment(comment: &str) -> bool {
-    comment.starts_with("/**") && !comment.starts_with("/***") && !comment.starts_with("/**/")
+    Some(CommentRun {
+        kind: syntax.kind_of(&text[start..]),
+        lines,
+        end,
+    })
 }
 
 /// The run of lines starting with `marker` (`//` or `#`) of one [`CommentKind`] starting at
@@ -310,9 +182,9 @@ fn line_comment_run(
     text: &str,
     start: usize,
     marker: LineMarker,
-    doc_markers: DocMarkers,
+    syntax: &CommentSyntax,
 ) -> CommentRun {
-    let kind_of = |line: &str| line_comment_kind(line.trim_start(), doc_markers);
+    let kind_of = |line: &str| syntax.kind_of(line.trim_start());
     let first_kind = kind_of(&text[start..]);
     let lines: Vec<CommentLine> = lines_with_offsets(&text[start..])
         .take_while(|(_, line)| {
@@ -334,20 +206,6 @@ fn line_comment_run(
     }
 }
 
-/// The kind of a trimmed line starting with `//`: `//!` is an inner doc comment, `///` an outer
-/// one, and `////` (or more) a plain comment, as in Rust.
-fn line_comment_kind(line: &str, doc_markers: DocMarkers) -> CommentKind {
-    if doc_markers == DocMarkers::Ignored {
-        CommentKind::Plain
-    } else if line.starts_with("//!") {
-        CommentKind::InnerDoc
-    } else if line.starts_with("///") && !line.starts_with("////") {
-        CommentKind::OuterDoc
-    } else {
-        CommentKind::Plain
-    }
-}
-
 /// A comment line printed as `printed`, from the source line starting at `start`; its range ends
 /// at the line's last non-whitespace character (so a blank line's range is empty).
 fn comment_line(start: usize, line: &str, printed: &str) -> CommentLine {
@@ -357,89 +215,53 @@ fn comment_line(start: usize, line: &str, printed: &str) -> CommentLine {
     }
 }
 
-/// Where a line sits in a block comment, which says which markers it has.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum BlockCommentLine {
-    /// The comment's only line: `/* text */`.
-    Only,
-    /// The line with the opening marker.
-    First,
-    /// A line between the first and the last, which may start with a `*`.
-    Middle,
-    /// The line with the closing marker, which may start with a `*`.
-    Last,
-}
-
-impl BlockCommentLine {
-    fn at(index: usize, last_index: usize) -> Self {
-        match (index == 0, index == last_index) {
-            (true, true) => BlockCommentLine::Only,
-            (true, false) => BlockCommentLine::First,
-            (false, false) => BlockCommentLine::Middle,
-            (false, true) => BlockCommentLine::Last,
-        }
-    }
-}
-
-/// Removes block comment markers from one trimmed line: `/*`, `/**` or `/*!` on the first line,
-/// a leading `*` on the others, and the closing `*/` on the last. A `*/` ending another line
-/// closes a nested comment, so it stays.
-///
-/// The opening marker goes first, so the `*` of `/**/` can't be mistaken for part of a `*/`.
-fn strip_block_markers(line: &str, position: BlockCommentLine) -> &str {
-    let opens = matches!(position, BlockCommentLine::Only | BlockCommentLine::First);
-    let closes = matches!(position, BlockCommentLine::Only | BlockCommentLine::Last);
-    let without_open = if opens {
-        line.strip_prefix(BLOCK_COMMENT_OPEN).unwrap_or(line)
-    } else {
-        line
-    };
-    let without_close = match without_open.strip_suffix(BLOCK_COMMENT_CLOSE) {
-        Some(rest) if closes => rest.trim_end_matches('*'),
-        _ => without_open,
-    };
-    let text = if opens {
-        let after_stars = without_close.trim_start_matches('*');
-        after_stars.strip_prefix('!').unwrap_or(after_stars)
-    } else {
-        without_close.strip_prefix('*').unwrap_or(without_close)
-    };
-    text.trim()
-}
-
-/// Removes the line comment marker from one trimmed line: `//`, a doc marker `///` or `//!`, a
-/// longer run of slashes such as `////`, or one or more `#`.
-fn strip_line_marker(line: &str, marker: LineMarker) -> &str {
-    let after_marker = line.trim_start_matches(marker.character());
-    match marker {
-        LineMarker::Slashes => after_marker
-            .strip_prefix('!')
-            .unwrap_or(after_marker)
-            .trim(),
-        LineMarker::Hash => after_marker.trim(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::source_text::line_end;
 
-    const C_LIKE: CommentSyntax = CommentSyntax::CFamily {
-        doc_markers: DocMarkers::Ignored,
-        block_comments: BlockComments::Flat,
-    };
-    const RUST_LIKE: CommentSyntax = CommentSyntax::CFamily {
-        doc_markers: DocMarkers::InnerAndOuter,
-        block_comments: BlockComments::Nested,
-    };
+    use crate::comment_syntax::{INNER_DOC_BLOCK, INNER_DOC_LINE, OUTER_DOC_BLOCK, OUTER_DOC_LINE};
+
+    /// TypeScript's syntax and choice.
+    const C_LIKE: (CommentSyntax, HeaderChoice) = (
+        CommentSyntax {
+            line: Some(LineMarker::Slashes),
+            block: Some(BlockComments::Flat),
+            doc_markers: &[OUTER_DOC_BLOCK],
+        },
+        HeaderChoice::FirstComment,
+    );
+    /// Rust's syntax and choice.
+    const RUST_LIKE: (CommentSyntax, HeaderChoice) = (
+        CommentSyntax {
+            line: Some(LineMarker::Slashes),
+            block: Some(BlockComments::Nested),
+            doc_markers: &[
+                INNER_DOC_LINE,
+                OUTER_DOC_LINE,
+                INNER_DOC_BLOCK,
+                OUTER_DOC_BLOCK,
+            ],
+        },
+        HeaderChoice::InnerDocElseFirstPlain,
+    );
+    const HASH: (CommentSyntax, HeaderChoice) = (CommentSyntax::HASH, HeaderChoice::FirstComment);
+    const BLOCK: (CommentSyntax, HeaderChoice) = (CommentSyntax::BLOCK, HeaderChoice::FirstComment);
+
+    fn find(
+        text: &str,
+        (syntax, choice): (CommentSyntax, HeaderChoice),
+        preamble_end: impl Fn(&str, usize) -> Option<usize>,
+    ) -> Option<Header> {
+        find_header_comment(text, &syntax, choice, preamble_end)
+    }
 
     fn no_preamble(_: &str, _: usize) -> Option<usize> {
         None
     }
 
-    fn header_texts(text: &str, syntax: CommentSyntax) -> Option<Vec<String>> {
-        let Some(Header::Comment(lines)) = find_header_comment(text, syntax, no_preamble) else {
+    fn header_texts(text: &str, language: (CommentSyntax, HeaderChoice)) -> Option<Vec<String>> {
+        let Some(Header::Comment(lines)) = find(text, language, no_preamble) else {
             return None;
         };
         Some(lines.into_iter().map(|line| line.text).collect())
@@ -474,7 +296,7 @@ mod tests {
 
     #[test]
     fn text_after_a_closing_marker_is_not_part_of_the_header() {
-        let header = find_header_comment("/* Note */ const x = 1;\n", C_LIKE, no_preamble);
+        let header = find("/* Note */ const x = 1;\n", C_LIKE, no_preamble);
         assert_eq!(
             header,
             Some(Header::Comment(vec![CommentLine {
@@ -495,12 +317,9 @@ mod tests {
         let shebang = |text: &str, start: usize| {
             (start == 0 && text.starts_with("#!")).then(|| line_end(text, start))
         };
-        let header = find_header_comment("#!/bin/sh\n\n// Tool.\n", C_LIKE, shebang);
+        let header = find("#!/bin/sh\n\n// Tool.\n", C_LIKE, shebang);
         assert!(matches!(header, Some(Header::Comment(lines)) if lines[0].text == "Tool."));
-        assert_eq!(
-            find_header_comment("x;\n// Late.\n", C_LIKE, no_preamble),
-            None
-        );
+        assert_eq!(find("x;\n// Late.\n", C_LIKE, no_preamble), None);
     }
 
     #[test]
@@ -585,42 +404,33 @@ mod tests {
                 .starts_with("#![a]")
                 .then_some(start + "#![a]".len())
         };
-        let header = find_header_comment("#![a] fn f() {}\n// Late.\n", RUST_LIKE, attribute);
+        let header = find("#![a] fn f() {}\n// Late.\n", RUST_LIKE, attribute);
         assert_eq!(header, None);
     }
 
     #[test]
     fn hash_comments_are_headers_and_preamble_is_checked_before_comments() {
         assert_eq!(
-            header_texts(
-                "## Tool config.\n# More.\n\n# Not header.\nkey = 1\n",
-                CommentSyntax::Hash
-            ),
+            header_texts("## Tool config.\n# More.\n\n# Not header.\nkey = 1\n", HASH),
             Some(texts(&["Tool config.", "More."]))
         );
-        assert_eq!(
-            header_texts("// Not a hash comment.\n", CommentSyntax::Hash),
-            None
-        );
+        assert_eq!(header_texts("// Not a hash comment.\n", HASH), None);
         let schema = |text: &str, start: usize| {
             text[start..]
                 .starts_with("#:schema")
                 .then(|| line_end(text, start))
         };
-        let header = find_header_comment("#:schema x\n# Tool.\n", CommentSyntax::Hash, schema);
+        let header = find("#:schema x\n# Tool.\n", HASH, schema);
         assert!(matches!(header, Some(Header::Comment(lines)) if lines[0].text == "Tool."));
     }
 
     #[test]
     fn block_syntax_reads_block_comments_but_not_line_comments() {
         assert_eq!(
-            header_texts("/* Theme.\n * Colors. */\n.a {}\n", CommentSyntax::Block),
+            header_texts("/* Theme.\n * Colors. */\n.a {}\n", BLOCK),
             Some(texts(&["Theme.", "Colors."]))
         );
-        assert_eq!(
-            header_texts("// Not a CSS comment.\n", CommentSyntax::Block),
-            None
-        );
+        assert_eq!(header_texts("// Not a CSS comment.\n", BLOCK), None);
     }
 
     #[test]
