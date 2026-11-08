@@ -71,9 +71,12 @@ pub(crate) struct NotUtf8Text;
 
 /// Turns a file's bytes into normalized text: UTF-8 without a BOM and with LF line endings.
 ///
+/// A lone CR is a line break too, as editors read it (classic Mac OS files end lines with CR
+/// only), so engines, [`LineIndex`], and printed lines never see a raw CR.
+///
 /// NUL bytes never occur in UTF-8 source text but do in UTF-16 and binary files, so they are
 /// rejected like invalid UTF-8. Takes the bytes by value so valid text is reused without a copy;
-/// only CRLF line endings make a new string.
+/// only CR line breaks make a new string.
 pub(crate) fn normalize(bytes: Vec<u8>) -> Result<String, NotUtf8Text> {
     if bytes.contains(&0) {
         return Err(NotUtf8Text);
@@ -83,8 +86,9 @@ pub(crate) fn normalize(bytes: Vec<u8>) -> Result<String, NotUtf8Text> {
         // Shifts the rest of the text in place instead of copying it.
         text.drain(..UTF8_BOM.len());
     }
-    if text.contains("\r\n") {
-        Ok(text.replace("\r\n", "\n"))
+    if text.contains('\r') {
+        // CRLF first, so its CR doesn't become a second line break.
+        Ok(text.replace("\r\n", "\n").replace('\r', "\n"))
     } else {
         Ok(text)
     }
@@ -240,6 +244,12 @@ mod tests {
     fn normalize_strips_the_bom_and_converts_crlf() {
         let text = normalize(b"\xef\xbb\xbf# A\r\nb\r\n".to_vec()).unwrap();
         assert_eq!(text, "# A\nb\n");
+    }
+
+    #[test]
+    fn normalize_turns_a_lone_cr_into_a_line_break() {
+        let text = normalize(b"a\rb\r\nc\r\r\n".to_vec()).unwrap();
+        assert_eq!(text, "a\nb\nc\n\n");
     }
 
     #[test]

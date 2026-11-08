@@ -1,0 +1,14 @@
+The glob view reads a lone CR as a line break too: the line count counts CR-only lines, and a
+header comment ends at its CR instead of running into the code.
+== args
+input
+== file input/cr.js escaped
+// Header\rfunction a() {}\rfunction b() {}\r\
+== file input/cr.json escaped
+{\r  "name": "cr",\r  "private": true\r}\r\
+== stdout
+glob view: input
+input/cr.js (3 lines): Header
+input/cr.json (4 lines): {name: "cr", private: true}
+== stderr
+== exit 0
