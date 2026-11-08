@@ -18,7 +18,10 @@ pub(crate) struct SourceFile {
 pub(crate) fn load(cwd: &Path, path: &str) -> Result<SourceFile, InputError> {
     let engine =
         engine_for(path).ok_or_else(|| InputError::UnsupportedFileType(path.to_owned()))?;
-    let bytes = fs::read(cwd.join(path)).map_err(|_| InputError::Unreadable(path.to_owned()))?;
+    let bytes = fs::read(cwd.join(path)).map_err(|error| InputError::Unreadable {
+        path: path.to_owned(),
+        detail: error.kind().to_string(),
+    })?;
     let text = normalize(bytes).map_err(|_| InputError::NotUtf8Text(path.to_owned()))?;
     Ok(SourceFile { engine, text })
 }

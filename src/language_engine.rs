@@ -67,6 +67,14 @@ static ENGINES: &[&dyn LanguageEngine] = &[
     &YAML,
 ];
 
+/// Every supported file extension, without the dot, in registry order, for messages that list
+/// them; derived from `ENGINES`, so a new engine's extensions appear without another edit.
+pub(crate) fn supported_extensions() -> impl Iterator<Item = &'static str> {
+    ENGINES
+        .iter()
+        .flat_map(|engine| engine.extensions().iter().copied())
+}
+
 /// The engine for a path, matched by extension ignoring ASCII case, or `None` if unsupported.
 pub(crate) fn engine_for(path: &str) -> Option<&'static dyn LanguageEngine> {
     let extension = Path::new(path).extension()?.to_str()?;

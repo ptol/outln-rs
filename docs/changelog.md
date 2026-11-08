@@ -12,6 +12,8 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 - File mode: an outline's first line prints the file's line count after its path, as the glob view does: `src/cli.rs (120 lines)` ([ADR-020](adr.md)).
 - Faster on large inputs: directories are walked and files outlined on several threads, and stdout is buffered. A glob view of 18k files takes about 0.1 s instead of 0.9 s, and file mode on 3 000 files 0.4 s instead of 1.6 s. Output is unchanged and in the same order, and when stdout and stderr go to one pipe, each error still follows the output printed before it ([ADR-022](adr.md)).
 
+- Error messages are all sentence case: `File <path> is not UTF-8 text`, `File <path> could not be read: permission denied` (now with the reason), and `File <path> has an unsupported file type; supported: .md, .ts, ...`, which lists every supported extension. Debug mode says `--debug requires exactly one file or directory path, not 2` or `... not the glob pattern <pattern>`, and reports a missing argument ending in `/` as `Directory <path> does not exist`, as the glob view does.
+
 ## 0.3.0 (2026-11-06)
 
 - Glob view: each line prints the file's line count after its path, `src/cli.rs (120 lines): Command-line arguments.` (`1 line`, `0 lines` for an empty file), and the two lines after `glob view:` (`Includes only ... per file.` and `For file-level outlines, use ...`) are gone; the README has a section to paste into an agent's instructions instead ([ADR-019](adr.md)).

@@ -10,5 +10,5 @@ input/ok.md
 input/ok.md (1 line)
 [L1-L1] # Ok
 == stderr
-FILE input/latin1.md IS NOT UTF-8 TEXT
+File input/latin1.md is not UTF-8 text
 == exit 1

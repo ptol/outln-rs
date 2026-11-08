@@ -243,7 +243,7 @@ fn output_is_the_same_on_any_number_of_threads() {
         let (_, err, status) = one_thread;
         assert_eq!(
             err,
-            "FILE docs/0100-broken.md IS NOT UTF-8 TEXT\nFILE docs/0900-broken.md IS NOT UTF-8 TEXT\n"
+            "File docs/0100-broken.md is not UTF-8 text\nFile docs/0900-broken.md is not UTF-8 text\n"
         );
         assert_eq!(status, ExitStatus::Failure);
     }

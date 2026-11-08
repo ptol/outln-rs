@@ -8,6 +8,6 @@ const alpha = 1;
 const beta = 2;
 == stdout
 == stderr
-FILE alpha.txt HAS UNSUPPORTED FILE TYPE
-FILE nested/beta.txt HAS UNSUPPORTED FILE TYPE
+File alpha.txt has an unsupported file type; supported: .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .toml, .yaml, .yml
+File nested/beta.txt has an unsupported file type; supported: .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .toml, .yaml, .yml
 == exit 1

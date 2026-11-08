@@ -22,16 +22,20 @@ pub(crate) fn run(
     err: &mut impl Write,
 ) -> io::Result<ExitStatus> {
     let [(path, kind)] = arguments else {
-        writeln!(err, "{}", InputError::DebugNeedsOnePath)?;
+        writeln!(err, "{}", InputError::DebugNeedsOnePath(arguments.len()))?;
         return Ok(ExitStatus::Failure);
     };
     let (files, walk_status) = match kind {
         ArgumentKind::Glob => {
-            writeln!(err, "{}", InputError::DebugNeedsOnePath)?;
+            writeln!(err, "{}", InputError::DebugGlob(path.clone()))?;
             return Ok(ExitStatus::Failure);
         }
-        ArgumentKind::MissingFile | ArgumentKind::MissingDirectory => {
+        ArgumentKind::MissingFile => {
             writeln!(err, "{}", InputError::FileMissing(path.clone()))?;
+            return Ok(ExitStatus::Failure);
+        }
+        ArgumentKind::MissingDirectory => {
+            writeln!(err, "{}", InputError::DirectoryMissing(path.clone()))?;
             return Ok(ExitStatus::Failure);
         }
         ArgumentKind::File => (vec![path.clone()], ExitStatus::Success),

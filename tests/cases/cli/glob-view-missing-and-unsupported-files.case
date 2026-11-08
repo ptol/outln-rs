@@ -15,5 +15,5 @@ glob view: input/src input/missing.md input/notes.txt
 input/src/a.md (4 lines): description: "A summary."
 == stderr
 File input/missing.md does not exist
-FILE input/notes.txt HAS UNSUPPORTED FILE TYPE
+File input/notes.txt has an unsupported file type; supported: .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .toml, .yaml, .yml
 == exit 1

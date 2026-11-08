@@ -6,5 +6,5 @@ input/*.md
 # a
 == stdout
 == stderr
---debug requires exactly one input file path.
+--debug requires a file or directory path, not the glob pattern input/*.md
 == exit 1
