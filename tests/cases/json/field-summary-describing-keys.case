@@ -1,0 +1,17 @@
+A field summary shows `description` (then `title`) first, before the other scalar keys in source
+order, three in all: it usually says what the file is. A describing key's value is cut at 100
+characters instead of 40, and a cut quoted value still ends with its closing quote after `…`.
+== args
+input
+== file input/package.json
+{
+  "name": "@boardgames/web-e2e",
+  "private": true,
+  "description": "Playwright smoke test that every home page renders and that each game in the catalog starts and ends without errors",
+  "homepage": "https://example.com/a/very/long/path/to/the/project/page"
+}
+== stdout
+glob view: input
+input/package.json (6 lines): {description: "Playwright smoke test that every home page renders and that each game in the catalog starts and end…", name: "@boardgames/web-e2e", private: true, ...}
+== stderr
+== exit 0

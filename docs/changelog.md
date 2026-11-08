@@ -11,6 +11,11 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 - Every engine: a lone CR (a file with classic Mac OS line endings) is a line break, as CRLF already was: such a file's line count, line ranges, and header comment count each CR-ended line, and no raw CR is printed.
 - CSS: a style rule without selectors (`{ color: red }`, in a half-edited file) is no longer listed as a blank outline line.
+- Data files ([ADR-022](adr.md)):
+  - **Field summary**: `description`, then `title`, come first, then the other scalar keys in source order, three in all (`{description: "...", name: "demo", private: true, ...}`, `[package] {description = "...", name = "outln", version = "0.3.0", ...}`); a file without scalar keys prints its keys' names, `{compilerOptions, include}`, instead of `(no header available)`.
+  - **Values**: a `description` or `title` value is cut at 100 characters instead of 40, in outline lines too, and a cut quoted value ends with its quote after the `…` (`"Playwright smoke test…"`). A value written over several lines (a YAML `|` block, a TOML `"""` string) prints its first paragraph with its lines joined by spaces instead of only its first line; so does a key (`? [a,\n b]`).
+  - **TOML**: a table header that doesn't close on its line (`[[bin` in a half-edited file) prints only that line, in outline lines and a field summary's table name.
+  - **YAML**: an empty first document (`---` right before another `---`) is skipped, so the next document's keys are listed; a root mapping broken by a syntax error lists its keys before the error.
 - File mode: an outline's first line prints the file's line count after its path, as the glob view does: `src/cli.rs (120 lines)` ([ADR-020](adr.md)).
 
 ## 0.3.0 (2026-11-06)

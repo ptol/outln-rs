@@ -92,8 +92,13 @@ _Avoid_: Outline, description
 
 ### Field summary
 
-What a glob view prints for a data file without a header comment: its first top-level keys with scalar values, as their outline lines print them, such as `{name: "outln", version: "0.2.0", private: true, ...}` (for a TOML file whose scalar keys are all in tables, the first table's, as `[package] {name = "outln", ...}`).
+What a glob view prints for a data file without a header comment: up to three top-level keys with scalar values, describing keys first and then the others in source order, as their outline lines print them, such as `{description: "...", name: "outln", private: true, ...}` (for a TOML file whose scalar keys are all in tables, the first table's, as `[package] {name = "outln", ...}`). A file without scalar keys shows its keys' names, `{compilerOptions, include}`.
 _Avoid_: Preview, metadata
+
+### Describing key
+
+A `description` or `title` key, whose value says what the whole file is: a field summary shows it before other fields, and a data file's outline line cuts its value at 100 characters instead of 40.
+_Avoid_: Preferred key, summary key, main field
 
 ## Positions
 

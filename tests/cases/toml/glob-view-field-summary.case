@@ -1,5 +1,5 @@
 A glob view prints a TOML file's header comment, or else a field summary: its first three scalar keys before the first table, then `...` if it has more.
-Without scalar keys before the first table, the summary takes the first table's keys and names the table; without any scalar keys there is nothing to summarize.
+Without scalar keys before the first table, the summary takes the first table's keys and names the table; when neither has a scalar key, it prints the names of the file's keys and table headers (`lists.toml`).
 == args
 input
 == file input/commented.toml
@@ -27,7 +27,7 @@ path = ["x"]
 glob view: input
 input/Cargo.toml (5 lines): [package] {name = "demo", version = "0.1.0", edition = "2024"}
 input/commented.toml (2 lines): Commented settings.
-input/lists.toml (3 lines): (no header available)
+input/lists.toml (3 lines): {items, [[bin]]}
 input/many.toml (4 lines): {a = 1, b = 'two', c = true, ...}
 input/rustfmt.toml (2 lines): {edition = "2024", max_width = 100}
 == stderr

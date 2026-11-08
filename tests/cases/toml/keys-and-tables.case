@@ -1,5 +1,5 @@
 A TOML outline lists the keys before the first table, then every table header as written, in file order: dotted tables and repeated arrays of tables stay separate lines.
-A scalar value prints after its key, cut after its first line or 40 characters; inline tables and arrays print only the key.
+A scalar value prints after its key on one line, a multi-line string's lines joined by spaces, cut at 40 characters, or 100 for a `description` (so this one prints whole); inline tables and arrays print only the key.
 A comment directly above a table starts its line range; a table's trailing comment and blank lines don't end it.
 == args
 input/Cargo.toml
@@ -30,8 +30,8 @@ name = "two"
 input/Cargo.toml (22 lines)
 Build settings for the demo crate.
 [L3-L3] edition = "2024"
-[L4-L4] description = "A very long description that goes on pa…
-[L5-L6] notes = """…
+[L4-L4] description = "A very long description that goes on past the cut"
+[L5-L6] notes = """ two lines"""
 [L7-L7] features
 [L8-L8] point
 [L9-L11] [package]

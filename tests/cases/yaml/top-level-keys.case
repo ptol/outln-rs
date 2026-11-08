@@ -1,4 +1,4 @@
-A YAML outline lists the keys of the root mapping: scalar values print after the key as written (quotes, anchors, aliases), cut after their first line; mappings and lists print only the key, and a key without a value prints as `key:`.
+A YAML outline lists the keys of the root mapping: scalar values print after the key as written (quotes, anchors, aliases), on one line (a `|` block's first paragraph, its lines joined by spaces); mappings and lists print only the key, and a key without a value prints as `key:`.
 A comment at the key's indentation directly above it starts its line range; one indented deeper belongs to the value above, and trailing comments and blank lines don't end a key's range.
 == args
 input/ci.yml
@@ -29,7 +29,7 @@ input/ci.yml (20 lines)
 [L2-L4] on
 [L5-L8] jobs
 [L11-L11] "quoted key": 'single'
-[L12-L14] script: |…
+[L12-L14] script: | echo one echo two
 [L15-L16] defaults
 [L17-L17] copy: *defaults
 [L18-L18] empty:

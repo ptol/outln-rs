@@ -1,4 +1,4 @@
-A glob view prints a YAML file's header comment, or else a field summary of its first three scalar keys, with `...` when more follow; a file with only mappings and lists has nothing to summarize.
+A glob view prints a YAML file's header comment, or else a field summary of its first three scalar keys, with `...` when more follow; a file with only mappings and lists prints its keys' names instead.
 == args
 input
 == file input/commented.yaml
@@ -22,6 +22,6 @@ glob view: input
 input/commented.yaml (2 lines): Commented settings.
 input/compose.yml (4 lines): {version: "3", name: demo}
 input/many.yaml (4 lines): {a: 1, b: two, c: true, ...}
-input/nested.yaml (2 lines): (no header available)
+input/nested.yaml (2 lines): {a}
 == stderr
 == exit 0

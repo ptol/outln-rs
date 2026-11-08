@@ -1,0 +1,16 @@
+A table header whose closing brackets are missing on its line (`[[bin`, as in a half-edited
+file) prints only its own line, even when the parser recovers it with the brackets of a later
+header and runs its line range on to them: an outline line is always one line.
+== args
+input/Cargo.toml
+== file input/Cargo.toml
+[[bin
+
+name = "x"
+[[bin]]
+name = "y"
+== stdout
+input/Cargo.toml (5 lines)
+[L1-L5] [[bin
+== stderr
+== exit 0

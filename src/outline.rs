@@ -123,6 +123,42 @@ pub(crate) enum FieldsShown {
     First,
 }
 
+/// How many fields a data file's field summary shows.
+const MAX_SUMMARY_FIELDS: usize = 3;
+
+/// Keys whose value says what the whole file is, which a file summary shows first, in this
+/// order.
+const DESCRIBING_KEYS: [&str; 2] = ["description", "title"];
+
+/// Whether a field's key is one of the [`DESCRIBING_KEYS`].
+pub(crate) fn is_describing_key(key: &str) -> bool {
+    DESCRIBING_KEYS.contains(&key)
+}
+
+/// The fields a file summary shows: the [`DESCRIBING_KEYS`] first, then the others in source
+/// order, at most [`MAX_SUMMARY_FIELDS`], and whether some were left out. `key` gives each
+/// field's key.
+pub(crate) fn summary_fields<T>(
+    fields: impl IntoIterator<Item = T>,
+    key: impl Fn(&T) -> &str,
+) -> (Vec<T>, FieldsShown) {
+    let mut fields: Vec<T> = fields.into_iter().collect();
+    // A stable sort, so fields of the same rank keep their source order.
+    fields.sort_by_key(|field| {
+        DESCRIBING_KEYS
+            .iter()
+            .position(|describing| *describing == key(field))
+            .unwrap_or(DESCRIBING_KEYS.len())
+    });
+    let shown = if fields.len() > MAX_SUMMARY_FIELDS {
+        fields.truncate(MAX_SUMMARY_FIELDS);
+        FieldsShown::First
+    } else {
+        FieldsShown::All
+    };
+    (fields, shown)
+}
+
 /// Printed in a glob view for a file without a header.
 const NO_HEADER: &str = "(no header available)";
 
