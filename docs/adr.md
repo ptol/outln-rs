@@ -463,6 +463,32 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - `declaration_lines` is a plain function pointer, so a language's rules can't capture state; anything it needs comes from the `OutlineLevel` or the node.
 - Rust reads doc comments from their markers instead of tree-sitter-rust's `outer` and `inner` fields; both follow rustc's rules, and outlines of 15 000 crates.io files were unchanged.
 
+## ADR-022: Outline files on several threads, printing in input order
+
+**Status**: Accepted (2026-11-08)
+
+### Decision
+
+- `src/main.rs` passes `std::thread::available_parallelism` (1 when unknown) as `Context::threads`; library code never asks the machine.
+- The glob view, file mode, and debug mode load and outline their files with `parallel::map_in_order`: scoped threads (`std::thread::scope`) that each claim the next unclaimed file from an atomic counter, then results sorted back into input order before anything is printed. Below 32 files per thread it uses fewer threads, and below 64 files only the calling thread.
+- A directory walk starts on the calling thread; after 1 024 entries it starts over with the `ignore` crate's parallel walker on up to 8 threads. Found files are sorted as before, and walk errors are now sorted by message.
+- stdout is a 64 KiB `BufWriter`; the stderr writer `src/main.rs` passes to `run` flushes it before every write, so stdout and stderr merged into one pipe keep their order.
+
+### Rationale
+
+- Measured on 16 vCPUs, piped: the glob view of 18k files in `~/.cargo/registry/src` went from 940 ms to about 100 ms (buffering 515 ms, faster byte scans 420 ms, parallel files 180 ms, parallel walk 100 ms); file mode on 3 000 registry `.rs` files under 200 KiB from 1.6 s to 0.36 s.
+- Printing after all results are ready keeps the printing code a plain loop. Streaming each result through a channel to the printing thread cost about 2 ms on a 67-file tree, because each result woke that thread; that is more than the parallel work saves there.
+- `std::thread::scope` lets threads borrow the file list and the rendering closure without `Arc`, and needs no thread-pool crate.
+- A walk can't know its size before it ends, and starting the walker threads made a glob view of a 12-file directory, the most common call, take 3.3 ms instead of 1.8. Up to about 1 000 entries one thread was as fast; starting over after 1 024 cost 0.7 ms on a 3 800-entry tree, whose walk the threads cut from 33 to 25 ms. Past 8 threads the large walk got no faster.
+- The thread count is a parameter so tests can run on one thread and compare: `tests/usage.rs` checks that 1 and 8 threads print the same, and casefiles run on 4.
+
+### Consequences
+
+- Output appears only after every file is outlined, and a closed pipe (`outln . | head`) is noticed only then: after about 100 ms for a glob view of 18k files, or 1 s for file mode on 3 000.
+- The slowest single file bounds file mode: a 2.5 MB generated `.rs` file takes 380 ms on its own.
+- A tree of more than 1 024 entries has its first 1 024 walked twice.
+- Engines must stay `Sync` (`LanguageEngine` already requires it) and rendering must not share mutable state between files.
+
 ## Dependencies
 
 One line per crate: why std was not enough.

@@ -1,10 +1,12 @@
 //! Finds the files behind path arguments: classifies each argument, walks directories, and expands glob patterns.
 
 use std::io;
+use std::num::NonZeroUsize;
 use std::path::{Component, Path};
+use std::sync::mpsc;
 
 use globset::GlobBuilder;
-use ignore::WalkBuilder;
+use ignore::{DirEntry, WalkBuilder, WalkState};
 
 use crate::input_error::InputError;
 use crate::language_engine::engine_for;
@@ -15,6 +17,14 @@ const NODE_MODULES: &str = "node_modules";
 const GLOB_START_CHARACTERS: [char; 4] = ['*', '?', '[', '{'];
 /// The glob segment that matches any number of directories.
 const ANY_DIRECTORIES: &str = "**";
+/// Past 8 threads a walk of 18k files got no faster (97 vs. 96 ms), while each thread made a
+/// parallel walk of a small tree slower; ripgrep caps its walker threads too.
+const MAX_WALK_THREADS: usize = 8;
+/// How many entries a walk visits on one thread before it starts over on several. Below about
+/// 1 000 entries, one thread was as fast (a 12-file `docs/`: 2 ms faster); starting over after
+/// 1 024 entries cost 0.7 ms on a 3 800-entry tree, which walking in parallel cut from 33 to
+/// 25 ms.
+const SEQUENTIAL_WALK_ENTRIES: usize = 1024;
 
 /// What a path argument names, decided once per argument.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,6 +94,8 @@ pub(crate) struct FoundFiles {
 pub(crate) struct FileWalker<'a> {
     pub(crate) cwd: &'a Path,
     pub(crate) global_gitignore: Option<&'a Path>,
+    /// How many threads may walk, and outline the files found.
+    pub(crate) threads: NonZeroUsize,
 }
 
 impl FileWalker<'_> {
@@ -133,43 +145,102 @@ impl FileWalker<'_> {
             let _ = builder.add_ignore(self.cwd.join(global_gitignore));
         }
 
-        let mut found = FoundFiles::default();
-        let display = |path: &Path| {
-            let relative = path.strip_prefix(&root).ok()?;
-            display_path(display_root, relative)
+        let entry_found = |result| found_in(result, &root, display_root);
+        let threads = self.threads.get().min(MAX_WALK_THREADS);
+        // Most walks are of a small directory, where starting walker threads costs more than
+        // the whole walk, and a walk can't know its size before it ends. So walk on this thread
+        // first, and start over on several threads once the walk outgrows its budget.
+        let budget = if threads == 1 {
+            usize::MAX
+        } else {
+            SEQUENTIAL_WALK_ENTRIES
         };
-        for result in builder.build() {
-            match result {
-                Ok(entry) if entry.file_type().is_some_and(|kind| kind.is_file()) => {
-                    found
-                        .files
-                        .extend(display(entry.path()).filter(|path| engine_for(path).is_some()));
-                }
-                // Unreadable directories are reported. A missing one (a glob's base that
-                // doesn't exist) just has no files, and malformed ignore rules are skipped, as
-                // git skips them.
-                Err(error) => {
-                    let Some(io_error) = error.io_error() else {
-                        continue;
-                    };
-                    if io_error.kind() == io::ErrorKind::NotFound {
-                        continue;
-                    }
-                    let directory = error_path(&error)
-                        .and_then(display)
-                        .unwrap_or_else(|| display_root.to_owned());
-                    // The walker's error text repeats the absolute path; the kind alone says why.
-                    found.errors.push(InputError::DirectoryUnreadable {
-                        directory,
-                        detail: io_error.kind().to_string(),
-                    });
-                }
-                // Directories and other entries that aren't regular files.
-                Ok(_) => {}
-            }
+        let mut found = FoundFiles::default();
+        let mut walk = builder.build();
+        for item in walk.by_ref().take(budget).filter_map(entry_found) {
+            found.add(item);
+        }
+        if walk.next().is_some() {
+            found = walk_in_parallel(&mut builder, threads, &entry_found);
         }
         found.files.sort_unstable();
+        // The walk order depends on the file system and, with threads, on timing.
+        found.errors.sort_by_cached_key(ToString::to_string);
         found
+    }
+}
+
+/// Walks with `threads` walker threads, keeping what `entry_found` makes of each entry.
+fn walk_in_parallel(
+    builder: &mut WalkBuilder,
+    threads: usize,
+    entry_found: &(impl Fn(WalkedEntry) -> Option<Result<String, InputError>> + Sync),
+) -> FoundFiles {
+    // Each walker thread sends what it finds; the channel collects it on this thread.
+    let (sender, receiver) = mpsc::channel();
+    builder.threads(threads).build_parallel().run(|| {
+        let sender = sender.clone();
+        Box::new(move |result| {
+            if let Some(item) = entry_found(result) {
+                // The receiver outlives the walk, so a send can't fail.
+                let _ = sender.send(item);
+            }
+            WalkState::Continue
+        })
+    });
+    drop(sender);
+    let mut found = FoundFiles::default();
+    for item in receiver {
+        found.add(item);
+    }
+    found
+}
+
+/// What the walker yields for each entry.
+type WalkedEntry = Result<DirEntry, ignore::Error>;
+
+impl FoundFiles {
+    fn add(&mut self, item: Result<String, InputError>) {
+        match item {
+            Ok(file) => self.files.push(file),
+            Err(error) => self.errors.push(error),
+        }
+    }
+}
+
+/// What one walked entry adds: the display path of a supported file, an error for an unreadable
+/// directory, or nothing.
+fn found_in(
+    result: WalkedEntry,
+    root: &Path,
+    display_root: &str,
+) -> Option<Result<String, InputError>> {
+    let display = |path: &Path| {
+        let relative = path.strip_prefix(root).ok()?;
+        display_path(display_root, relative)
+    };
+    match result {
+        Ok(entry) if entry.file_type().is_some_and(|kind| kind.is_file()) => display(entry.path())
+            .filter(|path| engine_for(path).is_some())
+            .map(Ok),
+        // Unreadable directories are reported. A missing one (a glob's base that doesn't
+        // exist) just has no files, and malformed ignore rules are skipped, as git skips them.
+        Err(error) => {
+            let io_error = error.io_error()?;
+            if io_error.kind() == io::ErrorKind::NotFound {
+                return None;
+            }
+            let directory = error_path(&error)
+                .and_then(display)
+                .unwrap_or_else(|| display_root.to_owned());
+            // The walker's error text repeats the absolute path; the kind alone says why.
+            Some(Err(InputError::DirectoryUnreadable {
+                directory,
+                detail: io_error.kind().to_string(),
+            }))
+        }
+        // Directories and other entries that aren't regular files.
+        Ok(_) => None,
     }
 }
 

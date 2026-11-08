@@ -2,12 +2,14 @@
 
 use std::collections::BTreeSet;
 use std::io::{self, Write};
+use std::path::Path;
 
 use crate::ExitStatus;
 use crate::discovery::{ArgumentKind, FileWalker};
 use crate::input_error::InputError;
 use crate::language_engine::engine_for;
 use crate::outline::render_file_summary;
+use crate::parallel::map_in_order;
 use crate::source_file::load;
 use crate::source_text::LineCount;
 
@@ -39,13 +41,13 @@ pub(crate) fn run(
     // view belongs in the agent's instructions, which is why it runs outln at all (ADR-019).
     writeln!(out, "glob view: {}", printed_arguments.join(" "))?;
     let mut status = ExitStatus::failure_if(!errors.is_empty());
-    for path in &files {
-        match load(walker.cwd, path) {
-            Ok(source) => {
-                let summary = source.engine.file_summary(&source.text);
-                let line_count = LineCount::of(&source.text);
-                writeln!(out, "{}", render_file_summary(path, line_count, &summary))?;
-            }
+    let files: Vec<String> = files.into_iter().collect();
+    let lines = map_in_order(&files, walker.threads, |path| {
+        summary_line(walker.cwd, path)
+    });
+    for line in lines {
+        match line {
+            Ok(line) => writeln!(out, "{line}")?,
             Err(error) => {
                 writeln!(err, "{error}")?;
                 status = ExitStatus::Failure;
@@ -53,6 +55,14 @@ pub(crate) fn run(
         }
     }
     Ok(status)
+}
+
+/// The glob view's line for one file.
+fn summary_line(cwd: &Path, path: &str) -> Result<String, InputError> {
+    let source = load(cwd, path)?;
+    let summary = source.engine.file_summary(&source.text);
+    let line_count = LineCount::of(&source.text);
+    Ok(render_file_summary(path, line_count, &summary))
 }
 
 /// The supported files the arguments name, plus errors for directories and explicit files

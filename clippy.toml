@@ -25,6 +25,7 @@ disallowed-methods = [
   { path = "std::env::home_dir", reason = "reads HOME from the environment; src/main.rs resolves it and passes paths in" },
   { path = "std::process::Command::new", reason = "library code doesn't start processes; do it in src/main.rs" },
   { path = "std::thread::sleep", reason = "inject a clock instead of waiting on real time" },
+  { path = "std::thread::available_parallelism", reason = "reads the process's CPU affinity; src/main.rs passes `Context::threads` instead" },
   { path = "std::fs::write", reason = "library code only reads files (ADR-004); write through an injected `impl Write`" },
   { path = "std::fs::File::create", reason = "library code only reads files (ADR-004); write through an injected `impl Write`" },
   { path = "std::time::SystemTime::now", reason = "inject a clock instead of reading time directly" },

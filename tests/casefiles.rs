@@ -17,6 +17,7 @@ mod scratch_dir;
 
 use std::fmt::Write as _;
 use std::fs;
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 
 use casefile::{Casefile, MissingOutput, Section};
@@ -30,6 +31,8 @@ const VERSION: &str = "0.0.0-test";
 const MAX_PRINTED_FAILURES: usize = 5;
 /// Unchanged lines kept around each change in a section diff; longer runs are collapsed.
 const CONTEXT_LINES: usize = 2;
+/// More than one, as on most machines; casefile trees are small, so they still run on one thread.
+const THREADS: NonZeroUsize = NonZeroUsize::new(4).unwrap();
 
 /// What the environment asks this run to do.
 struct Settings {
@@ -295,6 +298,7 @@ fn run_outln(casefile: &Casefile, index: usize) -> Result<Output, String> {
         cwd: dir.path(),
         version: VERSION,
         global_gitignore: None,
+        threads: THREADS,
     };
     let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
     let status = outln::run(
