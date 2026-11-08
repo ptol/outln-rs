@@ -25,15 +25,6 @@ impl Header {
     pub(crate) fn has_text(&self) -> bool {
         !header_lines(self).is_empty()
     }
-
-    /// The byte offset where the header's last line ends in the source.
-    pub(crate) fn end(&self) -> usize {
-        let last_range = match self {
-            Header::Frontmatter(fields) => fields.last().map(|field| field.range),
-            Header::Comment(lines) => lines.last().map(|line| line.range),
-        };
-        last_range.map_or(0, |range| range.end)
-    }
 }
 
 /// One non-blank source line of a header comment.

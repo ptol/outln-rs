@@ -19,7 +19,7 @@ mod yaml;
 use tree_sitter::{Language, Node};
 
 use crate::comment_syntax::CommentSyntax;
-use crate::header_comment::{HeaderChoice, find_header_comment};
+use crate::header_comment::{HeaderChoice, HeaderSearch, find_header_comment};
 use crate::language_engine::LanguageEngine;
 use crate::outline::{
     FieldSummary, FieldsShown, FileSummary, Header, Outline, OutlineLine, is_describing_key,
@@ -89,17 +89,16 @@ impl LanguageEngine for DataFile {
         let text = source.text;
         let parsed = (self.parsable_part)(text);
         let tree = parse(parsed, &(self.grammar)());
-        let header = self.header(text);
-        let header_end = header.as_ref().map(Header::end);
+        let HeaderSearch { header, end } = self.header(text);
         let keys = (self.keys)(tree.root_node(), parsed);
         let comments = comment_ranges(tree.root_node());
-        let lines = outline_lines(keys, source, &comments, header_end, self.preamble_end);
+        let lines = outline_lines(keys, source, &comments, end, self.preamble_end);
         Outline { header, lines }
     }
 
     fn file_summary(&self, text: &str) -> FileSummary {
         // A marker-only comment (a lone `#`) prints nothing, so fields summarize the file instead.
-        if let Some(header) = self.header(text).filter(Header::has_text) {
+        if let Some(header) = self.header(text).header.filter(Header::has_text) {
             return FileSummary::Header(header);
         }
         // The header is found line by line, but fields need a parse; parsing only the start of
@@ -133,8 +132,9 @@ pub(crate) fn yaml_fields(text: &str) -> Option<Vec<YamlField>> {
 }
 
 impl DataFile {
-    /// The header comment: the first comment at the top of the file, after any preamble.
-    fn header(&self, text: &str) -> Option<Header> {
+    /// The header comment: the first comment at the top of the file with a header paragraph,
+    /// after any preamble; and where the comments read for it end.
+    fn header(&self, text: &str) -> HeaderSearch {
         find_header_comment(
             text,
             &self.comment_syntax,
@@ -465,7 +465,8 @@ fn outline_lines(
 /// The walk stops at the key before (`previous_start`), at preamble (a `#:schema` directive),
 /// and at a comment indented deeper than the key, which belongs to the value above it (a YAML
 /// comment inside a nested mapping). Comments that reach up to the header comment (which ends
-/// at `header_end`) are the rest of it, so the range then starts at the key.
+/// at `header_end`, with any license notice passed over for it) are the rest of it, so the
+/// range then starts at the key.
 fn range_start(
     key: &Key,
     previous_start: usize,

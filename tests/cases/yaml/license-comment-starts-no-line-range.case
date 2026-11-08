@@ -1,0 +1,14 @@
+A license notice at the top of a data file is never its header, and it is not a comment of the first key either, though comment lines directly above a key start its line range: `name` starts at its own line.
+== args
+input/config.yaml
+== file input/config.yaml
+# Copyright 2024 Acme
+name: x
+# The version.
+version: 1
+== stdout
+input/config.yaml (4 lines)
+[L2-L2] name: x
+[L3-L4] version: 1
+== stderr
+== exit 0

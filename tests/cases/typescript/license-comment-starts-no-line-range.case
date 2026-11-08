@@ -1,0 +1,14 @@
+A `/** @license */` comment is a license notice, so it is not the header, and though it is written like a JSDoc comment it is not the leading annotation of the declaration below it: `a` starts at its own line, and `b` at its JSDoc comment.
+== args
+input/a.ts
+== file input/a.ts
+/** @license MIT */
+export const a = 1;
+/** Docs. */
+export const b = 2;
+== stdout
+input/a.ts (4 lines)
+[L2-L2] export const a
+[L3-L4] export const b
+== stderr
+== exit 0

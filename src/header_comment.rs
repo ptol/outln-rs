@@ -82,9 +82,21 @@ impl CommentRun {
     }
 }
 
+/// What [`find_header_comment`] found among the comments at the top of a file.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct HeaderSearch {
+    /// The header comment, if one of the comments is.
+    pub(crate) header: Option<Header>,
+    /// Where the last comment ends that is the header or was passed over for having no header
+    /// paragraph (a license notice, a comment without prose); `None` without either. Such a
+    /// comment describes the file, never the declaration below it, so an engine's walk over a
+    /// declaration's leading annotations stops before this offset.
+    pub(crate) end: Option<usize>,
+}
+
 /// The header comment of `text`: the header paragraph of the comment `choice` picks among the
 /// comments at the top of the file, before which only whitespace, other comments, and preamble
-/// may come.
+/// may come; and where the comments read for it end ([`HeaderSearch::end`]).
 ///
 /// `preamble_end(text, offset)` is called where no whitespace starts, before the header and
 /// before looking for a comment there (so a directive written as a comment, such as TOML's
@@ -96,13 +108,18 @@ pub(crate) fn find_header_comment(
     syntax: &CommentSyntax,
     choice: HeaderChoice,
     preamble_end: impl Fn(&str, usize) -> Option<usize>,
-) -> Option<Header> {
+) -> HeaderSearch {
     let runs = leading_comment_runs(text, syntax, preamble_end);
-    let lines = choose_header(runs, choice)?
-        .into_iter()
-        .filter(|line| line.range.start < line.range.end)
-        .collect();
-    Some(Header::Comment(lines))
+    let (lines, end) = choose_header(runs, choice);
+    let header = lines.map(|lines| {
+        Header::Comment(
+            lines
+                .into_iter()
+                .filter(|line| line.range.start < line.range.end)
+                .collect(),
+        )
+    });
+    HeaderSearch { header, end }
 }
 
 /// The comments at the top of `text`, up to the first code. Scanning goes on right after each
@@ -139,26 +156,37 @@ fn leading_comment_runs(
     runs
 }
 
-/// The header paragraph of the comment that is the header, as `choice` describes: comments
-/// without one (license notices, badges only) are passed over.
-fn choose_header(runs: Vec<CommentRun>, choice: HeaderChoice) -> Option<Vec<CommentLine>> {
-    let mut candidates = runs
-        .into_iter()
-        .filter(|run| choice.may_choose(run))
-        .filter_map(|run| Some((run.kind, header_paragraph(run.lines)?)));
-    match choice {
-        HeaderChoice::FirstComment => candidates.next().map(|(_, lines)| lines),
-        HeaderChoice::InnerDocElseFirstPlain => {
-            let mut first_plain = None;
-            for (kind, lines) in candidates {
+/// The header paragraph of the comment that is the header, as `choice` describes, and where
+/// the comments read for it end ([`HeaderSearch::end`]): comments without a header paragraph
+/// (license notices, badges only) are passed over.
+fn choose_header(
+    runs: Vec<CommentRun>,
+    choice: HeaderChoice,
+) -> (Option<Vec<CommentLine>>, Option<usize>) {
+    let mut end = None;
+    let mut first_plain = None;
+    for run in runs.into_iter().filter(|run| choice.may_choose(run)) {
+        let (kind, run_end) = (run.kind, run.end);
+        let Some(lines) = header_paragraph(run.lines) else {
+            end = Some(run_end);
+            continue;
+        };
+        match choice {
+            HeaderChoice::FirstComment => return (Some(lines), Some(run_end)),
+            HeaderChoice::InnerDocElseFirstPlain => {
                 if kind == CommentKind::InnerDoc {
-                    return Some(lines);
+                    return (Some(lines), Some(run_end));
                 }
-                first_plain.get_or_insert(lines);
+                // A later plain comment with prose that isn't the header stays a comment of
+                // the code below it, so only the first one moves `end`.
+                if first_plain.is_none() {
+                    first_plain = Some(lines);
+                    end = Some(run_end);
+                }
             }
-            first_plain
         }
     }
+    (first_plain, end)
 }
 
 /// Where the tool directive written as a comment that starts at byte `start` ends, such as
@@ -333,7 +361,12 @@ mod tests {
         (syntax, choice): (CommentSyntax, HeaderChoice),
         preamble_end: impl Fn(&str, usize) -> Option<usize>,
     ) -> Option<Header> {
-        find_header_comment(text, &syntax, choice, preamble_end)
+        find_header_comment(text, &syntax, choice, preamble_end).header
+    }
+
+    /// Where the comments read for the header of `text` end.
+    fn search_end(text: &str, (syntax, choice): (CommentSyntax, HeaderChoice)) -> Option<usize> {
+        find_header_comment(text, &syntax, choice, no_preamble).end
     }
 
     fn no_preamble(_: &str, _: usize) -> Option<usize> {
@@ -534,6 +567,24 @@ mod tests {
         }
         let banner = "/*! *****\nCopyright (c) Microsoft Corporation.\n***** */\n// Real.\n";
         assert_eq!(header_texts(banner, C_LIKE), Some(texts(&["Real."])));
+    }
+
+    #[test]
+    fn the_search_ends_after_the_header_or_the_last_comment_passed_over() {
+        let license = "/* Copyright 2024 A. */\n";
+        assert_eq!(
+            search_end(&format!("{license}.a {{}}\n"), BLOCK),
+            Some(license.len() - 1)
+        );
+        let with_header = "/* Copyright 2024 A. */\n/* Theme. */\n/* Rule. */\n.a {}\n";
+        assert_eq!(search_end(with_header, BLOCK), Some(36));
+        assert_eq!(search_end(".a {}\n", BLOCK), None);
+        // A doc comment, or a one-line comment labelling code, is the declaration's, so the
+        // search doesn't end after it.
+        assert_eq!(search_end("/// Item docs.\nfn f() {}\n", RUST_LIKE), None);
+        assert_eq!(search_end("// Std\nuse std::io;\n", RUST_LIKE), None);
+        let rust = "// Tool.\n\n// Copyright 2024 A.\n\n/// Docs.\nfn f() {}\n";
+        assert_eq!(search_end(rust, RUST_LIKE), Some(30));
     }
 
     #[test]

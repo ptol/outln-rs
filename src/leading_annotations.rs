@@ -89,10 +89,11 @@ pub(crate) enum PrecedingNode {
 /// `declaration_start` without one.
 ///
 /// `preceding` are the nodes before the declaration among its siblings, in source order, and
-/// `classify` says what each is. `header_end` is where the file's header ends, for a top-level
-/// declaration of a file with one: the comment a header was read from is never a leading
-/// annotation. A comment right after code
-/// on its line (`const A: u8 = 1; // one`) belongs to that code, so it ends the walk.
+/// `classify` says what each is. `header_end` is where the comments read for the file's header
+/// end ([`HeaderSearch::end`](crate::header_comment::HeaderSearch::end)), for a top-level
+/// declaration: the comment a header was read from, and a license notice passed over for it,
+/// are never leading annotations. A comment right after code on its line
+/// (`const A: u8 = 1; // one`) belongs to that code, so it ends the walk.
 pub(crate) fn leading_annotations_start(
     preceding: &[Node<'_>],
     declaration_start: usize,
