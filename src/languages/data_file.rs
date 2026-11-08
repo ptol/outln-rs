@@ -1,8 +1,9 @@
 //! Data file language engine (TOML, YAML, JSON): header comments, top-level keys with comment-aware line ranges, and the glob view's field summary; each format's child module finds its keys in its syntax tree.
 //!
-//! The formats differ only in their grammar, comment syntax, and where their keys sit in the
-//! tree; how a key prints, where its line range starts and ends, and which keys a field summary
-//! shows are the same for all three, so they live here.
+//! The formats differ only in their grammar, comment syntax, preamble, and where their keys sit
+//! in the tree, which each format's [`DataFile`] table names; how a key prints, where its line
+//! range starts and ends, and which keys a field summary shows are the same for all three, so
+//! they live here.
 
 mod json;
 mod toml;
@@ -17,117 +18,101 @@ use crate::outline::{FieldSummary, FieldsShown, FileSummary, Header, Outline, Ou
 use crate::source_text::{ByteRange, SourceText, trim_end};
 use crate::syntax_tree::{byte_range, parse};
 
-/// The language engine for one data file format.
+/// The language engine for one data file format, as the data that differs between formats.
 pub(crate) struct DataFile {
-    format: Format,
+    /// File extensions, lowercase and without the dot.
+    extensions: &'static [&'static str],
+    /// The tree-sitter grammar. A function, because a grammar can't be built in a `static`.
+    grammar: fn() -> Language,
+    comment_syntax: CommentSyntax,
+    /// Where the preamble starting at a byte ends: lines a tool reads rather than a person,
+    /// which are neither the header nor a key's comment. `None` if none starts there.
+    preamble_end: fn(&str, usize) -> Option<usize>,
+    /// The file's top-level keys, in source order.
+    keys: fn(Node<'_>, &str) -> Vec<Key>,
+    /// The keys a field summary picks its fields from, for a format whose summary doesn't just
+    /// take the file's keys; `None` takes them.
+    summary_source: Option<fn(Node<'_>, &str) -> SummarySource>,
 }
 
 pub(crate) static JSON: DataFile = DataFile {
-    format: Format::Json,
+    extensions: &["json"],
+    grammar: || tree_sitter_json::LANGUAGE.into(),
+    comment_syntax: json::COMMENT_SYNTAX,
+    preamble_end: |_, _| None,
+    keys: json::keys,
+    summary_source: None,
 };
 pub(crate) static TOML: DataFile = DataFile {
-    format: Format::Toml,
+    extensions: &["toml"],
+    grammar: || tree_sitter_toml_ng::LANGUAGE.into(),
+    comment_syntax: CommentSyntax::HASH,
+    preamble_end: toml::preamble_end,
+    keys: toml::keys,
+    summary_source: Some(toml::summary_source),
 };
 pub(crate) static YAML: DataFile = DataFile {
-    format: Format::Yaml,
+    extensions: &["yaml", "yml"],
+    grammar: || tree_sitter_yaml::LANGUAGE.into(),
+    comment_syntax: CommentSyntax::HASH,
+    preamble_end: yaml::preamble_end,
+    keys: yaml::keys,
+    summary_source: None,
 };
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Format {
-    Json,
-    Toml,
-    Yaml,
-}
 
 impl LanguageEngine for DataFile {
     fn extensions(&self) -> &'static [&'static str] {
-        match self.format {
-            Format::Json => &["json"],
-            Format::Toml => &["toml"],
-            Format::Yaml => &["yaml", "yml"],
-        }
+        self.extensions
     }
 
     fn outline(&self, source: &SourceText<'_>) -> Outline {
         let text = source.text;
-        let tree = parse(text, &self.format.language());
-        let header = self.format.header(text);
-        let header_end = header.as_ref().map_or(0, Header::end);
-        let keys = self.format.keys(tree.root_node(), text);
+        let tree = parse(text, &(self.grammar)());
+        let header = self.header(text);
+        let header_end = header.as_ref().map(Header::end);
+        let keys = (self.keys)(tree.root_node(), text);
         let comments = comment_ranges(tree.root_node());
-        let lines = outline_lines(keys, source, &comments, header_end, self.format);
+        let lines = outline_lines(keys, source, &comments, header_end, self.preamble_end);
         Outline { header, lines }
     }
 
     fn file_summary(&self, text: &str) -> FileSummary {
         // A marker-only comment (a lone `#`) prints nothing, so fields summarize the file instead.
-        if let Some(header) = self.format.header(text).filter(Header::has_text) {
+        if let Some(header) = self.header(text).filter(Header::has_text) {
             return FileSummary::Header(header);
         }
         // The header is found line by line, but fields need a parse; parsing only the start of
         // the file keeps a glob view over large lockfiles fast.
         let (prefix, cut) = summary_prefix(text);
-        let tree = parse(prefix, &self.format.language());
-        let source = self.format.summary_source(tree.root_node(), prefix);
+        let tree = parse(prefix, &(self.grammar)());
+        let source = self.summary_source(tree.root_node(), prefix);
         field_summary(source, prefix, cut).map_or(FileSummary::Empty, FileSummary::Fields)
     }
 
     #[cfg(test)]
     fn grammar(&self) -> Option<Language> {
-        Some(self.format.language())
+        Some((self.grammar)())
     }
 }
 
-impl Format {
-    fn language(self) -> Language {
-        match self {
-            Format::Json => tree_sitter_json::LANGUAGE.into(),
-            Format::Toml => tree_sitter_toml_ng::LANGUAGE.into(),
-            Format::Yaml => tree_sitter_yaml::LANGUAGE.into(),
-        }
-    }
-
+impl DataFile {
     /// The header comment: the first comment at the top of the file, after any preamble.
-    fn header(self, text: &str) -> Option<Header> {
-        let syntax = self.comment_syntax();
-        find_header_comment(text, &syntax, HeaderChoice::FirstComment, |text, start| {
-            self.preamble_end(text, start)
-        })
-    }
-
-    fn comment_syntax(self) -> CommentSyntax {
-        match self {
-            Format::Json => json::COMMENT_SYNTAX,
-            Format::Toml | Format::Yaml => CommentSyntax::HASH,
-        }
-    }
-
-    /// Where the preamble starting at byte `start` ends: lines a tool reads rather than a
-    /// person, which are neither the header nor a key's comment.
-    fn preamble_end(self, text: &str, start: usize) -> Option<usize> {
-        match self {
-            Format::Json => None,
-            Format::Toml => toml::preamble_end(text, start),
-            Format::Yaml => yaml::preamble_end(text, start),
-        }
-    }
-
-    /// The file's top-level keys, in source order.
-    fn keys(self, root: Node<'_>, text: &str) -> Vec<Key> {
-        match self {
-            Format::Json => json::keys(root, text),
-            Format::Toml => toml::keys(root, text),
-            Format::Yaml => yaml::keys(root, text),
-        }
+    fn header(&self, text: &str) -> Option<Header> {
+        find_header_comment(
+            text,
+            &self.comment_syntax,
+            HeaderChoice::FirstComment,
+            self.preamble_end,
+        )
     }
 
     /// The keys a field summary picks its fields from.
-    fn summary_source(self, root: Node<'_>, text: &str) -> SummarySource {
-        match self {
-            Format::Toml => toml::summary_source(root, text),
-            Format::Json | Format::Yaml => SummarySource {
+    fn summary_source(&self, root: Node<'_>, text: &str) -> SummarySource {
+        match self.summary_source {
+            Some(summary_source) => summary_source(root, text),
+            None => SummarySource {
                 table: None,
-                keys: self.keys(root, text),
+                keys: (self.keys)(root, text),
             },
         }
     }
@@ -311,8 +296,8 @@ fn outline_lines(
     keys: Vec<Key>,
     source: &SourceText<'_>,
     comments: &[ByteRange],
-    header_end: usize,
-    format: Format,
+    header_end: Option<usize>,
+    preamble_end: fn(&str, usize) -> Option<usize>,
 ) -> Vec<OutlineLine> {
     let starts: Vec<usize> = keys
         .iter()
@@ -321,7 +306,14 @@ fn outline_lines(
             let previous_start = index
                 .checked_sub(1)
                 .map_or(0, |previous| keys[previous].node.start);
-            range_start(key, previous_start, source, comments, header_end, format)
+            range_start(
+                key,
+                previous_start,
+                source,
+                comments,
+                header_end,
+                preamble_end,
+            )
         })
         .collect();
     keys.into_iter()
@@ -350,15 +342,15 @@ fn outline_lines(
 ///
 /// The walk stops at the key before (`previous_start`), at preamble (a `#:schema` directive),
 /// and at a comment indented deeper than the key, which belongs to the value above it (a YAML
-/// comment inside a nested mapping). Comments that reach up to the header (`header_end`, 0
-/// without one) are the rest of the header comment, so the range then starts at the key.
+/// comment inside a nested mapping). Comments that reach up to the header comment (which ends
+/// at `header_end`) are the rest of it, so the range then starts at the key.
 fn range_start(
     key: &Key,
     previous_start: usize,
     source: &SourceText<'_>,
     comments: &[ByteRange],
-    header_end: usize,
-    format: Format,
+    header_end: Option<usize>,
+    preamble_end: fn(&str, usize) -> Option<usize>,
 ) -> usize {
     let text = source.text;
     let key_line = source.line_around(key.node.start);
@@ -367,12 +359,12 @@ fn range_start(
     let mut line_start = key_line.start;
     while line_start > previous_start && line_start > 0 {
         let line = source.line_around(line_start - 1);
-        if line.start < header_end {
+        if header_end.is_some_and(|end| line.start < end) {
             return key.node.start;
         }
         let content = line_content(text, line);
         let is_comment_line = is_comment(content, comments);
-        let is_preamble = is_comment_line && format.preamble_end(text, content.start).is_some();
+        let is_preamble = is_comment_line && preamble_end(text, content.start).is_some();
         if !is_comment_line || is_preamble || content.start - line.start > key_column {
             break;
         }
@@ -420,35 +412,12 @@ fn is_comment(range: ByteRange, comments: &[ByteRange]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn outline_texts(engine: &DataFile, text: &str) -> Vec<String> {
-        engine
-            .outline(&SourceText::new(text))
-            .lines
-            .into_iter()
-            .map(|line| line.text)
-            .collect()
-    }
-
-    #[test]
-    fn every_grammar_loads_and_parses() {
-        for (engine, text, printed) in [
-            (&JSON, "{\"a\": 1}\n", "a: 1"),
-            (&TOML, "a = 1\n", "a = 1"),
-            (&YAML, "a: 1\n", "a: 1"),
-        ] {
-            let tree = parse(text, &engine.format.language());
-            assert!(!tree.root_node().has_error(), "{:?}", engine.format);
-            assert_eq!(outline_texts(engine, text), [printed]);
-        }
-    }
+    use crate::language_engine::{outline_of, outline_texts};
 
     #[test]
     fn a_range_ending_in_a_multi_byte_character_is_trimmed_without_panicking() {
         assert_eq!(outline_texts(&YAML, "name: café\n"), ["name: café"]);
-        let lines = TOML
-            .outline(&SourceText::new("[t]\nx = 1\n# Café\n[u]\n"))
-            .lines;
+        let lines = outline_of(&TOML, "[t]\nx = 1\n# Café\n[u]\n").lines;
         let ranges: Vec<ByteRange> = lines.into_iter().map(|line| line.range).collect();
         // `[u]`'s range starts at the comment above it; `é` is two bytes.
         assert_eq!(ranges, [ByteRange::new(0, 9), ByteRange::new(10, 21)]);
@@ -532,8 +501,8 @@ mod tests {
     #[test]
     fn a_field_summary_after_a_cut_drops_the_key_running_to_the_cut() {
         let prefix = "{\n\"a\": 1,\n\"b\": \"cut sh";
-        let tree = parse(prefix, &Format::Json.language());
-        let source = Format::Json.summary_source(tree.root_node(), prefix);
+        let tree = parse(prefix, &(JSON.grammar)());
+        let source = JSON.summary_source(tree.root_node(), prefix);
         let summary = field_summary(source, prefix, Cut::Prefix);
         assert_eq!(
             summary,
