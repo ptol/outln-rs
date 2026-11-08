@@ -34,6 +34,15 @@ const ESCAPED_FLAG: &str = " escaped";
 /// How plain output sections write the ESC byte of ANSI colour codes.
 const ESC_TEXT: &str = "\\x1b";
 
+/// What [`Casefile::parse`] does with a casefile whose output sections at the end are missing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MissingOutput {
+    /// A missing section is an error: the casefile expects no output it doesn't state.
+    Reject,
+    /// Missing sections start empty, with exit code 0, so update mode can fill them in.
+    AddEmpty,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Casefile {
     /// The lines before the first section, kept verbatim.
@@ -53,6 +62,18 @@ pub(crate) struct Section {
 }
 
 impl Section {
+    fn empty() -> Self {
+        Self {
+            escaped: false,
+            body: String::new(),
+        }
+    }
+
+    /// The section's lines as written in the casefile, escapes undecoded.
+    pub(crate) fn as_written(&self) -> &str {
+        &self.body
+    }
+
     /// The bytes of an input file.
     pub(crate) fn input_bytes(&self) -> Result<Vec<u8>, String> {
         if self.escaped {
@@ -101,7 +122,7 @@ impl Section {
 }
 
 impl Casefile {
-    pub(crate) fn parse(text: &str) -> Result<Self, String> {
+    pub(crate) fn parse(text: &str, missing_output: MissingOutput) -> Result<Self, String> {
         let mut description = String::new();
         let mut sections: Vec<(Marker, String)> = Vec::new();
         for line in text.split_inclusive('\n') {
@@ -118,11 +139,25 @@ impl Casefile {
                 target.push('\n');
             }
         }
-        Self::from_sections(description, sections)
+        Self::from_sections(description, sections, missing_output)
     }
 
-    /// Checks the canonical section order: args, files, stdout, stderr, exit.
-    fn from_sections(description: String, sections: Vec<(Marker, String)>) -> Result<Self, String> {
+    /// Checks for a description, then the canonical section order: args, files, stdout, stderr,
+    /// exit.
+    fn from_sections(
+        description: String,
+        sections: Vec<(Marker, String)>,
+        missing_output: MissingOutput,
+    ) -> Result<Self, String> {
+        if description.trim().is_empty() {
+            return Err(
+                "the casefile must start with a description, before `== args`: what \
+                 behaviour is under test and why the expected output looks this way \
+                 (docs/testing.md)"
+                    .to_owned(),
+            );
+        }
+        let add_empty = missing_output == MissingOutput::AddEmpty;
         let mut sections = sections.into_iter().peekable();
         let args = match sections.next() {
             Some((Marker::Args { escaped }, body)) => Section { escaped, body },
@@ -136,14 +171,17 @@ impl Casefile {
         }
         let stdout = match sections.next() {
             Some((Marker::Stdout { escaped }, body)) => Section { escaped, body },
+            None if add_empty => Section::empty(),
             _ => return Err("`== file` sections must be followed by `== stdout`".to_owned()),
         };
         let stderr = match sections.next() {
             Some((Marker::Stderr { escaped }, body)) => Section { escaped, body },
+            None if add_empty => Section::empty(),
             _ => return Err("`== stdout` must be followed by `== stderr`".to_owned()),
         };
         let exit_code = match sections.next() {
             Some((Marker::Exit(code), body)) if body.is_empty() => code,
+            None if add_empty => 0,
             _ => {
                 return Err(
                     "`== stderr` must be followed by `== exit <code>`, the last line".to_owned(),
@@ -321,7 +359,7 @@ mod tests {
 
     #[test]
     fn canonical_text_round_trips() {
-        let casefile = Casefile::parse(CANONICAL).unwrap();
+        let casefile = Casefile::parse(CANONICAL, MissingOutput::Reject).unwrap();
         assert_eq!(casefile.to_text(), CANONICAL);
         assert_eq!(casefile.args.arguments().unwrap(), ["input/a.md"]);
         assert_eq!(casefile.files[1].1.input_bytes().unwrap(), b"no newline");
@@ -334,8 +372,36 @@ mod tests {
 
     #[test]
     fn sections_out_of_order_are_rejected() {
-        let error = Casefile::parse("== stdout\n== args\n== stderr\n== exit 0\n").unwrap_err();
+        let error = Casefile::parse(
+            "Checks the order.\n== stdout\n== args\n== stderr\n== exit 0\n",
+            MissingOutput::Reject,
+        )
+        .unwrap_err();
         assert!(error.contains("first section"), "{error}");
+    }
+
+    #[test]
+    fn a_casefile_without_a_description_is_rejected() {
+        for text in [
+            "== args\n== stdout\n== stderr\n== exit 0\n",
+            "\n  \n== args\n",
+        ] {
+            let error = Casefile::parse(text, MissingOutput::AddEmpty).unwrap_err();
+            assert!(error.contains("description"), "{error}");
+        }
+    }
+
+    #[test]
+    fn missing_output_sections_are_rejected_or_added_empty() {
+        let text = "Checks a heading.\n== args\ninput/a.md\n== file input/a.md\n# A\n";
+        let error = Casefile::parse(text, MissingOutput::Reject).unwrap_err();
+        assert!(error.contains("`== stdout`"), "{error}");
+
+        let casefile = Casefile::parse(text, MissingOutput::AddEmpty).unwrap();
+        assert_eq!(
+            casefile.to_text(),
+            format!("{text}== stdout\n== stderr\n== exit 0\n")
+        );
     }
 
     #[test]

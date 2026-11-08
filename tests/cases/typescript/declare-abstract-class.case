@@ -1,0 +1,12 @@
+`declare abstract class` keeps both modifiers in its signature and spans its body; the `abstract id` field inside isn't listed.
+== args
+input/abstract-class.ts
+== file input/abstract-class.ts
+declare abstract class BaseModel {
+  abstract id: number;
+}
+== stdout
+input/abstract-class.ts (3 lines)
+[L1-L3] declare abstract class BaseModel
+== stderr
+== exit 0

@@ -1,0 +1,48 @@
+A nested `.gitignore` applies only under its own directory and its `!keep.gen.md` re-includes what the root's `*.gen.md` ignores, and the anchored `/build/` ignores only the root's `build`, not `src/build`. `input/.git/HEAD` makes `input` a git repository: outln applies `.gitignore` files only inside one.
+== args
+input
+== file input/.git/HEAD
+ref: refs/heads/main
+== file input/.gitignore
+*.gen.md
+/build/
+== file input/build/out.md
+---
+description: Build output (anchored /build/ ignores this).
+---
+# out
+== file input/src/build/kept.md
+---
+description: Not the root build dir, so kept.
+---
+# kept
+== file input/src/a.gen.md
+---
+description: Generated, ignored by root rule.
+---
+# gen
+== file input/src/.gitignore
+!keep.gen.md
+local/
+== file input/src/keep.gen.md
+---
+description: Re-included by nested negation.
+---
+# keep
+== file input/src/local/l.md
+---
+description: Ignored by nested rule.
+---
+# l
+== file input/other/local/o.md
+---
+description: Nested rule does not apply outside src.
+---
+# o
+== stdout
+glob view: input
+input/other/local/o.md (4 lines): description: "Nested rule does not apply outside src."
+input/src/build/kept.md (4 lines): description: "Not the root build dir, so kept."
+input/src/keep.gen.md (4 lines): description: "Re-included by nested negation."
+== stderr
+== exit 0

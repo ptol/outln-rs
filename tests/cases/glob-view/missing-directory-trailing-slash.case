@@ -1,0 +1,12 @@
+A missing path with a trailing slash is reported as a directory, `Directory input/empty/ does not exist`, on stderr with exit 1.
+== args
+input/empty/
+== file input/reference.md
+---
+description: Reference file.
+---
+# ref
+== stdout
+== stderr
+Directory input/empty/ does not exist
+== exit 1

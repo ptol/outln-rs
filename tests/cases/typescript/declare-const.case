@@ -1,0 +1,10 @@
+A single-declarator `declare const` prints `declare const` and its name, without its type annotation.
+== args
+input/ambient-single-const.ts
+== file input/ambient-single-const.ts
+declare const API_KEY: string;
+== stdout
+input/ambient-single-const.ts (1 line)
+[L1-L1] declare const API_KEY
+== stderr
+== exit 0

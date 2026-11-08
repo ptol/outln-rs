@@ -1,0 +1,16 @@
+Ambient `declare function`, `class`, `interface`, and `type` declarations keep their type parameters (`<T>`, `<K, V>`) in their outline lines; the type alias prints without its `= …` value.
+== args
+input/ambient.d.ts
+== file input/ambient.d.ts
+declare function parse<T>(text: string): T;
+declare class Store<K, V> {}
+declare interface Lookup<K> {}
+declare type Maybe<T> = T | null;
+== stdout
+input/ambient.d.ts (4 lines)
+[L1-L1] declare function parse<T>(text: string): T
+[L2-L2] declare class Store<K, V>
+[L3-L3] declare interface Lookup<K>
+[L4-L4] declare type Maybe<T>
+== stderr
+== exit 0

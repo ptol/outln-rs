@@ -1,0 +1,14 @@
+A `@sealed` decorator on its own line is the class's leading annotation, so the class's line range starts at L1 while its signature omits the decorator; its method is listed as a class member.
+== args
+input/decorated.ts
+== file input/decorated.ts
+@sealed
+export class Service {
+  run(): void {}
+}
+== stdout
+input/decorated.ts (4 lines)
+[L1-L4] export class Service
+  [L3-L3] run(): void
+== stderr
+== exit 0

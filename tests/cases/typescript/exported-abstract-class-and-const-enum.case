@@ -1,0 +1,16 @@
+`export abstract class`, an anonymous `export default class`, `export type`, and `export const enum` keep all their modifiers in the signature.
+== args
+input/exported-cases.ts
+== file input/exported-cases.ts
+export abstract class X {}
+export default class {}
+export type T = 'ok';
+export const enum ConstEnum { A = 1 }
+== stdout
+input/exported-cases.ts (4 lines)
+[L1-L1] export abstract class X
+[L2-L2] export default class
+[L3-L3] export type T
+[L4-L4] export const enum ConstEnum
+== stderr
+== exit 0

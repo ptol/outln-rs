@@ -1,0 +1,22 @@
+Debug mode highlights both declarators of `declare const first: string, second: number` (the first from `declare`, the second by its bare name, types left plain) and a `declare global` block through `global`.
+== args
+--debug
+input/ambient-mixed.ts
+== file input/ambient-mixed.ts
+declare const first: string, second: number;
+
+declare global {
+  interface Window {
+    customProp: boolean;
+  }
+}
+== stdout
+\x1b[32mdeclare const first\x1b[0m: string, \x1b[32msecond\x1b[0m: number;
+
+\x1b[32mdeclare global\x1b[0m {
+  interface Window {
+    customProp: boolean;
+  }
+}
+== stderr
+== exit 0

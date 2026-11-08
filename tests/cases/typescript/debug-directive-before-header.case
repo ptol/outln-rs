@@ -1,0 +1,18 @@
+In debug mode, a `'use client'` directive above the header comment stays plain, while every line of the `/** */` header comment after it and the declaration are highlighted.
+== args
+--debug
+input/page.tsx
+== file input/page.tsx
+'use client';
+/**
+ * Client page.
+ */
+export const page = 1;
+== stdout
+'use client';
+\x1b[32m/**\x1b[0m
+\x1b[32m * Client page.\x1b[0m
+\x1b[32m */\x1b[0m
+\x1b[32mexport const page\x1b[0m = 1;
+== stderr
+== exit 0

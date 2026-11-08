@@ -1,0 +1,33 @@
+After the `/** */` header, each `export function add` overload signature and the implementation get their own outline line, followed by a class with its constructor and getter.
+== args
+input/full-feature.ts
+== file input/full-feature.ts
+/**
+ * Math utilities with overloaded functions.
+ */
+export function add(a: string, b: string): string;
+export function add(a: number, b: number): number;
+export function add(a: string | number, b: string | number): string | number {
+  return typeof a === 'number' ? a + (b as number) : a + (b as string);
+}
+
+export class Calculator {
+  private value: number;
+  constructor(initial = 0) {
+    this.value = initial;
+  }
+  get result(): number {
+    return this.value;
+  }
+}
+== stdout
+input/full-feature.ts (18 lines)
+Math utilities with overloaded functions.
+[L4-L4] export function add(a: string, b: string): string
+[L5-L5] export function add(a: number, b: number): number
+[L6-L8] export function add(a: string | number, b: string | number): string | number
+[L10-L18] export class Calculator
+  [L12-L14] constructor(initial = 0)
+  [L15-L17] get result(): number
+== stderr
+== exit 0

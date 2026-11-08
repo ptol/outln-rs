@@ -1,0 +1,9 @@
+A missing path with brackets is a glob pattern, and `[slug].md` matches no file (not `other.md`), so outln reports that no supported files matched and exits 1.
+== args
+input/[slug].md
+== file input/other.md
+# other
+== stdout
+== stderr
+No supported files matched: input/[slug].md
+== exit 1

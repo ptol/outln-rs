@@ -1,0 +1,39 @@
+A glob pattern skips `node_modules` and files the `.gitignore` ignores, and `!dist/keep.md` can't re-include a file whose parent `dist/` is ignored, so only `src/a.md` is listed. `input/.git/HEAD` makes `input` a git repository: outln applies `.gitignore` files only inside one.
+== args
+input/**/*.md
+== file input/.git/HEAD
+ref: refs/heads/main
+== file input/.gitignore
+dist/
+!dist/keep.md
+*.gen.md
+== file input/src/a.md
+---
+description: Source a.
+---
+# a
+== file input/src/a.gen.md
+---
+description: Generated.
+---
+# gen
+== file input/dist/out.md
+---
+description: Dist output.
+---
+# out
+== file input/dist/keep.md
+---
+description: Cannot be re-included: parent dist/ is excluded.
+---
+# keep
+== file input/node_modules/dep/index.md
+---
+description: Dependency.
+---
+# dep
+== stdout
+glob view: input/**/*.md
+input/src/a.md (4 lines): description: "Source a."
+== stderr
+== exit 0

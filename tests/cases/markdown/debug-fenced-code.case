@@ -1,0 +1,22 @@
+Debug mode leaves a `## Not a heading` line inside a fenced code block unhighlighted, since it isn't a heading, and highlights the two real headings.
+== args
+--debug
+input/fences.md
+== file input/fences.md
+# Overview
+
+```md
+## Not a heading
+```
+
+## Real heading
+== stdout
+\x1b[32m# Overview\x1b[0m
+
+```md
+## Not a heading
+```
+
+\x1b[32m## Real heading\x1b[0m
+== stderr
+== exit 0

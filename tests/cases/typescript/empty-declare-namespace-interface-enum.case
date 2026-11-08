@@ -1,0 +1,16 @@
+A `declare namespace`, `interface`, `enum` with an empty body, and a `declare type` aliasing `{}`, are each listed on their one line with `declare` kept.
+== args
+input/empty-ambient.ts
+== file input/empty-ambient.ts
+declare namespace EmptyNS {}
+declare interface EmptyInterface {}
+declare type EmptyType = {};
+declare enum EmptyEnum {}
+== stdout
+input/empty-ambient.ts (4 lines)
+[L1-L1] declare namespace EmptyNS
+[L2-L2] declare interface EmptyInterface
+[L3-L3] declare type EmptyType
+[L4-L4] declare enum EmptyEnum
+== stderr
+== exit 0

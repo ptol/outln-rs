@@ -1,0 +1,28 @@
+A class's constructor, method, and `get`/`set` accessors are listed as class members indented under it, each with its signature; the `private value` field isn't listed.
+== args
+input/class-members.ts
+== file input/class-members.ts
+class Counter {
+  private value: number;
+  constructor(initial: number) {
+    this.value = initial;
+  }
+  increment(step: number): void {
+    this.value += step;
+  }
+  get count() {
+    return this.value;
+  }
+  set count(next: number) {
+    this.value = next;
+  }
+}
+== stdout
+input/class-members.ts (15 lines)
+[L1-L15] class Counter
+  [L3-L5] constructor(initial: number)
+  [L6-L8] increment(step: number): void
+  [L9-L11] get count()
+  [L12-L14] set count(next: number)
+== stderr
+== exit 0

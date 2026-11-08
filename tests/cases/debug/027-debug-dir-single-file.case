@@ -1,9 +1,0 @@
-== args
---debug
-input/single
-== file input/single/only.md
-# only
-== stdout
-\x1b[32m# only\x1b[0m
-== stderr
-== exit 0

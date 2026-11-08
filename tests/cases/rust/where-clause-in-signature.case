@@ -1,0 +1,12 @@
+Signatures print as written on one line, generics included, with a function's `where` clause after its return type.
+== args
+input/where.rs
+== file input/where.rs
+fn generic<T>(value: T) -> T where T: Clone { value }
+fn multi<T, U>(x: T, y: U) -> U where T: Display, U: Clone { y }
+== stdout
+input/where.rs (2 lines)
+[L1-L1] fn generic<T>(value: T) -> T where T: Clone
+[L2-L2] fn multi<T, U>(x: T, y: U) -> U where T: Display, U: Clone
+== stderr
+== exit 0

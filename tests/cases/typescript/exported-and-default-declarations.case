@@ -1,0 +1,25 @@
+Exported declarations keep `export` or `export default` in their signatures: an `export interface`, an `export function` with its full signature, an anonymous `export default function()`, and an `export default class`.
+== args
+input/exports.ts
+== file input/exports.ts
+export interface Config {
+  env: string;
+}
+
+export function buildConfig(env: string): Config {
+  return { env };
+}
+
+export default function () {
+  return 1;
+}
+
+export default class App {}
+== stdout
+input/exports.ts (13 lines)
+[L1-L3] export interface Config
+[L5-L7] export function buildConfig(env: string): Config
+[L9-L11] export default function()
+[L13-L13] export default class App
+== stderr
+== exit 0

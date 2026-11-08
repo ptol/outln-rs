@@ -1,0 +1,9 @@
+A directory holding only an unsupported file (`data.txt`) prints no glob view; outln reports that no supported files matched and exits 1.
+== args
+input
+== file input/data.txt
+{"a": 1}
+== stdout
+== stderr
+No supported files matched: input
+== exit 1

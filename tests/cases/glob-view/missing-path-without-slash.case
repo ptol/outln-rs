@@ -1,0 +1,12 @@
+A missing path without a trailing slash is reported as a file, `File input/nonexistent does not exist`, on stderr with exit 1.
+== args
+input/nonexistent
+== file input/reference.md
+---
+description: Reference file.
+---
+# ref
+== stdout
+== stderr
+File input/nonexistent does not exist
+== exit 1

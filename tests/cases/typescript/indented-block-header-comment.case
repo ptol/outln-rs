@@ -1,0 +1,12 @@
+A `/* */` comment indented by spaces at the top of the file is still the header comment, printed without its delimiters and indentation.
+== args
+input/indented-block.ts
+== file input/indented-block.ts escaped
+  /* Indented block comment */
+const x = 1;\
+== stdout
+input/indented-block.ts (2 lines)
+Indented block comment
+[L2-L2] const x
+== stderr
+== exit 0

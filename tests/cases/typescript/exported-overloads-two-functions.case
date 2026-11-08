@@ -1,0 +1,25 @@
+Two exported overloaded functions each list every overload signature on its own line, then the implementation with its body's line range; the default value in `radix = 10` stays in the signature.
+== args
+input/exported-overloads-multiple.ts
+== file input/exported-overloads-multiple.ts
+export function parse(input: string): number;
+export function parse(input: number): number;
+export function parse(input: string | number): number {
+  return Number(input);
+}
+
+export function format(value: number, radix?: number): string;
+export function format(value: bigint, radix?: number): string;
+export function format(value: number | bigint, radix = 10): string {
+  return value.toString(radix);
+}
+== stdout
+input/exported-overloads-multiple.ts (11 lines)
+[L1-L1] export function parse(input: string): number
+[L2-L2] export function parse(input: number): number
+[L3-L5] export function parse(input: string | number): number
+[L7-L7] export function format(value: number, radix?: number): string
+[L8-L8] export function format(value: bigint, radix?: number): string
+[L9-L11] export function format(value: number | bigint, radix = 10): string
+== stderr
+== exit 0

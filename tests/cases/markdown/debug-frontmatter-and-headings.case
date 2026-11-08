@@ -1,0 +1,28 @@
+Debug mode highlights each frontmatter field and each heading line, leaving the `---` lines and blank lines plain.
+== args
+--debug
+input/guide.md
+== file input/guide.md
+---
+title: Debug Guide
+description: Testing debug mode for markdown
+---
+
+# Getting Started
+
+## Installation
+
+## Configuration
+== stdout
+---
+\x1b[32mtitle: Debug Guide\x1b[0m
+\x1b[32mdescription: Testing debug mode for markdown\x1b[0m
+---
+
+\x1b[32m# Getting Started\x1b[0m
+
+\x1b[32m## Installation\x1b[0m
+
+\x1b[32m## Configuration\x1b[0m
+== stderr
+== exit 0

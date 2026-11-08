@@ -1,0 +1,24 @@
+Debug mode highlights a method's and a getter's return type (`: number`) as part of their signatures.
+== args
+--debug
+input/class-return-types.ts
+== file input/class-return-types.ts
+class Calculator {
+  add(a: number, b: number): number {
+    return a + b;
+  }
+  get result(): number {
+    return 42;
+  }
+}
+== stdout
+\x1b[32mclass Calculator\x1b[0m {
+  \x1b[32madd(a: number, b: number): number\x1b[0m {
+    return a + b;
+  }
+  \x1b[32mget result(): number\x1b[0m {
+    return 42;
+  }
+}
+== stderr
+== exit 0

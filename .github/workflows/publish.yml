@@ -1,7 +1,8 @@
 # Publishes the crate to crates.io when a version tag (`v<version>`) is pushed (docs/runbook.md,
 # Release). Run by hand (`gh workflow run publish.yml`), it skips the tag checks and runs the rest
-# with `cargo publish --dry-run`, so the runner setup can be tried before a release. Commits are gated by the local pre-commit hook; this
-# job re-runs clippy and the tests because a published version can never be replaced.
+# with `cargo publish --dry-run`, so the runner setup can be tried before a release. A published
+# version can never be replaced, so the upload waits for the whole Check workflow (check.yml:
+# every hook check, the static build, and the packaged crate's tests) on the same commit.
 name: Publish
 
 on:
@@ -13,7 +14,11 @@ permissions:
   contents: read
 
 jobs:
+  check:
+    uses: ./.github/workflows/check.yml
+
   publish:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       # Pinned to a commit: a moved tag can't change what runs with the crates.io token.
@@ -40,13 +45,6 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME points to a commit that isn't on main; push main first"
             exit 1
           fi
-
-      # The same commands as `just lint` and `just test`; keep them in step with the justfile.
-      - name: Lint
-        run: cargo clippy --all-targets --locked -- -D warnings
-
-      - name: Test
-        run: cargo test --locked
 
       - name: Publish to crates.io
         run: cargo publish --locked ${{ github.event_name == 'workflow_dispatch' && '--dry-run' || '' }}

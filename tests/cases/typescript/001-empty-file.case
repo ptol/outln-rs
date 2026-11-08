@@ -1,8 +1,0 @@
-== args
-input/empty.ts
-== file input/empty.ts escaped
-\
-== stdout
-input/empty.ts (0 lines)
-== stderr
-== exit 0

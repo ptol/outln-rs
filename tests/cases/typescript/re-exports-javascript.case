@@ -1,0 +1,12 @@
+Re-exports parse in JavaScript files too: `export * from` and `export { default as Button } from` are listed as written.
+== args
+input/index.js
+== file input/index.js
+export * from './utils.js';
+export { default as Button } from './button.js';
+== stdout
+input/index.js (2 lines)
+[L1-L1] export * from './utils.js'
+[L2-L2] export { default as Button } from './button.js'
+== stderr
+== exit 0

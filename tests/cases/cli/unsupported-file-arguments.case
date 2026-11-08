@@ -1,0 +1,13 @@
+Each file argument with an unsupported extension (`.txt`), nested path included, gets its own error on stderr, so stdout is empty and outln exits 1.
+== args
+alpha.txt
+nested/beta.txt
+== file alpha.txt
+const alpha = 1;
+== file nested/beta.txt
+const beta = 2;
+== stdout
+== stderr
+FILE alpha.txt HAS UNSUPPORTED FILE TYPE
+FILE nested/beta.txt HAS UNSUPPORTED FILE TYPE
+== exit 1

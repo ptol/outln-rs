@@ -1,0 +1,17 @@
+Consecutive plain `//` lines after a skipped `#!` shebang line form the header comment, printed one line each.
+== args
+input/with-header.rs
+== file input/with-header.rs
+#!/usr/bin/env rust-script
+
+// Service bootstrap for CLI scripts.
+// Loads config and starts runner.
+
+fn main() {}
+== stdout
+input/with-header.rs (6 lines)
+Service bootstrap for CLI scripts.
+Loads config and starts runner.
+[L6-L6] fn main()
+== stderr
+== exit 0

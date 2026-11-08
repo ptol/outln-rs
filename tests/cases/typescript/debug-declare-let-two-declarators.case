@@ -1,0 +1,10 @@
+Debug mode highlights both declarators of a `declare let` statement, `declare let mutableA` and then `mutableB` by its bare name, leaving their types plain.
+== args
+--debug
+input/declare-let-multi.ts
+== file input/declare-let-multi.ts
+declare let mutableA: string, mutableB: number;
+== stdout
+\x1b[32mdeclare let mutableA\x1b[0m: string, \x1b[32mmutableB\x1b[0m: number;
+== stderr
+== exit 0

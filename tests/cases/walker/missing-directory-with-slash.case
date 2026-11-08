@@ -1,0 +1,15 @@
+A missing path ending in `/` is reported on stderr as a missing directory and outln exits 1, while the other directory's glob view still prints.
+== args
+input/missing/
+input/src
+== file input/src/a.md
+---
+description: Source a.
+---
+# a
+== stdout
+glob view: input/missing/ input/src
+input/src/a.md (4 lines): description: "Source a."
+== stderr
+Directory input/missing/ does not exist
+== exit 1

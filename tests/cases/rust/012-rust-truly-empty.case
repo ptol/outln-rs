@@ -1,7 +1,0 @@
-== args
-input/empty.rs
-== file input/empty.rs
-== stdout
-input/empty.rs (0 lines)
-== stderr
-== exit 0

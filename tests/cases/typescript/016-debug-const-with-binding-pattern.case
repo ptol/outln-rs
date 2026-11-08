@@ -1,9 +1,0 @@
-== args
---debug
-input/const-binding-pattern.ts
-== file input/const-binding-pattern.ts
-const a = 1, { b } = obj;
-== stdout
-\x1b[32mconst a\x1b[0m = 1, { b } = obj;
-== stderr
-== exit 0

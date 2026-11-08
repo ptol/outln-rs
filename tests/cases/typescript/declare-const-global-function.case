@@ -1,0 +1,19 @@
+Each declarator of `declare const API_ENDPOINT…, API_TIMEOUT…` gets its own `declare const` outline line with the statement's line range, `declare global` spans its block, and `declare function` prints its signature.
+== args
+input/ambient-full.ts
+== file input/ambient-full.ts
+declare const API_ENDPOINT: string, API_TIMEOUT: number;
+
+declare global {
+  var globalConfig: Record<string, unknown>;
+}
+
+declare function helper(a: string, b: number): boolean;
+== stdout
+input/ambient-full.ts (7 lines)
+[L1-L1] declare const API_ENDPOINT
+[L1-L1] declare const API_TIMEOUT
+[L3-L5] declare global
+[L7-L7] declare function helper(a: string, b: number): boolean
+== stderr
+== exit 0

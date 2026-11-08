@@ -1,0 +1,12 @@
+Debug mode highlights each declarator of an `export const` statement spread over two lines: `export const a` on the first line and the bare `b` on the second.
+== args
+--debug
+input/export-const-multi-line.ts
+== file input/export-const-multi-line.ts
+export const a = 1,
+  b = 2;
+== stdout
+\x1b[32mexport const a\x1b[0m = 1,
+  \x1b[32mb\x1b[0m = 2;
+== stderr
+== exit 0

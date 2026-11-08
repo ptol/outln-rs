@@ -1,0 +1,13 @@
+A plain block comment at the top is the header comment when there is no `//!` comment, and prints without its `/* */` delimiters.
+== args
+input/block-comment.rs
+== file input/block-comment.rs
+/* This is a block comment */
+
+fn main() {}
+== stdout
+input/block-comment.rs (3 lines)
+This is a block comment
+[L3-L3] fn main()
+== stderr
+== exit 0

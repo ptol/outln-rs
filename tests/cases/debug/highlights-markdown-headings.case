@@ -1,0 +1,12 @@
+Debug mode prints the Markdown source with each heading line, here `# version` and `# run`, highlighted whole.
+== args
+--debug
+input/sample.md
+== file input/sample.md
+# version
+# run
+== stdout
+\x1b[32m# version\x1b[0m
+\x1b[32m# run\x1b[0m
+== stderr
+== exit 0

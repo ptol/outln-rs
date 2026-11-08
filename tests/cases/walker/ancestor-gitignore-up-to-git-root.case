@@ -1,0 +1,31 @@
+Walking a directory inside a git repository applies the `.gitignore` files of its ancestors up to the git root: the root's `generated/` and `packages/.gitignore`'s `*.tmp.md` leave only `index.md` in the glob view.
+== args
+repo/packages/web
+== file outer/.gitignore
+*.md
+== file repo/.git/HEAD
+ref: refs/heads/main
+== file repo/.gitignore
+generated/
+== file repo/packages/.gitignore
+*.tmp.md
+== file repo/packages/web/index.md
+---
+description: Web entry.
+---
+# web
+== file repo/packages/web/generated/api.md
+---
+description: Ignored by repo root .gitignore.
+---
+# api
+== file repo/packages/web/scratch.tmp.md
+---
+description: Ignored by packages/.gitignore.
+---
+# scratch
+== stdout
+glob view: repo/packages/web
+repo/packages/web/index.md (4 lines): description: "Web entry."
+== stderr
+== exit 0

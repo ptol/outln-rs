@@ -1,0 +1,14 @@
+Frontmatter without a closing `---` isn't frontmatter, so no header prints and the headings after it are listed from L3.
+== args
+input/bad-frontmatter.md
+== file input/bad-frontmatter.md
+---
+title: Broken
+# Visible heading
+## Also visible
+== stdout
+input/bad-frontmatter.md (4 lines)
+[L3-L4] # Visible heading
+[L4-L4] ## Also visible
+== stderr
+== exit 0

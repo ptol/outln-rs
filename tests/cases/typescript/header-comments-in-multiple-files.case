@@ -1,0 +1,39 @@
+Each of two files prints its own header comment, a `/** */` block in one and a `//` comment after a shebang and a blank line in the other; a `const` with a multi-line object value spans the whole statement.
+== args
+input/config.ts
+input/utils.ts
+== file input/config.ts
+/**
+ * Application configuration types.
+ */
+export interface AppConfig {
+  debug: boolean;
+  port: number;
+}
+
+export const DEFAULT_CONFIG: AppConfig = {
+  debug: false,
+  port: 3000
+};
+== file input/utils.ts
+#!/usr/bin/env node
+
+// Helper functions for text processing.
+
+export function trimInput(input: string): string {
+  return input.trim();
+}
+
+export const VERSION = '1.0.0';
+== stdout
+input/config.ts (12 lines)
+Application configuration types.
+[L4-L7] export interface AppConfig
+[L9-L12] export const DEFAULT_CONFIG
+
+input/utils.ts (9 lines)
+Helper functions for text processing.
+[L5-L7] export function trimInput(input: string): string
+[L9-L9] export const VERSION
+== stderr
+== exit 0

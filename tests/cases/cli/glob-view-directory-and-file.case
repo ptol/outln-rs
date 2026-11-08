@@ -1,0 +1,20 @@
+A directory and an explicit Markdown file together make one glob view, the explicit file's file summary in the same one-line format, with all lines sorted by path rather than argument order.
+== args
+input/docs
+input/AGENTS.md
+== file input/docs/guide.md
+---
+description: How to use the tool.
+---
+# Guide
+== file input/AGENTS.md
+---
+description: Agent instructions.
+---
+# Agents
+== stdout
+glob view: input/docs input/AGENTS.md
+input/AGENTS.md (4 lines): description: "Agent instructions."
+input/docs/guide.md (4 lines): description: "How to use the tool."
+== stderr
+== exit 0

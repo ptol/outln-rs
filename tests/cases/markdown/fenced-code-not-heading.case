@@ -1,0 +1,15 @@
+A `## Not a heading` line inside a fenced code block isn't listed, so `# Top` runs to the end of the file with only `## Real` inside it.
+== args
+input/fenced.md
+== file input/fenced.md
+# Top
+```md
+## Not a heading
+```
+## Real
+== stdout
+input/fenced.md (5 lines)
+[L1-L5] # Top
+[L5-L5] ## Real
+== stderr
+== exit 0

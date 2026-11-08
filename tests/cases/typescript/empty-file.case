@@ -1,0 +1,9 @@
+An empty file prints only its path and `(0 lines)`, with no header and no outline lines.
+== args
+input/empty.ts
+== file input/empty.ts escaped
+\
+== stdout
+input/empty.ts (0 lines)
+== stderr
+== exit 0

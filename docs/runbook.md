@@ -22,6 +22,10 @@ Building needs a C compiler (`cc` on `PATH`), because the tree-sitter grammars a
 
 Release build: `cargo build --release` (profile in `Cargo.toml`) writes `target/release/outln`; run it from there. The static binary: `just build-static` writes `target/x86_64-unknown-linux-musl/release/outln`, compiling the grammars with the zig that `mise install` pins, and fails unless the binary is static and outlines every engine sample in `tests/engine-samples/` exactly as the dev build does ([ADR-009](adr.md), [ADR-017](adr.md)). The `outln` on `PATH` is the latest crates.io release, not this build ([ADR-014](adr.md)).
 
+## CI
+
+`.github/workflows/check.yml` runs `just ci` on every branch push and pull request: `just verify` (every step of `hk.pkl`), `just build-static`, and `just test-package` (`cargo package`, then `cargo test` in the unpacked crate, which holds only the files `include` in `Cargo.toml` selects). Run `just ci` locally to reproduce a failure. The pre-commit hook stays the gate on commits; CI catches what the hook skips (the static build, the packaged crate) and commits made without the hook installed. The Publish workflow runs the same workflow before uploading.
+
 ## Release
 
 Publishing to crates.io runs in CI, `.github/workflows/publish.yml` ([ADR-010](adr.md)). One-time setup: create a crates.io API token with the `publish-new` and `publish-update` scopes, then `gh secret set CARGO_REGISTRY_TOKEN`. To try the runner setup without uploading, run `gh workflow run publish.yml`: it skips the tag checks and runs the rest with `cargo publish --dry-run`.
@@ -42,7 +46,7 @@ When a run fails, first check whether crates.io has the version (`cargo search o
 Configured in `hk.pkl`. On `git commit`, hk stashes unstaged edits and untracked files, then:
 
 1. Fixes staged files and re-stages them: rustfmt (`.rs`), dprint (Markdown, TOML, JSON, YAML), trailing whitespace, final newlines (not in `tests/cases`, whose casefiles are exact bytes; rustfmt and dprint also skip `tests/engine-samples`, [ADR-017](adr.md)).
-2. Checks: merge-conflict markers, large files, clippy and rustdoc warnings (when Rust or Cargo files are staged), every test (when Rust, Cargo, casefiles, or engine samples are staged), the dependency policy in `deny.toml` (when `Cargo.toml`, `Cargo.lock`, or `deny.toml` is staged; [ADR-015](adr.md)), and `tests/repo_conventions.rs` (on every commit).
+2. Checks: merge-conflict markers, large files, the workflows (actionlint) and shell scripts (shellcheck), clippy and rustdoc warnings (when Rust or Cargo files are staged), every test (when Rust, Cargo, casefiles, or engine samples are staged), the dependency policy in `deny.toml` (`just deny`, when `Cargo.toml`, `Cargo.lock`, or `deny.toml` is staged; [ADR-015](adr.md)), and `tests/repo_conventions.rs` (on every commit; the `tests` step skips its two repository-wide tests so they run once).
 3. Restores the stashed edits.
 
 Run it without committing: `hk run pre-commit`. Preview what it would run: `hk run pre-commit --plan`.
@@ -51,5 +55,5 @@ Run it without committing: `hk run pre-commit`. Preview what it would run: `hk r
 
 - **Wrong Rust version** (`rustc --version` differs from `rust-toolchain.toml`): mise isn't active in this shell. Run `mise install`, or prefix commands with `mise exec --`.
 - **Hook can't find a tool**: rerun `hk install --mise`.
-- **`cargo_deny` fails**: `just deny` prints the reason. An advisory against a dependency: bump it (`cargo update -p <crate>`); if no fixed version exists, ask the maintainer before adding an `ignore` entry with a `reason` to `deny.toml`. A rejected license or a second version of a crate: ask the maintainer too. Offline, it fails fetching the advisory database; commit the dependency change once you're back online.
+- **`cargo_deny` fails**: `just deny` prints the reason. An advisory against a dependency: bump it (`cargo update -p <crate>`); if no fixed version exists, ask the maintainer before adding an `ignore` entry with a `reason` to `deny.toml`. A rejected license or a second version of a crate: ask the maintainer too. Offline, it prints a note and checks against the advisory database fetched last time (and fails if there is none yet); rerun `just deny` once you're back online, since new advisories may be missing.
 - **Stash restore failed after a hook run**: check `git status`, `git diff`, `git diff --cached`, and `git stash list` before changing anything; hk also keeps patch backups (see `hk --help`).

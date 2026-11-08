@@ -1,0 +1,15 @@
+Consecutive `//` lines at the top form one header comment, printed line by line; the `/* */` comment after them isn't part of it and isn't printed.
+== args
+input/multiple-leading-comments.ts
+== file input/multiple-leading-comments.ts
+// Primary file purpose.
+// Keep this.
+/* Secondary note that should not be emitted. */
+export const ready = true;
+== stdout
+input/multiple-leading-comments.ts (4 lines)
+Primary file purpose.
+Keep this.
+[L4-L4] export const ready
+== stderr
+== exit 0

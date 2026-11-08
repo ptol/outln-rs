@@ -1,0 +1,18 @@
+An existing directory path with `[id]` is taken literally, not as a glob character class, so the glob view lists `[id]/page.md` but not `i/other.md`.
+== args
+input/app/[id]
+== file input/app/[id]/page.md
+---
+description: Product detail page.
+---
+# Page
+== file input/app/i/other.md
+---
+description: Must not match the [id] character class.
+---
+# other
+== stdout
+glob view: input/app/[id]
+input/app/[id]/page.md (4 lines): description: "Product detail page."
+== stderr
+== exit 0

@@ -1,0 +1,18 @@
+Debug mode highlights nothing when the frontmatter has no closing `---`: it isn't frontmatter, and the file has no headings.
+== args
+--debug
+input/unterminated.md
+== file input/unterminated.md
+---
+title: Guide
+owner: docs
+
+Body text.
+== stdout
+---
+title: Guide
+owner: docs
+
+Body text.
+== stderr
+== exit 0

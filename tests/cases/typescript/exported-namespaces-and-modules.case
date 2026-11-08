@@ -1,0 +1,18 @@
+`export namespace`, `export module`, and a string-named `export module '…'` are listed with `export` kept; their exported contents aren't listed.
+== args
+input/exported-modules.ts
+== file input/exported-modules.ts
+export namespace API {
+  export const version = 'v1';
+}
+export module Legacy {
+  export const ok = true;
+}
+export module 'legacy/path' {}
+== stdout
+input/exported-modules.ts (7 lines)
+[L1-L3] export namespace API
+[L4-L6] export module Legacy
+[L7-L7] export module 'legacy/path'
+== stderr
+== exit 0

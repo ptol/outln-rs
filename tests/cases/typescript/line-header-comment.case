@@ -1,0 +1,12 @@
+A single `//` comment at the top of the file is the header comment, printed without the `//` marker before the declarations.
+== args
+input/single-line.ts
+== file input/single-line.ts
+// Simple comment.
+const x = 1;
+== stdout
+input/single-line.ts (2 lines)
+Simple comment.
+[L2-L2] const x
+== stderr
+== exit 0

@@ -1,0 +1,14 @@
+A file named directly that the glob argument also matches gets a single file summary.
+== args
+input/**/*.md
+input/direct.md
+== file input/direct.md
+---
+description: Direct file.
+---
+# direct
+== stdout
+glob view: input/**/*.md input/direct.md
+input/direct.md (4 lines): description: "Direct file."
+== stderr
+== exit 0

@@ -1,0 +1,17 @@
+A Markdown file with CRLF line endings still has its frontmatter read and its headings outlined, with no `\r` left in the output.
+== args
+input/crlf.md
+== file input/crlf.md escaped
+---\r
+description: CRLF doc\r
+---\r
+# Title\r
+\r
+## Section\r
+== stdout
+input/crlf.md (6 lines)
+description: "CRLF doc"
+[L4-L6] # Title
+[L6-L6] ## Section
+== stderr
+== exit 0

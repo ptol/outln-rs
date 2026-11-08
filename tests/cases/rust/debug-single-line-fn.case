@@ -1,0 +1,10 @@
+Debug mode highlights a one-line function only up to the end of its signature, leaving its `{ 42 }` body plain.
+== args
+--debug
+input/rust-single-line-fn.rs
+== file input/rust-single-line-fn.rs
+fn simple() -> i32 { 42 }
+== stdout
+\x1b[32mfn simple() -> i32\x1b[0m { 42 }
+== stderr
+== exit 0

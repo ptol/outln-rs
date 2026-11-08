@@ -1,0 +1,13 @@
+Debug mode takes exactly one path, so two file arguments are rejected with an error and exit 1, and neither file is printed.
+== args
+--debug
+input/a.md
+input/b.md
+== file input/a.md
+# a
+== file input/b.md
+# b
+== stdout
+== stderr
+--debug requires exactly one input file path.
+== exit 1

@@ -7,12 +7,21 @@ use std::process::Command;
 
 use scratch_dir::ScratchDir;
 
+/// A command that runs the compiled binary, which is what these tests are for.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "running the binary as a child process is this test crate's purpose"
+)]
+fn outln_binary() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_outln"))
+}
+
 #[test]
 fn prints_an_outline_of_a_file_in_the_working_directory() {
     let dir = ScratchDir::new("cli-outline").expect("temp dir");
     dir.write("guide.md", b"# Guide\n").expect("write");
 
-    let output = Command::new(env!("CARGO_BIN_EXE_outln"))
+    let output = outln_binary()
         .arg("guide.md")
         .current_dir(dir.path())
         .output()
@@ -28,7 +37,7 @@ fn prints_an_outline_of_a_file_in_the_working_directory() {
 
 #[test]
 fn version_flag_prints_the_crate_version() {
-    let output = Command::new(env!("CARGO_BIN_EXE_outln"))
+    let output = outln_binary()
         .arg("-v")
         .output()
         .expect("the outln binary should start");
@@ -42,7 +51,7 @@ fn version_flag_prints_the_crate_version() {
 
 #[test]
 fn usage_errors_exit_with_code_2() {
-    let output = Command::new(env!("CARGO_BIN_EXE_outln"))
+    let output = outln_binary()
         .output()
         .expect("the outln binary should start");
 

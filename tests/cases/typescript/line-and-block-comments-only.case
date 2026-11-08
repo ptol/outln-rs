@@ -1,0 +1,12 @@
+In a file of only comments, the header comment is the leading `//` comment alone, without the `/* */` block after it, and there are no outline lines.
+== args
+input/comments.ts
+== file input/comments.ts
+// This is a comment
+/* Multi-line
+   comment */
+== stdout
+input/comments.ts (3 lines)
+This is a comment
+== stderr
+== exit 0

@@ -1,0 +1,46 @@
+Two files with `/** */` header comments, one of `declare` namespace, variables, enum, interface, and type, the other of `export namespace`, `export module`, and string-named `export module '…'`; namespace and module contents aren't listed.
+== args
+input/ambient-declarations.ts
+input/exported-blocks.ts
+== file input/ambient-declarations.ts
+/**
+ * Ambient type definitions for external libraries.
+ */
+declare namespace ExternalLib {
+  export function initialize(config: any): void;
+  export const version: string;
+}
+declare var globalCounter: number;
+declare let sessionActive: boolean;
+declare enum LogLevel { Debug, Info, Warn, Error }
+declare interface Config { timeout: number }
+declare type Callback = () => void;
+== file input/exported-blocks.ts
+/**
+ * Exported namespace and module blocks.
+ */
+export namespace PublicAPI {
+  export function getVersion(): string;
+  export const NAME = 'public-api';
+}
+export module Internal {
+  export const secret = 'hidden';
+}
+export module 'dynamic/path' {}
+== stdout
+input/ambient-declarations.ts (12 lines)
+Ambient type definitions for external libraries.
+[L4-L7] declare namespace ExternalLib
+[L8-L8] declare var globalCounter
+[L9-L9] declare let sessionActive
+[L10-L10] declare enum LogLevel
+[L11-L11] declare interface Config
+[L12-L12] declare type Callback
+
+input/exported-blocks.ts (11 lines)
+Exported namespace and module blocks.
+[L4-L7] export namespace PublicAPI
+[L8-L10] export module Internal
+[L11-L11] export module 'dynamic/path'
+== stderr
+== exit 0

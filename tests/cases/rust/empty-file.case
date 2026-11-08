@@ -1,0 +1,8 @@
+An empty `.rs` file prints only its path and `(0 lines)`, with no header and no declarations.
+== args
+input/empty.rs
+== file input/empty.rs
+== stdout
+input/empty.rs (0 lines)
+== stderr
+== exit 0

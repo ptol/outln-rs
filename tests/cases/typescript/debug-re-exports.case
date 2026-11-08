@@ -1,0 +1,16 @@
+Debug mode highlights a one-line `export * from './b';` including its semicolon, but only the first line, `export {`, of a multi-line `export { … } from`.
+== args
+--debug
+input/index.ts
+== file input/index.ts
+export * from './b';
+export {
+  a
+} from './a';
+== stdout
+\x1b[32mexport * from './b';\x1b[0m
+\x1b[32mexport {\x1b[0m
+  a
+} from './a';
+== stderr
+== exit 0

@@ -1,0 +1,15 @@
+A double-quoted `"use strict"` directive without a semicolon is skipped, so the two `//` comment lines after it print as the header.
+== args
+input/legacy.js
+== file input/legacy.js
+"use strict"
+// Legacy helpers.
+// Kept for compatibility.
+function helper() {}
+== stdout
+input/legacy.js (4 lines)
+Legacy helpers.
+Kept for compatibility.
+[L4-L4] function helper()
+== stderr
+== exit 0

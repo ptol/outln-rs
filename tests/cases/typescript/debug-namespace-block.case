@@ -1,0 +1,26 @@
+Debug mode highlights a `namespace` through its name and nothing inside it, not even a nested `export module Inner`.
+== args
+--debug
+input/namespace.ts
+== file input/namespace.ts
+namespace PlainNamespace {
+  export const enabled = true;
+}
+
+namespace NestedNamespace {
+  export module Inner {
+    export const value = 42;
+  }
+}
+== stdout
+\x1b[32mnamespace PlainNamespace\x1b[0m {
+  export const enabled = true;
+}
+
+\x1b[32mnamespace NestedNamespace\x1b[0m {
+  export module Inner {
+    export const value = 42;
+  }
+}
+== stderr
+== exit 0

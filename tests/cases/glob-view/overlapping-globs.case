@@ -1,0 +1,26 @@
+Two overlapping globs list each matched file once, in path order; frontmatter without a `description` prints all its fields, joined by commas.
+== args
+input/a/**/*
+input/**/*
+== file input/a/one.md
+---
+description: One summary.
+---
+# one
+== file input/a/two.md
+---
+title: Some title
+summary: Two summary.
+---
+== file input/z/three.md
+---
+description: Three summary.
+---
+# three
+== stdout
+glob view: input/a/**/* input/**/*
+input/a/one.md (4 lines): description: "One summary."
+input/a/two.md (4 lines): title: "Some title", summary: "Two summary."
+input/z/three.md (4 lines): description: "Three summary."
+== stderr
+== exit 0

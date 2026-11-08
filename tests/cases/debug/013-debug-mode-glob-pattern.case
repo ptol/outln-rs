@@ -1,9 +1,0 @@
-== args
---debug
-input/*.md
-== file input/a.md
-# a
-== stdout
-== stderr
---debug requires exactly one input file path.
-== exit 1

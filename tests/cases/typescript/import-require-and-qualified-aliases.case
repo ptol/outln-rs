@@ -1,0 +1,16 @@
+`import x = require('…')` and `import X = a.b` aliases are listed as `import` and the alias name, without the right-hand side.
+== args
+input/import-alias-variations.ts
+== file input/import-alias-variations.ts
+import fs = require('fs');
+import path = require('node:path');
+import ReadFile = fs.readFileSync;
+import Join = path.join;
+== stdout
+input/import-alias-variations.ts (4 lines)
+[L1-L1] import fs
+[L2-L2] import path
+[L3-L3] import ReadFile
+[L4-L4] import Join
+== stderr
+== exit 0

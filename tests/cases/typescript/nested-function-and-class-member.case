@@ -1,0 +1,21 @@
+A function declared inside another function isn't listed, while a class's method is listed one level deeper as a class member.
+== args
+input/nested.ts
+== file input/nested.ts
+function outer(): void {
+  function inner(): void {}
+}
+
+class Box {
+  method(): void {}
+}
+
+const top = 1;
+== stdout
+input/nested.ts (9 lines)
+[L1-L3] function outer(): void
+[L5-L7] class Box
+  [L6-L6] method(): void
+[L9-L9] const top
+== stderr
+== exit 0
