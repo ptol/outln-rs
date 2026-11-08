@@ -202,7 +202,8 @@ impl BlockCommentLine {
     }
 }
 
-/// Removes block comment markers from one trimmed line: `/*`, `/**` or `/*!` on the first line,
+/// Removes block comment markers from one trimmed line: `/*`, `/**` or `/*!` (with any stars
+/// after it) on the first line,
 /// a leading `*` on the others, and the closing `*/` on the last. A `*/` ending another line
 /// closes a nested comment, so it stays.
 ///
@@ -220,8 +221,10 @@ pub(crate) fn strip_block_markers(line: &str, position: BlockCommentLine) -> &st
         _ => without_open,
     };
     let text = if opens {
+        // Stars may come before the `!` (`/**!`) and after it (a `/*!****` banner).
         let after_stars = without_close.trim_start_matches('*');
-        after_stars.strip_prefix('!').unwrap_or(after_stars)
+        let after_bang = after_stars.strip_prefix('!').unwrap_or(after_stars);
+        after_bang.trim_start_matches('*')
     } else {
         without_close.strip_prefix('*').unwrap_or(without_close)
     };

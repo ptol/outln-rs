@@ -1,0 +1,71 @@
+The header is the first prose paragraph of the chosen comment, so the glob view prints what a file is for:
+- A comment whose first prose paragraph is a license notice is passed over for the next comment (`license.rs`); with only a license comment, a file has no header (`license-only.rs`).
+- Rows of decoration print nothing and separate paragraphs, so a `/*!` banner's `*` rows and its title's frame aren't printed (`banner.rs`).
+- Badges, link definitions, HTML tags, and code fences aren't prose, so the summary comes after them (`badges.rs`, `fence.rs`).
+- A one-line plain comment right above code labels that code, not the file (`section.rs`), while one a blank line separates from code, or one of several lines, is still the header (`plain.rs`).
+== args
+input
+== file input/badges.rs
+//! [![github]](https://github.com/a/b)&ensp;[![crates-io]](https://crates.io/crates/b)
+//!
+//! [github]: https://img.shields.io/badge/github-8da0cb
+//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62
+//!
+//! <br>
+//!
+//! Fast decimal formatting.
+
+pub fn format() {}
+== file input/banner.rs
+/*!*************************************
+ * Pixel buffers.
+ ***************************************
+ * Details.
+ */
+
+pub struct Buffer;
+== file input/fence.rs
+//! ```compile_fail,E0277
+//! let x: u8 = "no";
+//!
+//! x.check();
+//! ```
+//!
+//! Checks that a string is not a number.
+
+fn main() {}
+== file input/license-only.rs
+// Copyright 2024 The Authors.
+// Licensed under the Apache License, Version 2.0.
+
+pub fn run() {}
+== file input/license.rs
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Copyright (c) 2024 The Authors.
+
+// Parses the wire format.
+
+pub fn parse() {}
+== file input/plain.rs
+// Reads the config file and merges
+// the environment into it.
+use std::env;
+== file input/section.rs
+// Copyright 2024 The Authors.
+
+// Std
+use std::io;
+
+// Internal
+use crate::arg::Arg;
+== stdout
+glob view: input
+input/badges.rs (10 lines): Fast decimal formatting.
+input/banner.rs (7 lines): Pixel buffers.
+input/fence.rs (9 lines): Checks that a string is not a number.
+input/license-only.rs (4 lines): (no header available)
+input/license.rs (6 lines): Parses the wire format.
+input/plain.rs (3 lines): Reads the config file and merges the environment into it.
+input/section.rs (7 lines): (no header available)
+== stderr
+== exit 0

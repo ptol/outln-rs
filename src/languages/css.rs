@@ -4,7 +4,7 @@ use tree_sitter::Node;
 
 use crate::code_outline::{CodeLanguage, OutlineLevel};
 use crate::comment_syntax::{BLOCK_COMMENT_OPEN, BlockComments, CommentSyntax, block_comment_end};
-use crate::header_comment::HeaderChoice;
+use crate::header_comment::{HeaderChoice, directive_comment_end};
 use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
@@ -32,11 +32,12 @@ pub(crate) static CSS: CodeLanguage = CodeLanguage {
     declaration_lines: rule_lines,
 };
 
-/// Where the `@charset` rule ends, if the file starts with one: CSS requires it to be the
-/// file's first bytes, written in lowercase.
+/// Where the preamble starting at byte `start` ends: the `@charset` rule, if the file starts
+/// with one (CSS requires it to be the file's first bytes, written in lowercase), or a tool
+/// directive written as a comment ([`TOOL_DIRECTIVES`]).
 fn preamble_end(text: &str, start: usize) -> Option<usize> {
     if start != 0 || !text.starts_with(CHARSET) {
-        return None;
+        return directive_comment_end(text, start, &CommentSyntax::BLOCK, &TOOL_DIRECTIVES);
     }
     // The preamble ends after the rule's `;`, so a comment or rule after it on its line is still
     // seen; an encoding name never contains a `;`. Without one, the line ends it.
@@ -50,6 +51,10 @@ fn preamble_end(text: &str, start: usize) -> Option<usize> {
 
 /// How an `@charset` rule starts.
 const CHARSET: &str = "@charset ";
+
+/// How the text of a comment that is a linter's or formatter's directive starts, after its
+/// `/*`, such as `/* stylelint-disable */`.
+const TOOL_DIRECTIVES: [&str; 3] = ["stylelint-", "prettier-ignore", "biome-ignore"];
 
 /// Node kinds of the rules listed in an outline. `@charset` is left out: it says how the file
 /// is encoded, not what it styles.
@@ -383,5 +388,14 @@ mod tests {
             CSS.header("@charset \"UTF-8\"\n/* Theme; colors. */\n")
                 .is_some()
         );
+    }
+
+    #[test]
+    fn a_linter_directive_comment_is_preamble_before_the_header() {
+        let text = "/* stylelint-disable selector-class-pattern */\n/* Theme. */\n.a {}\n";
+        let Some(Header::Comment(lines)) = CSS.header(text) else {
+            panic!("expected a header comment");
+        };
+        assert_eq!(lines[0].text, "Theme.");
     }
 }

@@ -72,7 +72,7 @@ _Avoid_: File metadata
 
 ### Header comment
 
-The comment at the top of a source file that says what the file is for, such as a Rust file's `//!` comment; outlines print only its first paragraph.
+The comment at the top of a source file that says what the file is for, such as a Rust file's `//!` comment; outlines print only its first prose paragraph, never a license notice.
 _Avoid_: Top comment, file doc, banner
 
 ### Preamble

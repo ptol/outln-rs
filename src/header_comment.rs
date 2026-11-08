@@ -1,29 +1,55 @@
-//! Header comments, shared by every engine but Markdown's: which comment at the top of a file is its header, and the header's first paragraph.
+//! Header comments, shared by every engine but Markdown's: which comment at the top of a file is its header, and the paragraph of it the header prints.
 //!
 //! Each engine says how it writes comments ([`CommentSyntax`]), which comment is the header
 //! ([`HeaderChoice`]), and which lines may come before it (a shebang, directives, inner
-//! attributes), then calls [`find_header_comment`]; reading the comments at the top of a file
-//! and choosing one is the same for every language.
+//! attributes, tool directives written as comments), then calls [`find_header_comment`];
+//! reading the comments at the top of a file and choosing one is the same for every language.
+//! A comment whose text is a license notice, or has no prose, is never the header
+//! (`paragraph.rs`).
+
+mod paragraph;
 
 use crate::comment_syntax::{
     BLOCK_COMMENT_OPEN, BlockCommentLine, BlockComments, CommentKind, CommentSyntax, LineMarker,
     block_comment_end, strip_block_markers, strip_line_marker,
 };
 use crate::outline::{CommentLine, Header};
-use crate::source_text::{ByteRange, after_whitespace, lines_with_offsets};
+use crate::source_text::{ByteRange, after_whitespace, line_end, lines_with_offsets};
+use paragraph::header_paragraph;
 
 /// Which of the comments at the top of a file is its header comment. A language whose rule none
 /// of these states gets a new variant, such as one for Go's comment attached to `package`.
+///
+/// Whatever the choice, a comment that is a license notice or has no prose (only badges or a
+/// code example) is passed over for the next one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum HeaderChoice {
-    /// The first comment, whatever its markers say: in TypeScript and JavaScript (where `///` is
-    /// also a directive) doc comments don't say whether they document the file, and CSS and data
-    /// files have none.
+    /// The first comment, whatever its markers say and even right above code: in TypeScript and
+    /// JavaScript (where `///` is also a directive) doc comments don't say whether they document
+    /// the file, and CSS and data files have none.
     FirstComment,
-    /// The first inner doc comment (`//!`, `/*!`), or else the first plain comment, as in Rust:
-    /// `///` and `/** */` comments document the declaration after them, and a license comment
-    /// comes before the `//!` comment it then loses to.
+    /// The first inner doc comment (`//!`, `/*!`), or else the first plain comment that doesn't
+    /// label code, as in Rust: `///` and `/** */` comments document the declaration after them, a
+    /// license comment comes before the `//!` comment it then loses to, and a one-line plain
+    /// comment right above code (`// Std` above `use std::…`, `// FIXME: …`) labels that code
+    /// rather than the file ([`CommentRun::labels_code`]).
     InnerDocElseFirstPlain,
+}
+
+impl HeaderChoice {
+    /// Whether the comment may be the header.
+    fn may_choose(self, run: &CommentRun) -> bool {
+        match self {
+            // Without a marker for file docs, the first comment is the only sign of a header,
+            // and files often put it right above their first import, rule, or key.
+            HeaderChoice::FirstComment => true,
+            HeaderChoice::InnerDocElseFirstPlain => match run.kind {
+                CommentKind::InnerDoc => true,
+                CommentKind::Plain => !run.labels_code(),
+                CommentKind::OuterDoc => false,
+            },
+        }
+    }
 }
 
 /// One comment at the top of a file: a run of `//` or `#` lines of the same kind, or one block
@@ -35,9 +61,28 @@ struct CommentRun {
     lines: Vec<CommentLine>,
     /// Where the comment ends: after a block comment's `*/`, or at the end of a run's last line.
     end: usize,
+    /// Whether code starts right after the comment, on its last line or the next one, with no
+    /// blank line, other comment, or preamble between them.
+    precedes_code: bool,
 }
 
-/// The header comment of `text`: the first paragraph of the comment `choice` picks among the
+impl CommentRun {
+    /// Whether the comment labels the code right after it rather than the file: it is one line
+    /// of text directly above code, with no blank line between. A file's description glued to
+    /// its first line of code usually runs over several lines; a section label (`// Std`) or a
+    /// note on the next line (`// FIXME: …`) is one line.
+    fn labels_code(&self) -> bool {
+        self.precedes_code
+            && self
+                .lines
+                .iter()
+                .filter(|line| !line.text.is_empty())
+                .count()
+                == 1
+    }
+}
+
+/// The header comment of `text`: the header paragraph of the comment `choice` picks among the
 /// comments at the top of the file, before which only whitespace, other comments, and preamble
 /// may come.
 ///
@@ -52,9 +97,8 @@ pub(crate) fn find_header_comment(
     choice: HeaderChoice,
     preamble_end: impl Fn(&str, usize) -> Option<usize>,
 ) -> Option<Header> {
-    let runs = leading_comment_runs(text, syntax, choice, preamble_end);
-    let chosen = choose_run(runs, choice)?;
-    let lines = first_paragraph(chosen.lines)
+    let runs = leading_comment_runs(text, syntax, preamble_end);
+    let lines = choose_header(runs, choice)?
         .into_iter()
         .filter(|line| line.range.start < line.range.end)
         .collect();
@@ -63,15 +107,13 @@ pub(crate) fn find_header_comment(
 
 /// The comments at the top of `text`, up to the first code. Scanning goes on right after each
 /// comment or preamble, so code or another comment on the same line counts. Preamble is checked
-/// first, because a directive may look like a comment. With [`HeaderChoice::FirstComment`] only
-/// the first comment is needed, so the scan stops there.
+/// first, because a directive may look like a comment.
 fn leading_comment_runs(
     text: &str,
     syntax: &CommentSyntax,
-    choice: HeaderChoice,
     preamble_end: impl Fn(&str, usize) -> Option<usize>,
 ) -> Vec<CommentRun> {
-    let mut runs = Vec::new();
+    let mut runs: Vec<CommentRun> = Vec::new();
     let mut offset = 0;
     loop {
         // Blank lines are whitespace too, so this also steps over them.
@@ -84,53 +126,76 @@ fn leading_comment_runs(
             continue;
         }
         let Some(run) = comment_run_at(text, start, syntax) else {
+            // Code starts here; the comment just before it, if nothing came between, labels it
+            // unless a blank line separates them.
+            if let Some(last) = runs.last_mut().filter(|last| last.end == offset) {
+                last.precedes_code = text[offset..start].matches('\n').count() < 2;
+            }
             break;
         };
         offset = run.end;
         runs.push(run);
-        if choice == HeaderChoice::FirstComment {
-            break;
-        }
     }
     runs
 }
 
-/// The comment that is the header, as `choice` describes.
-fn choose_run(mut runs: Vec<CommentRun>, choice: HeaderChoice) -> Option<CommentRun> {
+/// The header paragraph of the comment that is the header, as `choice` describes: comments
+/// without one (license notices, badges only) are passed over.
+fn choose_header(runs: Vec<CommentRun>, choice: HeaderChoice) -> Option<Vec<CommentLine>> {
+    let mut candidates = runs
+        .into_iter()
+        .filter(|run| choice.may_choose(run))
+        .filter_map(|run| Some((run.kind, header_paragraph(run.lines)?)));
     match choice {
-        HeaderChoice::FirstComment => runs.into_iter().next(),
+        HeaderChoice::FirstComment => candidates.next().map(|(_, lines)| lines),
         HeaderChoice::InnerDocElseFirstPlain => {
-            let chosen = runs
-                .iter()
-                .position(|run| run.kind == CommentKind::InnerDoc)
-                .or_else(|| runs.iter().position(|run| run.kind == CommentKind::Plain))?;
-            Some(runs.swap_remove(chosen))
+            let mut first_plain = None;
+            for (kind, lines) in candidates {
+                if kind == CommentKind::InnerDoc {
+                    return Some(lines);
+                }
+                first_plain.get_or_insert(lines);
+            }
+            first_plain
         }
     }
 }
 
-/// The comment's lines up to the end of its first paragraph: from its first line with text up
-/// to the first line without, when more text follows (a `//` or ` *` line, or a blank line inside
-/// a block comment, separates paragraphs). Marker-only lines before and after a single paragraph
-/// stay, so debug mode still highlights a `/**` and its `*/`.
-fn first_paragraph(mut lines: Vec<CommentLine>) -> Vec<CommentLine> {
-    let Some(first_text) = lines.iter().position(|line| !line.text.is_empty()) else {
-        return lines;
-    };
-    let Some(paragraph_end) = lines[first_text..]
-        .iter()
-        .position(|line| line.text.is_empty())
-        .map(|index| first_text + index)
-    else {
-        return lines;
-    };
-    if lines[paragraph_end..]
-        .iter()
-        .any(|line| !line.text.is_empty())
+/// Where the tool directive written as a comment that starts at byte `start` ends, such as
+/// `// @ts-nocheck` or `/* eslint-disable */`: a comment whose text, after its markers, starts
+/// with one of `directives`. A line comment ends at its line's end, a block comment after its
+/// `*/`. `None` if no such comment starts there.
+///
+/// Engines call this from their `preamble_end`, so a directive is preamble, and the comment after
+/// it can be the header.
+pub(crate) fn directive_comment_end(
+    text: &str,
+    start: usize,
+    syntax: &CommentSyntax,
+    directives: &[&str],
+) -> Option<usize> {
+    let rest = &text[start..];
+    let (end, body) = if let Some(block_comments) = syntax
+        .block
+        .filter(|_| rest.starts_with(BLOCK_COMMENT_OPEN))
     {
-        lines.truncate(paragraph_end);
-    }
-    lines
+        let end = block_comment_end(text, start, block_comments)?;
+        (end, &text[start + BLOCK_COMMENT_OPEN.len()..end])
+    } else {
+        let marker = syntax
+            .line
+            .filter(|marker| rest.starts_with(marker.text()))?;
+        let end = line_end(text, start);
+        (end, &text[start + marker.text().len()..end])
+    };
+    // The markers of `///`, `/**`, `/*!`, and a block comment's ` * ` line starts.
+    let directive = body.trim_start_matches(|character: char| {
+        matches!(character, '/' | '*' | '!') || character.is_whitespace()
+    });
+    directives
+        .iter()
+        .any(|prefix| directive.starts_with(prefix))
+        .then_some(end)
 }
 
 /// The comment starting at byte `start`, or `None` when no comment starts there or it is an
@@ -173,6 +238,8 @@ fn block_comment_run(
         kind: syntax.kind_of(&text[start..]),
         lines,
         end,
+        // Set by `leading_comment_runs` once it sees what follows.
+        precedes_code: false,
     })
 }
 
@@ -203,17 +270,30 @@ fn line_comment_run(
         kind: first_kind,
         lines,
         end,
+        precedes_code: false,
     }
 }
 
 /// A comment line printed as `printed`, from the source line starting at `start`; its range ends
-/// at the line's last non-whitespace character (so a blank line's range is empty).
+/// at the line's last non-whitespace character (so a blank line's range is empty). A line of
+/// decoration only, such as a row of `*` or `=` in a banner, has no text, like a marker-only
+/// line, so it also separates paragraphs.
 fn comment_line(start: usize, line: &str, printed: &str) -> CommentLine {
+    let is_decoration = printed
+        .chars()
+        .all(|character| DECORATION.contains(&character));
     CommentLine {
-        text: printed.to_owned(),
+        text: if is_decoration {
+            String::new()
+        } else {
+            printed.to_owned()
+        },
         range: ByteRange::new(start, start + line.trim_end().len()),
     }
 }
+
+/// The characters that banners draw rows of.
+const DECORATION: [char; 8] = ['*', '-', '=', '#', '/', '~', '_', '+'];
 
 #[cfg(test)]
 mod tests {
@@ -354,7 +434,7 @@ mod tests {
             Some(texts(&["Plain."]))
         );
         assert_eq!(
-            header_texts("//// Banner.\nfn main() {}\n", RUST_LIKE),
+            header_texts("//// Banner.\n\nfn main() {}\n", RUST_LIKE),
             Some(texts(&["Banner."]))
         );
         assert_eq!(
@@ -436,5 +516,80 @@ mod tests {
     #[test]
     fn a_line_without_a_comment_is_no_header() {
         assert_eq!(header_texts("const x = 1; // trailing\n", C_LIKE), None);
+    }
+
+    #[test]
+    fn a_license_notice_is_passed_over_for_the_next_comment() {
+        let license = "// Copyright 2024 The Authors.\n// Licensed under MIT.\n\n";
+        for language in [C_LIKE, RUST_LIKE, HASH] {
+            let marker = language.0.line.map_or("", LineMarker::text);
+            let text = format!("{license}{marker} Parses input.\n\nx;\n").replace("//", marker);
+            assert_eq!(
+                header_texts(&text, language),
+                Some(texts(&["Parses input."])),
+                "{text}"
+            );
+            let only_license = format!("{license}x;\n").replace("//", marker);
+            assert_eq!(header_texts(&only_license, language), None);
+        }
+        let banner = "/*! *****\nCopyright (c) Microsoft Corporation.\n***** */\n// Real.\n";
+        assert_eq!(header_texts(banner, C_LIKE), Some(texts(&["Real."])));
+    }
+
+    #[test]
+    fn rows_of_decoration_have_no_text_and_separate_paragraphs() {
+        assert_eq!(
+            header_texts("// =====\n// Title\n// -----\n// Body.\n", C_LIKE),
+            Some(texts(&["", "Title"]))
+        );
+        assert_eq!(
+            header_texts("/*!****\n * Docs.\n ****/\n", RUST_LIKE),
+            Some(texts(&["", "Docs.", ""]))
+        );
+    }
+
+    #[test]
+    fn a_one_line_plain_rust_comment_right_above_code_labels_the_code_not_the_file() {
+        assert_eq!(header_texts("// Std\nuse std::io;\n", RUST_LIKE), None);
+        assert_eq!(header_texts("/* Note */ fn f() {}\n", RUST_LIKE), None);
+        assert_eq!(
+            header_texts("// Copyright 2024 A.\n\n// Std\nuse std::io;\n", RUST_LIKE),
+            None
+        );
+        assert_eq!(
+            header_texts("// Std\n\nuse std::io;\n", RUST_LIKE),
+            Some(texts(&["Std"]))
+        );
+        assert_eq!(
+            header_texts("// Tool.\n// Two lines.\nfn f() {}\n", RUST_LIKE),
+            Some(texts(&["Tool.", "Two lines."]))
+        );
+        assert_eq!(
+            header_texts("// Std\nuse std::io;\n", C_LIKE),
+            Some(texts(&["Std"]))
+        );
+        assert_eq!(
+            header_texts("//! Docs.\nuse std::io;\n", RUST_LIKE),
+            Some(texts(&["Docs."]))
+        );
+        let attribute = |text: &str, start: usize| {
+            text[start..]
+                .starts_with("#![a]")
+                .then_some(start + "#![a]".len())
+        };
+        let header = find("// Tool.\n#![a]\nfn f() {}\n", RUST_LIKE, attribute);
+        assert!(matches!(header, Some(Header::Comment(lines)) if lines[0].text == "Tool."));
+    }
+
+    #[test]
+    fn a_directive_comment_ends_after_its_line_or_block() {
+        let (syntax, _) = C_LIKE;
+        let directives = ["@ts-", "eslint-"];
+        let end = |text: &str| directive_comment_end(text, 0, &syntax, &directives);
+        assert_eq!(end("// @ts-nocheck\n// Docs.\n"), Some(14));
+        assert_eq!(end("/* eslint-disable */ x"), Some(20));
+        assert_eq!(end("/**\n * @ts-self-types=\"./a\"\n */\n"), Some(31));
+        assert_eq!(end("// Docs about @ts-nocheck.\n"), None);
+        assert_eq!(end("x; // @ts-nocheck\n"), None);
     }
 }

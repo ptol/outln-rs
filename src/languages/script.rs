@@ -11,7 +11,7 @@ use tree_sitter::{Language, Node};
 
 use crate::code_outline::{CodeLanguage, OutlineLevel};
 use crate::comment_syntax::{BlockComments, CommentSyntax, LineMarker, OUTER_DOC_BLOCK};
-use crate::header_comment::HeaderChoice;
+use crate::header_comment::{HeaderChoice, directive_comment_end};
 use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
@@ -39,13 +39,7 @@ const fn script(extensions: &'static [&'static str], grammar: fn() -> Language) 
     CodeLanguage {
         extensions,
         grammar,
-        // A `/** */` (`JSDoc`) comment documents what follows it; `///` is a directive in
-        // TypeScript, not a doc comment. Block comments don't nest.
-        comment_syntax: CommentSyntax {
-            line: Some(LineMarker::Slashes),
-            block: Some(BlockComments::Flat),
-            doc_markers: &[OUTER_DOC_BLOCK],
-        },
+        comment_syntax: COMMENT_SYNTAX,
         header_choice: HeaderChoice::FirstComment,
         preamble_end,
         // A decorator (a sibling of its class member in the TypeScript grammar, part of it in
@@ -63,14 +57,58 @@ const fn script(extensions: &'static [&'static str], grammar: fn() -> Language) 
     }
 }
 
-/// Where the preamble starting at byte `start` ends: a shebang on the first line, or a
-/// directive.
+/// A `/** */` (`JSDoc`) comment documents what follows it; `///` is a directive in TypeScript,
+/// not a doc comment. Block comments don't nest.
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+    line: Some(LineMarker::Slashes),
+    block: Some(BlockComments::Flat),
+    doc_markers: &[OUTER_DOC_BLOCK],
+};
+
+/// Where the preamble starting at byte `start` ends: a shebang on the first line, a directive,
+/// or a tool directive written as a comment ([`TOOL_DIRECTIVES`]).
 fn preamble_end(text: &str, start: usize) -> Option<usize> {
     let line_end = line_end(text, start);
     let line_text = &text[start..line_end];
     let is_shebang = start == 0 && line_text.starts_with("#!");
-    (is_shebang || is_directive(line_text)).then_some(line_end)
+    if is_shebang || is_directive(line_text) {
+        return Some(line_end);
+    }
+    directive_comment_end(text, start, &COMMENT_SYNTAX, &TOOL_DIRECTIVES)
 }
+
+/// How the text of a comment that is a tool directive starts, after its markers: triple-slash
+/// directives (`/// <reference types="node" />`), and the pragmas of TypeScript, Flow, JSX,
+/// test runners, linters, formatters, and coverage tools. They are written for tools, so the
+/// comment after them can be the header.
+const TOOL_DIRECTIVES: [&str; 26] = [
+    "<reference ",
+    "<amd-",
+    "@ts-",
+    "@flow",
+    "@noflow",
+    "@jsx",
+    "@jest-environment",
+    "@vitest-environment",
+    "@refresh ",
+    "eslint-",
+    "eslint ",
+    "global ",
+    "globals ",
+    "exported ",
+    "jshint ",
+    "jslint ",
+    "tslint:",
+    "oxlint-",
+    "prettier-ignore",
+    "biome-ignore",
+    "deno-lint-ignore",
+    "deno-fmt-ignore",
+    "dprint-ignore",
+    "istanbul ",
+    "c8 ",
+    "v8 ignore",
+];
 
 /// Whether a line is a directive prologue such as `'use client';` or `"use strict"`.
 fn is_directive(line: &str) -> bool {
@@ -429,6 +467,28 @@ mod tests {
             panic!("expected a header comment");
         };
         assert_eq!(lines[0].text, "Tool.");
+    }
+
+    #[test]
+    fn tool_directive_comments_are_preamble_before_the_header() {
+        let cases = [
+            "/// <reference types=\"node\" />\n// Reads config files.\n",
+            "// @ts-nocheck\n/** Reads config files. */\n",
+            "/* eslint-disable */\n// Reads config files.\n",
+            "/* global window, document */\n/** @jsx h */\n// Reads config files.\n",
+            "/**\n * @jest-environment jsdom\n */\n\n// Reads config files.\n",
+        ];
+        for text in cases {
+            let Some(Header::Comment(lines)) = TYPESCRIPT.header(text) else {
+                panic!("expected a header comment in {text:?}");
+            };
+            assert_eq!(lines[0].text, "Reads config files.", "{text:?}");
+        }
+        assert_eq!(TYPESCRIPT.header("// @ts-check\nrun();\n"), None);
+        let Some(Header::Comment(lines)) = TYPESCRIPT.header("// Global state.\n") else {
+            panic!("expected a header comment");
+        };
+        assert_eq!(lines[0].text, "Global state.");
     }
 
     #[test]
