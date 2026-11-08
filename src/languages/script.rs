@@ -139,9 +139,14 @@ struct Statement<'tree> {
     range: ByteRange,
 }
 
-/// The outline lines of a node with line range `range`: a top-level statement's, or, deeper, a
-/// class member's or a nested test block's, since only class bodies and test blocks' callbacks
-/// list the declarations inside them.
+/// Appends the outline lines of a node with line range `range`: a top-level statement's, or,
+/// deeper, a class member's or a nested test block's, since only class bodies and test blocks'
+/// callbacks list the declarations inside them.
+///
+/// Every helper below appends to `lines` rather than returning a vector of its own, so a
+/// statement allocates nothing beyond its lines' text ([`DeclarationLines`]).
+///
+/// [`DeclarationLines`]: crate::code_outline::DeclarationLines
 fn statement_or_member_lines(
     level: &OutlineLevel<'_>,
     node: Node<'_>,
@@ -150,92 +155,84 @@ fn statement_or_member_lines(
 ) {
     let statement = Statement { node, range };
     if level.is_top_level() {
-        lines.extend(statement_lines(level, statement));
+        statement_lines(level, statement, lines);
     } else if node.kind() == "expression_statement" {
-        lines.extend(nested_test_block_lines(statement, level));
+        nested_test_block_lines(statement, level, lines);
     } else {
         lines.extend(class_members::member_line(level, node, range));
     }
 }
 
-/// The outline lines of a statement in a test block's callback: a test block, or nothing.
-fn nested_test_block_lines(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Vec<OutlineLine> {
-    first_syntax_child(statement.node)
+/// Appends the outline lines of a statement in a test block's callback: a test block, or
+/// nothing.
+fn nested_test_block_lines(
+    statement: Statement<'_>,
+    level: &OutlineLevel<'_>,
+    lines: &mut Vec<OutlineLine>,
+) {
+    if let Some(call) = first_syntax_child(statement.node)
         .filter(|expression| expression.kind() == "call_expression")
-        .map(|call| test_blocks::test_block_lines(statement, call, level))
-        .unwrap_or_default()
-}
-
-/// The outline lines of one top-level statement; most statements give none.
-fn statement_lines(level: &OutlineLevel<'_>, statement: Statement<'_>) -> Vec<OutlineLine> {
-    let node = statement.node;
-    match node.kind() {
-        "export_statement" => export_lines(statement, level),
-        "expression_statement" => expression_statement_lines(statement, level),
-        "import_statement" => import_alias_line(node, statement, "", level)
-            .into_iter()
-            .collect(),
-        _ => declaration_lines(node, statement, "", level),
+    {
+        test_blocks::test_block_lines(statement, call, level, lines);
     }
 }
 
-/// The outline lines of a declaration: the statement itself, or the declaration inside an
-/// `export` or `declare` statement. `prefix` is printed before it, such as `export default`.
+/// Appends the outline lines of one top-level statement; most statements give none.
+fn statement_lines(
+    level: &OutlineLevel<'_>,
+    statement: Statement<'_>,
+    lines: &mut Vec<OutlineLine>,
+) {
+    let node = statement.node;
+    match node.kind() {
+        "export_statement" => export_lines(statement, level, lines),
+        "expression_statement" => expression_statement_lines(statement, level, lines),
+        "import_statement" => lines.extend(import_alias_line(node, statement, "", level)),
+        _ => declaration_lines(node, statement, "", level, lines),
+    }
+}
+
+/// Appends the outline lines of a declaration: the statement itself, or the declaration inside
+/// an `export` or `declare` statement. `prefix` is printed before it, such as `export default`.
 fn declaration_lines(
     declaration: Node<'_>,
     statement: Statement<'_>,
     prefix: &str,
     level: &OutlineLevel<'_>,
-) -> Vec<OutlineLine> {
-    match declaration.kind() {
+    lines: &mut Vec<OutlineLine>,
+) {
+    let signature = match declaration.kind() {
         "function_declaration"
         | "generator_function_declaration"
         | "function_expression"
         | "generator_function"
-        | "function_signature" => {
-            vec![statement_line(
-                level,
-                statement,
-                prefix,
-                signatures::function(declaration, level),
-            )]
-        }
+        | "function_signature" => signatures::function(declaration, level),
         "class_declaration" | "abstract_class_declaration" | "class" => {
-            let mut lines = vec![statement_line(
-                level,
-                statement,
-                prefix,
-                signatures::type_like(declaration, level),
-            )];
+            let signature = signatures::type_like(declaration, level);
+            lines.push(statement_line(level, statement, prefix, signature));
             if let Some(body) = declaration.child_by_field_name("body") {
-                level.declarations_inside(body, &mut lines);
+                level.declarations_inside(body, lines);
             }
-            lines
+            return;
         }
         "interface_declaration" | "type_alias_declaration" | "enum_declaration" => {
-            vec![statement_line(
-                level,
-                statement,
-                prefix,
-                signatures::type_like(declaration, level),
-            )]
+            signatures::type_like(declaration, level)
         }
-        "internal_module" | "module" => vec![statement_line(
-            level,
-            statement,
-            prefix,
-            signatures::namespace(declaration, level),
-        )],
+        "internal_module" | "module" => signatures::namespace(declaration, level),
         "lexical_declaration" | "variable_declaration" | "using_declaration" => {
-            variable_lines(declaration, statement, prefix, level)
+            return variable_lines(declaration, statement, prefix, level, lines);
         }
-        "ambient_declaration" => ambient_lines(declaration, statement, prefix, level),
+        "ambient_declaration" => {
+            return ambient_lines(declaration, statement, prefix, level, lines);
+        }
         // `export import Name = Namespace.member`.
-        "import_alias" => import_alias_line(declaration, statement, prefix, level)
-            .into_iter()
-            .collect(),
-        _ => Vec::new(),
-    }
+        "import_alias" => {
+            lines.extend(import_alias_line(declaration, statement, prefix, level));
+            return;
+        }
+        _ => return,
+    };
+    lines.push(statement_line(level, statement, prefix, signature));
 }
 
 /// The outline line of a statement that declares one thing: its line range is the statement's,
@@ -275,15 +272,16 @@ fn prefixed(prefix: &str, text: String) -> String {
     }
 }
 
-/// One line per declared name of a `const`, `let`, `var`, or `using` declaration, each with the
-/// line range of the whole statement. The first highlight starts at the statement's first
-/// keyword; the others at their name. Destructuring patterns declare no listed name.
+/// Appends one line per declared name of a `const`, `let`, `var`, or `using` declaration, each
+/// with the line range of the whole statement. The first highlight starts at the statement's
+/// first keyword; the others at their name. Destructuring patterns declare no listed name.
 fn variable_lines(
     declaration: Node<'_>,
     statement: Statement<'_>,
     prefix: &str,
     level: &OutlineLevel<'_>,
-) -> Vec<OutlineLine> {
+    lines: &mut Vec<OutlineLine>,
+) {
     let declaration_children = children(declaration);
     let keywords: Vec<&str> = declaration_children
         .iter()
@@ -295,7 +293,7 @@ fn variable_lines(
     let declarators = declaration_children
         .iter()
         .filter(|child| child.kind() == "variable_declarator");
-    let mut lines: Vec<OutlineLine> = Vec::new();
+    let first_line = lines.len();
     for declarator in declarators {
         let Some(name) = declarator
             .child_by_field_name("name")
@@ -318,15 +316,14 @@ fn variable_lines(
             },
         };
         let mut line = statement_line(level, statement, &prefix, signature);
-        if !lines.is_empty() {
+        if lines.len() > first_line {
             line.highlight = ByteRange::new(name.start_byte(), line.highlight.end);
         }
         lines.push(line);
     }
-    lines
 }
 
-/// The outline lines of a `declare` statement: `declare function`, `declare const`,
+/// Appends the outline lines of a `declare` statement: `declare function`, `declare const`,
 /// `declare class`, `declare module`, `declare global`, and so on. Ambient classes have no
 /// bodies worth listing, so their members are not shown.
 fn ambient_lines(
@@ -334,23 +331,22 @@ fn ambient_lines(
     statement: Statement<'_>,
     prefix: &str,
     level: &OutlineLevel<'_>,
-) -> Vec<OutlineLine> {
+    lines: &mut Vec<OutlineLine>,
+) {
     let prefix = prefixed(prefix, "declare".to_owned());
     for child in children(ambient) {
         match child.kind() {
             "statement_block" => break,
             "class_declaration" | "abstract_class_declaration" => {
-                return vec![statement_line(
-                    level,
-                    statement,
-                    &prefix,
-                    signatures::type_like(child, level),
-                )];
+                let signature = signatures::type_like(child, level);
+                lines.push(statement_line(level, statement, &prefix, signature));
+                return;
             }
             _ => {
-                let lines = declaration_lines(child, statement, &prefix, level);
-                if !lines.is_empty() {
-                    return lines;
+                let count = lines.len();
+                declaration_lines(child, statement, &prefix, level, lines);
+                if lines.len() > count {
+                    return;
                 }
             }
         }
@@ -359,7 +355,7 @@ fn ambient_lines(
     let highlight_end = child_of_kind(ambient, "global")
         .or_else(|| child_of_kind(ambient, "declare"))
         .map_or(ambient.start_byte(), |keyword| keyword.end_byte());
-    vec![statement_line(
+    lines.push(statement_line(
         level,
         statement,
         &prefix,
@@ -367,15 +363,16 @@ fn ambient_lines(
             text: "global".to_owned(),
             highlight_end,
         },
-    )]
+    ));
 }
 
-/// The outline lines of an `export` statement: a re-export, an exported declaration, or a
-/// default export of an expression.
-fn export_lines(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Vec<OutlineLine> {
+/// Appends the outline lines of an `export` statement: a re-export, an exported declaration, or
+/// a default export of an expression.
+fn export_lines(statement: Statement<'_>, level: &OutlineLevel<'_>, lines: &mut Vec<OutlineLine>) {
     let node = statement.node;
     if is_re_export(node) {
-        return vec![re_export_line(statement, level)];
+        lines.push(re_export_line(statement, level));
+        return;
     }
     let prefix = if has_child_of_kind(node, "default") {
         "export default"
@@ -383,26 +380,28 @@ fn export_lines(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Vec<Outli
         "export"
     };
     if let Some(declaration) = node.child_by_field_name("declaration") {
-        return declaration_lines(declaration, statement, prefix, level);
+        declaration_lines(declaration, statement, prefix, level, lines);
+        return;
     }
     let Some(value) = node
         .child_by_field_name("value")
         .map(signatures::without_wrappers)
     else {
-        return Vec::new();
+        return;
     };
-    let lines = declaration_lines(value, statement, prefix, level);
-    if !lines.is_empty() {
-        return lines;
+    let count = lines.len();
+    declaration_lines(value, statement, prefix, level, lines);
+    if lines.len() > count {
+        return;
     }
     let default_keyword_end =
         child_of_kind(node, "default").map_or(node.start_byte(), |keyword| keyword.end_byte());
-    vec![statement_line(
+    lines.push(statement_line(
         level,
         statement,
         prefix,
         signatures::default_value(value, default_keyword_end, level),
-    )]
+    ));
 }
 
 /// Child node kinds that make an `export` statement a re-export or an export alias.
@@ -431,19 +430,20 @@ fn re_export_line(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Outline
     level.outline_line(signature, statement.range, node.start_byte())
 }
 
-/// The outline lines of an expression statement: a `namespace` block, which the TypeScript
-/// grammar parses as an expression, or a test block.
+/// Appends the outline lines of an expression statement: a `namespace` block, which the
+/// TypeScript grammar parses as an expression, or a test block.
 fn expression_statement_lines(
     statement: Statement<'_>,
     level: &OutlineLevel<'_>,
-) -> Vec<OutlineLine> {
+    lines: &mut Vec<OutlineLine>,
+) {
     let Some(expression) = first_syntax_child(statement.node) else {
-        return Vec::new();
+        return;
     };
     match expression.kind() {
-        "internal_module" => declaration_lines(expression, statement, "", level),
-        "call_expression" => test_blocks::test_block_lines(statement, expression, level),
-        _ => Vec::new(),
+        "internal_module" => declaration_lines(expression, statement, "", level, lines),
+        "call_expression" => test_blocks::test_block_lines(statement, expression, level, lines),
+        _ => {}
     }
 }
 
