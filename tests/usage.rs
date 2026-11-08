@@ -178,14 +178,16 @@ fn invalid_arguments_print_usage_to_err() {
 fn output_is_the_same_on_any_number_of_threads() {
     let dir = ScratchDir::new("usage-threads").expect("temp dir");
     let mut paths = Vec::new();
-    for index in 0..300 {
-        let path = format!("docs/{index:03}.md");
+    // More files than a walk visits on one thread before it starts over on several
+    // (`SEQUENTIAL_WALK_ENTRIES` in src/discovery.rs), so the parallel walk runs too.
+    for index in 0..1100 {
+        let path = format!("docs/{index:04}.md");
         dir.write(&path, format!("# Doc {index}\n").as_bytes())
             .expect("write");
         paths.push(path);
     }
     // Failing files among the others, so their errors must keep their order too.
-    for broken in ["docs/100-broken.md", "docs/200-broken.md"] {
+    for broken in ["docs/0100-broken.md", "docs/0900-broken.md"] {
         dir.write(broken, b"\xff").expect("write");
         paths.push(broken.to_owned());
     }
@@ -201,7 +203,7 @@ fn output_is_the_same_on_any_number_of_threads() {
         let (_, err, status) = one_thread;
         assert_eq!(
             err,
-            "FILE docs/100-broken.md IS NOT UTF-8 TEXT\nFILE docs/200-broken.md IS NOT UTF-8 TEXT\n"
+            "FILE docs/0100-broken.md IS NOT UTF-8 TEXT\nFILE docs/0900-broken.md IS NOT UTF-8 TEXT\n"
         );
         assert_eq!(status, ExitStatus::Failure);
     }

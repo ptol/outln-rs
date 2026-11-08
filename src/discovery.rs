@@ -17,10 +17,14 @@ const NODE_MODULES: &str = "node_modules";
 const GLOB_START_CHARACTERS: [char; 4] = ['*', '?', '[', '{'];
 /// The glob segment that matches any number of directories.
 const ANY_DIRECTORIES: &str = "**";
-/// A walk can't know its size before it ends, so even a small directory pays for every walker
-/// thread. Past 8 threads a walk of 18k files got no faster (97 vs. 96 ms), while each thread
-/// added to a 67-file walk (+1.2 ms at 8 threads, +2.1 ms at 16); ripgrep caps its walk too.
+/// Past 8 threads a walk of 18k files got no faster (97 vs. 96 ms), while each thread made a
+/// parallel walk of a small tree slower; ripgrep caps its walker threads too.
 const MAX_WALK_THREADS: usize = 8;
+/// How many entries a walk visits on one thread before it starts over on several. Below about
+/// 1 000 entries, one thread was as fast (a 12-file `docs/`: 2 ms faster); starting over after
+/// 1 024 entries cost 0.7 ms on a 3 800-entry tree, which walking in parallel cut from 33 to
+/// 25 ms.
+const SEQUENTIAL_WALK_ENTRIES: usize = 1024;
 
 /// What a path argument names, decided once per argument.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -142,29 +146,22 @@ impl FileWalker<'_> {
         }
 
         let entry_found = |result| found_in(result, &root, display_root);
-        let mut found = FoundFiles::default();
         let threads = self.threads.get().min(MAX_WALK_THREADS);
-        if threads == 1 {
-            for item in builder.build().filter_map(entry_found) {
-                found.add(item);
-            }
+        // Most walks are of a small directory, where starting walker threads costs more than
+        // the whole walk, and a walk can't know its size before it ends. So walk on this thread
+        // first, and start over on several threads once the walk outgrows its budget.
+        let budget = if threads == 1 {
+            usize::MAX
         } else {
-            // Each walker thread sends what it finds; the channel collects it on this thread.
-            let (sender, receiver) = mpsc::channel();
-            builder.threads(threads).build_parallel().run(|| {
-                let sender = sender.clone();
-                Box::new(move |result| {
-                    if let Some(item) = entry_found(result) {
-                        // The receiver outlives the walk, so a send can't fail.
-                        let _ = sender.send(item);
-                    }
-                    WalkState::Continue
-                })
-            });
-            drop(sender);
-            for item in receiver {
-                found.add(item);
-            }
+            SEQUENTIAL_WALK_ENTRIES
+        };
+        let mut found = FoundFiles::default();
+        let mut walk = builder.build();
+        for item in walk.by_ref().take(budget).filter_map(entry_found) {
+            found.add(item);
+        }
+        if walk.next().is_some() {
+            found = walk_in_parallel(&mut builder, threads, &entry_found);
         }
         found.files.sort_unstable();
         // The walk order depends on the file system and, with threads, on timing.
@@ -172,6 +169,35 @@ impl FileWalker<'_> {
         found
     }
 }
+
+/// Walks with `threads` walker threads, keeping what `entry_found` makes of each entry.
+fn walk_in_parallel(
+    builder: &mut WalkBuilder,
+    threads: usize,
+    entry_found: &(impl Fn(WalkedEntry) -> Option<Result<String, InputError>> + Sync),
+) -> FoundFiles {
+    // Each walker thread sends what it finds; the channel collects it on this thread.
+    let (sender, receiver) = mpsc::channel();
+    builder.threads(threads).build_parallel().run(|| {
+        let sender = sender.clone();
+        Box::new(move |result| {
+            if let Some(item) = entry_found(result) {
+                // The receiver outlives the walk, so a send can't fail.
+                let _ = sender.send(item);
+            }
+            WalkState::Continue
+        })
+    });
+    drop(sender);
+    let mut found = FoundFiles::default();
+    for item in receiver {
+        found.add(item);
+    }
+    found
+}
+
+/// What the walker yields for each entry.
+type WalkedEntry = Result<DirEntry, ignore::Error>;
 
 impl FoundFiles {
     fn add(&mut self, item: Result<String, InputError>) {
@@ -185,7 +211,7 @@ impl FoundFiles {
 /// What one walked entry adds: the display path of a supported file, an error for an unreadable
 /// directory, or nothing.
 fn found_in(
-    result: Result<DirEntry, ignore::Error>,
+    result: WalkedEntry,
     root: &Path,
     display_root: &str,
 ) -> Option<Result<String, InputError>> {

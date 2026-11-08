@@ -22,7 +22,7 @@ const CASES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cases");
 const CASEFILE_EXTENSION: &str = "case";
 /// Printed by `--version` in every casefile, so a release doesn't change expected output.
 const VERSION: &str = "0.0.0-test";
-/// More than one, so every casefile also covers the parallel directory walk.
+/// More than one, as on most machines; casefile trees are small, so they still run on one thread.
 const THREADS: NonZeroUsize = NonZeroUsize::new(4).unwrap();
 
 /// What the environment asks this run to do.
