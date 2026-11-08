@@ -3,6 +3,7 @@
 use std::ffi::OsString;
 use std::num::NonZeroUsize;
 
+use clap::error::ErrorKind;
 use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
 
 use crate::language_engine::supported_extensions;
@@ -89,11 +90,24 @@ pub(crate) fn parse(
     arguments: impl IntoIterator<Item = impl Into<OsString> + Clone>,
     version: &str,
 ) -> Result<Arguments, clap::Error> {
-    let matches = Arguments::command()
+    let matches = command(version).try_get_matches_from(arguments)?;
+    Arguments::from_arg_matches(&matches)
+}
+
+/// The clap command of [`Arguments`] printing `version`, with the help text after its options.
+fn command(version: &str) -> clap::Command {
+    Arguments::command()
         .version(version.to_owned())
         .after_help(after_help())
-        .try_get_matches_from(arguments)?;
-    Arguments::from_arg_matches(&matches)
+}
+
+/// The usage error for `--depth` with only file arguments: file mode prints every file's full
+/// outline, so the limit would be ignored without a word.
+pub(crate) fn depth_limit_without_glob_view(version: &str) -> clap::Error {
+    command(version).error(
+        ErrorKind::ArgumentConflict,
+        "the argument '--depth <N>' needs a directory or glob pattern; file arguments print full outlines",
+    )
 }
 
 /// The text after the options in `--help`. The extensions come from the engine registry, so

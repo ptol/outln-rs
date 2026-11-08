@@ -1,0 +1,15 @@
+`--depth` limits a glob view of directory arguments, but file arguments alone run file mode, which prints each file's full outline: rather than ignore the limit without a word, outln reports a usage error and exits 2, as it does for `--depth` with `--debug`.
+== args
+--depth
+1
+input/a.rs
+== file input/a.rs
+fn f() {}
+== stdout
+== stderr
+error: the argument '--depth <N>' needs a directory or glob pattern; file arguments print full outlines
+
+Usage: outln [OPTIONS] <PATH>...
+
+For more information, try '--help'.
+== exit 2

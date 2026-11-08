@@ -71,7 +71,8 @@ fn directory_arguments_print_a_glob_view() {
 }
 
 /// Past 300 files, a glob view without `--depth` suggests it on stderr, so stdout stays only
-/// file summaries; with `--depth 1`, the same tree is one directory summary.
+/// file summaries; with `--depth 1`, the same tree is one directory summary, while a glob
+/// pattern, which `--depth` doesn't limit, still gets a hint.
 #[test]
 fn a_long_glob_view_suggests_a_depth_limit_on_stderr() {
     let dir = ScratchDir::new("usage-long-glob-view").expect("temp dir");
@@ -96,6 +97,14 @@ fn a_long_glob_view_suggests_a_depth_limit_on_stderr() {
         run_in(&dir, &["--depth", "1", "docs"]).expect("writing to a Vec cannot fail");
     assert_eq!(out, "glob view: docs\ndocs/part/ (301 files, 301 lines)\n");
     assert_eq!(err, "");
+
+    // A depth limit doesn't apply to a glob pattern, so the hint still follows.
+    let (_, err, _) =
+        run_in(&dir, &["--depth", "1", "docs/**/*.md"]).expect("writing to a Vec cannot fail");
+    assert_eq!(
+        err,
+        "Hint: found 301 files; a narrower path or pattern lists fewer\n"
+    );
 }
 
 /// `src/main.rs` picks the style: green for a terminal, markers for agents and pipes.

@@ -155,6 +155,12 @@ pub fn run(
     });
     if is_glob_view {
         glob_view::run(&classified, &walker, arguments.depth, out, err)
+    } else if arguments.depth.is_some() {
+        print_clap_message(
+            &cli::depth_limit_without_glob_view(context.version),
+            out,
+            err,
+        )
     } else {
         file_mode::run(&classified, context.cwd, context.threads, out, err)
     }

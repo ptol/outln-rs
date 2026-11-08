@@ -14,8 +14,9 @@ use crate::parallel::map_in_order;
 use crate::source_file::load;
 use crate::source_text::LineCount;
 
-/// A glob view without a depth limit that lists more files than this ends with a hint on
-/// stderr: 300 file summaries are about 15k tokens, more than an agent wants for an overview.
+/// A glob view that lists more files than this ends with a hint on stderr, unless a depth limit
+/// applied to a directory argument: 300 file summaries are about 15k tokens, more than an agent
+/// wants for an overview.
 const MANY_FILES: usize = 300;
 
 /// What a glob view lists, each sorted and without duplicates.
@@ -67,25 +68,47 @@ pub(crate) fn run(
             }
         }
     }
-    if depth_limit.is_none() && listing.files.len() > MANY_FILES {
-        let has_directory = arguments
-            .iter()
-            .any(|(_, kind)| *kind == ArgumentKind::Directory);
-        writeln!(
-            err,
-            "{}",
-            many_files_hint(listing.files.len(), has_directory)
-        )?;
+    if listing.files.len() > MANY_FILES
+        && let Some(suggestion) = Suggestion::for_arguments(arguments, depth_limit)
+    {
+        writeln!(err, "{}", many_files_hint(listing.files.len(), suggestion))?;
     }
     Ok(status)
 }
 
+/// What the hint after a long glob view suggests to list fewer files.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Suggestion {
+    /// A depth limit, or a narrower path: for a glob view of a directory argument.
+    DepthLimit,
+    /// A narrower path or pattern: a depth limit applies to directory arguments only
+    /// (ADR-025), so it can't shorten a glob view of glob patterns and files.
+    NarrowerPath,
+}
+
+impl Suggestion {
+    /// The suggestion for a glob view of `arguments`, or `None` when a depth limit applied to a
+    /// directory argument already.
+    fn for_arguments(
+        arguments: &[(String, ArgumentKind)],
+        depth_limit: Option<NonZeroUsize>,
+    ) -> Option<Self> {
+        let has_directory = arguments
+            .iter()
+            .any(|(_, kind)| *kind == ArgumentKind::Directory);
+        match (has_directory, depth_limit) {
+            (true, Some(_)) => None,
+            (true, None) => Some(Self::DepthLimit),
+            (false, _) => Some(Self::NarrowerPath),
+        }
+    }
+}
+
 /// The hint after a long glob view; it goes to stderr, so stdout stays only file summaries.
-fn many_files_hint(file_count: usize, has_directory: bool) -> String {
-    let fewer = if has_directory {
-        "for an overview, try --depth 1 or a narrower path"
-    } else {
-        "a narrower path or pattern lists fewer"
+fn many_files_hint(file_count: usize, suggestion: Suggestion) -> String {
+    let fewer = match suggestion {
+        Suggestion::DepthLimit => "for an overview, try --depth 1 or a narrower path",
+        Suggestion::NarrowerPath => "a narrower path or pattern lists fewer",
     };
     format!("Hint: found {file_count} files; {fewer}")
 }
