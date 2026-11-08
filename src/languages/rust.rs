@@ -18,7 +18,9 @@ use crate::syntax_tree::{OneLineRules, child_of_kind, has_child_of_kind, source}
 ///
 /// The header comment is the first `//!` or `/*!` comment, or else the first plain comment that
 /// isn't a one-line label right above code, among the comments before the first declaration; a
-/// shebang and inner attributes (`#![...]`) may come before or between them.
+/// shebang and inner attributes (`#![...]`) may come before or between them. A comment whose
+/// first prose paragraph is a license notice, or that has no prose paragraph (only badges or a
+/// code example), is passed over for the next one.
 pub(crate) static RUST: CodeLanguage = CodeLanguage {
     extensions: &["rs"],
     grammar: || tree_sitter_rust::LANGUAGE.into(),

@@ -25,8 +25,10 @@ pub(crate) trait LanguageEngine: Sync {
     /// The full outline, for file mode and debug mode.
     fn outline(&self, source: &SourceText<'_>) -> Outline;
 
-    /// What the glob view prints for the file: its header, or a field summary or first heading
-    /// without one; cheaper than `outline`, because it parses little or nothing.
+    /// What the glob view prints for the file: its header, or without one a data file's field
+    /// summary, a code file's declaration summary, or a Markdown file's first heading; cheaper
+    /// than `outline`, because it parses little or nothing (a code file without a header only
+    /// its start).
     fn file_summary(&self, text: &str) -> FileSummary;
 
     /// The tree-sitter grammar the engine parses with, if any, so the contract tests can check

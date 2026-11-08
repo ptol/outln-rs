@@ -35,8 +35,10 @@ pub(crate) static JAVASCRIPT: CodeLanguage = script(&["js", "jsx", "mjs", "cjs"]
 /// The language engine for the TypeScript or JavaScript files with `extensions`, parsed with
 /// `grammar`.
 ///
-/// The header comment is the first comment that starts a line, if nothing but a shebang, blank
-/// lines, and directives (`'use strict';`) come before it.
+/// The header comment is the first comment with a prose paragraph that isn't a license notice,
+/// among the comments before the first code; only a shebang, blank lines, directives
+/// (`'use strict';`), and tool directives written as comments (`// @ts-check`,
+/// `/* eslint-disable */`) may come before them.
 const fn script(extensions: &'static [&'static str], grammar: fn() -> Language) -> CodeLanguage {
     CodeLanguage {
         extensions,

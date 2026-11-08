@@ -72,7 +72,8 @@ const INDENT_PER_DEPTH: &str = "  ";
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum FileSummary {
     Header(Header),
-    /// A data file without a header comment summarizes its first fields instead.
+    /// A data file without a header comment summarizes its first scalar fields instead, or its
+    /// keys' names when it has no scalar keys.
     Fields(FieldSummary),
     /// A code file without a header comment summarizes its first top-level declarations
     /// instead.
@@ -80,18 +81,20 @@ pub(crate) enum FileSummary {
     /// A Markdown file without frontmatter fields is summarized by its first heading, as its outline
     /// line prints it (`# Guide`).
     FirstHeading(String),
-    /// No header, fields, or heading to summarize.
+    /// No header, fields, declarations, or heading to summarize.
     Empty,
 }
 
-/// A data file's first top-level keys with scalar values, as `{name: "outln", ...}`, which a
-/// glob view prints for a data file without a header comment.
+/// A data file's first top-level keys with scalar values, as `{name: "outln", ...}`, or in a
+/// file without scalar keys its keys' names, as `{compilerOptions, include}`, which a glob view
+/// prints for a data file without a header comment.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct FieldSummary {
     /// The TOML table the fields come from, such as `[package]`, when they aren't top-level
     /// keys of the file.
     pub(crate) table: Option<String>,
-    /// Each field as its outline line prints it: `name: "outln"`, or `name = "outln"` in TOML.
+    /// Each field as its outline line prints it: `name: "outln"`, `name = "outln"` in TOML, or
+    /// a key's name alone.
     pub(crate) fields: Vec<String>,
     pub(crate) shown: FieldsShown,
 }
@@ -220,7 +223,8 @@ fn shortened(text: &str) -> String {
     }
 }
 
-/// Printed in a glob view for a file without a header.
+/// Printed in a glob view for a file with nothing to summarize: no header, field summary,
+/// declaration summary, or first heading.
 const NO_HEADER: &str = "(no header available)";
 
 /// Printed after the shown fields of a [`FieldSummary`], or the declarations of a

@@ -5,6 +5,10 @@
 //! range starts and ends, and which keys a field summary shows are the same for all three, so
 //! they live here.
 //!
+//! The header comment is the first comment at the top, after any preamble (a `#:schema` or YAML
+//! directive), whose first prose paragraph isn't a license notice; a license notice or a
+//! comment without prose is passed over, and starts no key's line range either.
+//!
 //! A key's outline line prints a scalar value as written, its first paragraph on one line (a
 //! value written over several lines has its lines joined by spaces), cut at 40 characters, or
 //! 100 for a describing key (`description`, `title`). A field summary shows up to three scalar
@@ -132,8 +136,8 @@ pub(crate) fn yaml_fields(text: &str) -> Option<Vec<YamlField>> {
 }
 
 impl DataFile {
-    /// The header comment: the first comment at the top of the file with a header paragraph,
-    /// after any preamble; and where the comments read for it end.
+    /// The header comment: the first comment at the top of the file, after any preamble, with a
+    /// prose paragraph that isn't a license notice; and where the comments read for it end.
     fn header(&self, text: &str) -> HeaderSearch {
         find_header_comment(
             text,

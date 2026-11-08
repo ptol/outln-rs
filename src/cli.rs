@@ -25,7 +25,7 @@ Modes:
                              Glob patterns set their own depth.
   outln --debug <file|dir>   Source text with the extracted outline highlighted: green on a
                              terminal; between « and » when stdout isn't a terminal or
-                             NO_COLOR is set.";
+                             NO_COLOR is set to a non-empty value.";
 
 /// Printed after the supported extensions in `--help`.
 const QUOTING_AND_EXAMPLES: &str = "\

@@ -71,7 +71,7 @@ pub struct Context<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HighlightStyle {
     /// ANSI green, for a person at a terminal. `src/main.rs` picks it when stdout is a terminal
-    /// and `NO_COLOR` isn't set.
+    /// and `NO_COLOR` isn't set to a non-empty value.
     AnsiGreen,
     /// `«` before and `»` after each highlighted part of a line, readable without a terminal:
     /// by agents, in files, and through pipes.

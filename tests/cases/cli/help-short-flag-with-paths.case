@@ -33,7 +33,7 @@ Modes:
                              Glob patterns set their own depth.
   outln --debug <file|dir>   Source text with the extracted outline highlighted: green on a
                              terminal; between « and » when stdout isn't a terminal or
-                             NO_COLOR is set.
+                             NO_COLOR is set to a non-empty value.
 
 Supported files (by extension; others are skipped in a glob view):
   .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .jsonc, .toml, .yaml, .yml
