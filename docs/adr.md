@@ -27,7 +27,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ## ADR-002: Local-only tooling with strict lints and an auto-fixing pre-commit hook
 
-**Status**: Accepted (2026-11-06); amended by ADR-010 (replaces "No CI for now": a CI workflow publishes releases, and commits stay gated only by the hook)
+**Status**: Accepted (2026-11-06); amended by ADR-010 (replaces "No CI for now": a CI workflow publishes releases, and commits stay gated only by the hook) and ADR-026 (CI also checks every branch push and pull request)
 
 ### Decision
 
@@ -51,7 +51,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ## ADR-003: Language engines return data with byte ranges into normalized text
 
-**Status**: Accepted (2026-11-06); amended by ADR-008 (one engine type may serve several grammars, and `Header` has a header comment variant) and ADR-016 (`file_summary` returns a `FileSummary` enum, and a data file's engine parses a prefix of the file for it)
+**Status**: Accepted (2026-11-06); amended by ADR-008 (one engine type may serve several grammars, and `Header` has a header comment variant) ADR-016 (`file_summary` returns a `FileSummary` enum, and a data file's engine parses a prefix of the file for it), and ADR-021 (code languages are `static CodeLanguage` tables and data file formats `static DataFile` tables, not one unit struct per language); amended 2026-11-08 (a lone CR becomes LF too, and NUL bytes are an error only when they look binary or UTF-16: `source_text::normalize`, [changelog.md](changelog.md))
 
 ### Decision
 
@@ -74,7 +74,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ## ADR-004: Casefiles in a plain-text format, run in process on a temp directory
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended 2026-11-08 (update mode also adds missing output sections and writes each casefile in canonical form, input files' bytes unchanged: `tests/casefiles.rs`)
 
 ### Decision
 
@@ -114,7 +114,7 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ## ADR-006: Walk directories with the `ignore` crate and git semantics
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended by ADR-022 (a walk past 1,024 entries starts over on the crate's parallel walker, and walk errors are sorted by message)
 
 ### Decision
 
@@ -195,7 +195,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-010: Publish to crates.io from a tag-triggered GitHub Actions workflow
 
-**Status**: Accepted (2026-11-06); amended by ADR-014 (agents' machines install this crate) and ADR-017 (the package also includes the engine samples)
+**Status**: Accepted (2026-11-06); amended by ADR-014 (agents' machines install this crate), ADR-017 (the package also includes the engine samples), and ADR-026 (before uploading, the workflow runs the Check workflow, `just ci`, instead of its own clippy and test commands)
 
 ### Decision
 
@@ -215,7 +215,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - `cargo install` builds from source: users need Rust at least `rust-version` and a C compiler for the grammars. Prebuilt binaries (`just build-static`) aren't released yet.
 - The crate page has no README; it shows the description and links to the repository.
 - The published crate can't run its integration tests (`cargo package` warns that it drops each one); unit tests and doctests in `src/` stay.
-- The workflow's clippy and test commands copy `just lint` and `just test`, so CI needs no tools beyond rustup; change them together.
+- The workflow's clippy and test commands copy `just lint` and `just test`, so CI needs no tools beyond rustup; change them together. (Since ADR-026 the workflow calls `check.yml` instead, so there is no copy to keep in step.)
 - crates.io's trusted publishing (OIDC, no stored token) needs the crate to exist first; switching to it after the first release removes the secret.
 
 ## ADR-011: Parse Rust with tree-sitter-rust
@@ -321,7 +321,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-016: Outline TOML, YAML, and JSON data files with tree-sitter
 
-**Status**: Accepted (2026-11-06); amends ADR-003 and ADR-012; amended by ADR-019 (the glob view prints no preamble) and ADR-023 (field summary order and value limits)
+**Status**: Accepted (2026-11-06); amends ADR-003 and ADR-012; amended by ADR-019 (the glob view prints no preamble), ADR-021 (each format is a `static DataFile` table instead of a format field), and ADR-023 (field summary order and value limits); amended 2026-11-08 (`.jsonc` files are outlined as JSON, `.json5` still isn't; a JSON object missing a comma keeps its keys before the gap, [changelog.md](changelog.md))
 
 ### Decision
 
@@ -347,7 +347,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-017: Check every engine against shared engine samples
 
-**Status**: Accepted (2026-11-06); amends ADR-009 (what `just build-static` outlines) and ADR-010 (the package also includes the engine samples)
+**Status**: Accepted (2026-11-06); amends ADR-009 (what `just build-static` outlines) and ADR-010 (the package also includes the engine samples); amended 2026-11-08 (the contract also checks the output's shape, the file summary against the outline, and debug mode, and runs on seeded mutations of the samples: `contract.rs`, `contract/mutation.rs`, [testing.md](testing.md); about ten engines are now planned, not eight)
 
 ### Decision
 
@@ -465,7 +465,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-022: Outline files on several threads, printing in input order
 
-**Status**: Accepted (2026-11-08)
+**Status**: Accepted (2026-11-08); its glob view figures predate ADR-024, whose declaration summaries parse every headerless code file's start: the registry's glob view, about half of it headerless `.rs` files, now takes about 0.5 s
 
 ### Decision
 
@@ -511,6 +511,27 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - The Markdown engine parses a frontmatter block with tree-sitter on every glob view; frontmatter is short, so this costs microseconds per file.
 - Quoted frontmatter text is still not unescaped (`'it''s'` prints `"it''s"`), and a `|` block's line breaks print as spaces.
 
+## ADR-024: Summarize code files without a header by their declarations
+
+**Status**: Accepted (2026-11-08); its timings were taken without ADR-022's threads, with which the registry's glob view takes about 0.5 s
+
+### Decision
+
+- In the glob view, a code file (any `CodeLanguage`) without a header comment with text prints a declaration summary instead of `(no header available)`: its first five distinct top-level declarations, each as `CodeLanguage::summary_text` cuts its outline line (`signature::signature_head`: up to the parameter list and its type parameters; a test block keeps its title; CSS keeps the whole prelude), cut at 48 characters, a repeated one with its count (`impl Arg ×6`), then `...` when more may follow.
+- Only a file without a header is parsed, and only its first 4 KiB (`DECLARATION_SUMMARY_PREFIX_BYTES`), cut before the last line in them that starts at column 0 with neither whitespace nor a closing bracket, so the parse rarely ends inside a declaration, which tree-sitter would drop as a syntax error. A cut file's summary ends with `...`.
+- `source_text::summary_prefix` cuts a text to a byte budget at a line break, for this and for the data file engine's field summary, which still has its own copy.
+
+### Rationale
+
+- 52% of the crates.io registry's `.rs` files and 77% of a `node_modules` tree's script files have no header comment, so their glob view lines said nothing; their first declarations say what they hold, as a data file's field summary does.
+- Parsing is the cost: tree-sitter parses about 15 to 20 MB/s here, so whole files (generated bindings of several megabytes) took the registry's glob view from 0.57 s to 8.3 s. A 4 KiB prefix holds five declarations for most files; 2 KiB left 500 more registry files without any.
+
+### Consequences
+
+- The glob view is slower on code without headers. With hyperfine: the registry (18,136 files, 9,368 headerless `.rs`) 0.62 s before, 2.28 s after (1.73 s with a 2 KiB prefix); a 24,158-file `node_modules` tree (18,569 headerless) 0.44 s before, 2.67 s after. Documented code is unchanged: its header is still found without parsing.
+- Counts (`×3`) are of the declarations in the prefix read, not the whole file.
+- A declaration whose source starts inside the 4 KiB but runs past the cut may be missing or printed from a partial parse.
+
 ## ADR-025: A depth limit for the glob view, with directory summaries
 
 **Status**: Accepted (2026-11-08)
@@ -534,26 +555,26 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - A depth-limited glob view of a huge tree still reads every supported file in it.
 - A file below the limit that can't be read is reported only by a glob view that lists it.
 
-## ADR-024: Summarize code files without a header by their declarations
+## ADR-026: Check every branch push in CI
 
-**Status**: Accepted (2026-11-08)
+**Status**: Accepted (2026-11-08); amends ADR-002 (CI checks pushes, not only releases) and ADR-010 (the publish workflow runs this check)
 
 ### Decision
 
-- In the glob view, a code file (any `CodeLanguage`) without a header comment with text prints a declaration summary instead of `(no header available)`: its first five distinct top-level declarations, each as `CodeLanguage::summary_text` cuts its outline line (`signature::signature_head`: up to the parameter list and its type parameters; a test block keeps its title; CSS keeps the whole prelude), cut at 48 characters, a repeated one with its count (`impl Arg ×6`), then `...` when more may follow.
-- Only a file without a header is parsed, and only its first 4 KiB (`DECLARATION_SUMMARY_PREFIX_BYTES`), cut before the last line in them that starts at column 0 with neither whitespace nor a closing bracket, so the parse rarely ends inside a declaration, which tree-sitter would drop as a syntax error. A cut file's summary ends with `...`.
-- `source_text::summary_prefix` cuts a text to a byte budget at a line break, for this and for the data file engine's field summary, which still has its own copy.
+- `.github/workflows/check.yml` runs `just ci` on every branch push and pull request: `just verify` (every step of `hk.pkl`), `just build-static`, and `just test-package` (`cargo package`, then `cargo test` in the unpacked crate). mise (`jdx/mise-action`) installs the tools `mise.toml` pins.
+- `.github/workflows/publish.yml` calls it (`uses:`) and uploads only after it passes; a tag push runs it there, not as a branch push.
+- The pre-commit hook stays the gate on commits; CI doesn't block a push.
 
 ### Rationale
 
-- 52% of the crates.io registry's `.rs` files and 77% of a `node_modules` tree's script files have no header comment, so their glob view lines said nothing; their first declarations say what they hold, as a data file's field summary does.
-- Parsing is the cost: tree-sitter parses about 15 to 20 MB/s here, so whole files (generated bindings of several megabytes) took the registry's glob view from 0.57 s to 8.3 s. A 4 KiB prefix holds five declarations for most files; 2 KiB left 500 more registry files without any.
+- The hook skips the static build (too slow for every commit, ADR-009) and never builds the packaged crate, so either could break unnoticed until a release; a commit made without the hook installed was checked by nothing.
+- One recipe for CI and the laptop: `just ci` reproduces a failure locally, and mise gives CI the hook's tool versions.
+- Publishing through the same workflow checks a release with every check instead of a copy of clippy and the tests that could drift from `just lint` and `just test`.
 
 ### Consequences
 
-- The glob view is slower on code without headers. With hyperfine: the registry (18,136 files, 9,368 headerless `.rs`) 0.62 s before, 2.28 s after (1.73 s with a 2 KiB prefix); a 24,158-file `node_modules` tree (18,569 headerless) 0.44 s before, 2.67 s after. Documented code is unchanged: its header is still found without parsing.
-- Counts (`×3`) are of the declarations in the prefix read, not the whole file.
-- A declaration whose source starts inside the 4 KiB but runs past the cut may be missing or printed from a partial parse.
+- A CI run needs the network for cargo-deny's advisory database and takes as long as the static build.
+- A failure shows up after the push; fix it with a new commit.
 
 ## Dependencies
 
