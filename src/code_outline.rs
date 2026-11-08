@@ -95,6 +95,13 @@ impl LanguageEngine for CodeLanguage {
 /// deeper.
 const TOP_LEVEL_DEPTH: usize = 0;
 
+/// The deepest level an outline lists, in every code language: a top-level declaration, what it
+/// contains (a Rust module's items, a class's members, the tests in a `describe` block), and
+/// what those contain (the methods of an `impl` block in a module), but nothing deeper. An
+/// outline is for choosing what to read, and deeper levels would bury the top-level lines; the
+/// limit also bounds how deep the walk recurses.
+const DEEPEST_DEPTH: usize = 2;
+
 /// One level of a code file's outline: what a [`CodeLanguage`]'s `declaration_lines` gets with
 /// each node, to read the source, print signatures, and list the declarations inside a node
 /// one level deeper.
@@ -145,8 +152,12 @@ impl<'a> OutlineLevel<'a> {
 
     /// Appends the outline lines of the declarations among `parent`'s children one level
     /// deeper, each with its own line range: a class's members, the rules in an at-rule's
-    /// block. The language's `declaration_lines` gets each of them at the deeper level.
+    /// block. The language's `declaration_lines` gets each of them at the deeper level. Nothing
+    /// below [`DEEPEST_DEPTH`] is listed.
     pub(crate) fn declarations_inside(&self, parent: Node<'_>, lines: &mut Vec<OutlineLine>) {
+        if self.depth >= DEEPEST_DEPTH {
+            return;
+        }
         let deeper = OutlineLevel {
             depth: self.depth + 1,
             ..*self

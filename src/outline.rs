@@ -75,8 +75,9 @@ pub(crate) struct OutlineLine {
     pub(crate) range: ByteRange,
     /// The part of the source that debug mode highlights.
     pub(crate) highlight: ByteRange,
-    /// How deep the declaration is nested: 0 at the top level, 1 for a class member or a CSS rule
-    /// inside a top-level at-rule. Each level indents the printed line by [`INDENT_PER_DEPTH`].
+    /// How deep the declaration is nested: 0 at the top level, 1 for a member or a CSS rule
+    /// inside a top-level at-rule, 2 for a member inside a Rust module's `impl` block. Each level
+    /// indents the printed line by [`INDENT_PER_DEPTH`].
     pub(crate) depth: usize,
 }
 

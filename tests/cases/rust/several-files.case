@@ -67,7 +67,9 @@ Defines entities and value objects.
 [L8-L11] pub struct User
 [L13-L17] pub enum Role
 [L19-L21] pub trait Authenticable
+  [L20-L20] fn authenticate(&self) -> bool
 [L23-L25] impl Authenticable for User
+  [L24-L24] fn authenticate(&self) -> bool
 
 input/utils/helpers.rs (12 lines)
 Utility functions for common operations.

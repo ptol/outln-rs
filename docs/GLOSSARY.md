@@ -31,7 +31,7 @@ _Avoid_: Size, length, LOC
 
 ### Declaration
 
-A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a class member, a test block, a data file's key, or a CSS rule.
+A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a member, a declaration inside an inline module, a test block, a data file's key, or a CSS rule.
 Code says declaration even where a grammar's node kinds say item (tree-sitter-rust's `function_item`).
 _Avoid_: Symbol, definition, item
 
@@ -45,10 +45,10 @@ _Avoid_: Head, prototype
 A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration. Data files and CSS have no doc comments, so the comment lines directly above a key or rule are its leading annotation.
 _Avoid_: Prefix, trivia
 
-### Class member
+### Member
 
-A method, accessor, or constructor of a class, listed under the class one level deeper.
-_Avoid_: Child, nested declaration
+A declaration inside a class, `impl` block, or trait, listed one level under it: a class's method, accessor, or constructor, or an `impl` block's or trait's function, constant, or type.
+_Avoid_: Child, nested declaration, associated item (Rust's own word, fine in Rust-specific code)
 
 ### Test block
 

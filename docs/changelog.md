@@ -10,6 +10,7 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 ## Unreleased
 
 - File mode: an outline's first line prints the file's line count after its path, as the glob view does: `src/cli.rs (120 lines)` ([ADR-020](adr.md)).
+- Rust: the members of an `impl` block or trait (functions, constants, associated types) and the items of an inline `mod` are listed one level deeper, each with its own line range; an `impl` block inside an inline module lists its members at depth 2, and nothing deeper is listed ([ADR-011](adr.md)).
 
 ## 0.3.0 (2026-11-06)
 

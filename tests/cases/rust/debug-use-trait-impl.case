@@ -16,11 +16,11 @@ impl Repo for Store {
 use std::fmt::Debug;
 
 \x1b[32mtrait Repo\x1b[0m {
-  fn load(&self);
+  \x1b[32mfn load(&self)\x1b[0m;
 }
 
 \x1b[32mimpl Repo for Store\x1b[0m {
-  fn load(&self) {}
+  \x1b[32mfn load(&self)\x1b[0m {}
 }
 == stderr
 == exit 0

@@ -15,8 +15,12 @@ input/impls.rs (8 lines)
 Impl blocks
 [L3-L3] struct Container<T>
 [L4-L4] trait Printable
+  [L4-L4] fn print(&self)
 [L6-L6] impl<T> Container<T>
+  [L6-L6] fn new(v: T) -> Self
 [L7-L7] impl<T: Display> Printable for Container<T>
+  [L7-L7] fn print(&self)
 [L8-L8] impl String
+  [L8-L8] fn len(&self) -> usize
 == stderr
 == exit 0

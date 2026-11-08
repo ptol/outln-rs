@@ -1,4 +1,4 @@
-//! Rust language engine: header comments (`//!` and `/*!` preferred over plain comments) and top-level declarations with their leading annotations, parsed with tree-sitter.
+//! Rust language engine: header comments (`//!` and `/*!` preferred over plain comments), top-level declarations with their leading annotations, and the members of `impl` blocks and traits and the items of inline modules one level deeper, parsed with tree-sitter.
 
 use tree_sitter::Node;
 
@@ -129,8 +129,12 @@ fn char_literal_len(rest: &str) -> Option<usize> {
         .then_some(1 + literal_len + 1)
 }
 
-/// The outline line of a declaration with line range `range`; nothing for a node that isn't a
-/// listed declaration.
+/// The outline line of a declaration with line range `range`, then, for an `impl` block, a
+/// trait, or an inline module, the declarations in its body one level deeper (members, or a
+/// module's items); nothing for a node that isn't a listed declaration.
+///
+/// Every level lists the same kinds, so a module's items print as top-level ones do, and an
+/// `impl` block's or trait's members are its functions, constants, and types.
 fn declaration_lines(
     level: &OutlineLevel<'_>,
     node: Node<'_>,
@@ -143,6 +147,11 @@ fn declaration_lines(
     let signature = level.signature_before(node, signature_end);
     // Attributes are siblings of the declaration, so its node starts at its first keyword.
     lines.push(level.outline_line(signature, range, node.start_byte()));
+    if matches!(node.kind(), "impl_item" | "trait_item" | "mod_item")
+        && let Some(body) = node.child_by_field_name("body")
+    {
+        level.declarations_inside(body, lines);
+    }
 }
 
 /// Where a declaration's signature ends, or `None` for a node that isn't a listed declaration
@@ -152,7 +161,7 @@ fn declaration_lines(
 /// braced `struct`, inline `mod`, and `extern` block; up to the `=` of a `const` or `static`, so
 /// its type stays and its value goes; up to the name of a `macro_rules!`; and up to the final
 /// `;` of anything else (a tuple or unit `struct`, a `type` alias with its type, `mod name;`, a
-/// function without a body, `extern crate`, `pub use`).
+/// function without a body, `extern crate`, `pub use`, a trait's `type Item: Clone;`).
 fn signature_end(node: Node<'_>) -> Option<usize> {
     match node.kind() {
         "function_item" | "impl_item" | "trait_item" | "enum_item" | "union_item"
@@ -167,9 +176,10 @@ fn signature_end(node: Node<'_>) -> Option<usize> {
         "use_declaration" if has_child_of_kind(node, "visibility_modifier") => {
             Some(before_semicolon(node))
         }
-        "function_signature_item" | "type_item" | "extern_crate_declaration" => {
-            Some(before_semicolon(node))
-        }
+        "function_signature_item"
+        | "type_item"
+        | "associated_type"
+        | "extern_crate_declaration" => Some(before_semicolon(node)),
         _ => None,
     }
 }
@@ -208,16 +218,13 @@ mod tests {
             ("struct Unit;", "struct Unit"),
             ("enum Role { Admin }", "enum Role"),
             ("union Bits { n: u32 }", "union Bits"),
-            (
-                "pub trait Engine: Sync { fn run(&self); }",
-                "pub trait Engine: Sync",
-            ),
+            ("pub trait Engine: Sync {}", "pub trait Engine: Sync"),
             (
                 "impl<T: Display> Render for Wrapper<T> {}",
                 "impl<T: Display> Render for Wrapper<T>",
             ),
             ("mod storage;", "mod storage"),
-            ("mod tests { fn t() {} }", "mod tests"),
+            ("mod tests {}", "mod tests"),
             ("pub const MAX: usize = 3;", "pub const MAX: usize"),
             ("static mut COUNT: u64 = 0;", "static mut COUNT: u64"),
             ("pub type Id = u64;", "pub type Id = u64"),
@@ -236,6 +243,44 @@ mod tests {
         for (source, signature) in cases {
             assert_eq!(signatures(source), [signature], "{source}");
         }
+    }
+
+    #[test]
+    fn impl_trait_and_inline_module_bodies_are_listed_one_level_deeper_up_to_depth_two() {
+        let text = "\
+trait Shape { type Unit: Copy; const SIDES: u8; fn area(&self) -> f64; fn name() {} }
+impl Square { pub const ONE: Self = Self(1);
+    /// Docs.
+    fn new() -> Self { todo!() } mac!(); }
+mod outer { use a::b; pub struct S; impl S { fn m() {} } mod inner { fn deepest() {} } }
+";
+        let outline = outline_of(&RUST, text);
+        let lines: Vec<(usize, &str)> = outline
+            .lines
+            .iter()
+            .map(|line| (line.depth, line.text.as_str()))
+            .collect();
+        assert_eq!(
+            lines,
+            [
+                (0, "trait Shape"),
+                (1, "type Unit: Copy"),
+                (1, "const SIDES: u8"),
+                (1, "fn area(&self) -> f64"),
+                (1, "fn name()"),
+                (0, "impl Square"),
+                (1, "pub const ONE: Self"),
+                (1, "fn new() -> Self"),
+                (0, "mod outer"),
+                (1, "pub struct S"),
+                (1, "impl S"),
+                (2, "fn m()"),
+                (1, "mod inner"),
+                (2, "fn deepest()"),
+            ]
+        );
+        let method = &outline.lines[7];
+        assert_eq!(method.range.start, text.find("/// Docs.").unwrap());
     }
 
     #[test]
