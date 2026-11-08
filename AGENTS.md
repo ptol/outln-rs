@@ -61,7 +61,7 @@ Side effects belong to `src/main.rs`, the imperative shell, and library code rec
 
 - Run `just check` before reporting work as done, and fix every failure until it passes. It applies automatic fixes first (clippy suggestions, formatting, whitespace), then runs every check and test, and ends by listing the files that changed; review those changes as your own.
 - `just verify` runs the same checks without changing any file.
-- CI only publishes releases (`.github/workflows/publish.yml`, on a version tag): the pre-commit hook is the only automatic gate on commits. It checks formatting and conventions on every commit, runs clippy, rustdoc, and every test when Rust or Cargo files are staged, runs every test when casefiles or engine samples are, and runs `cargo deny` when the dependencies or `deny.toml` change. Never bypass the hook (`git commit --no-verify`, `-n`, `HK=0`); when it fails, fix the cause.
+- CI (`.github/workflows/check.yml`) runs `just ci` on every push and pull request: `just verify`, the static build, and the packaged crate's tests; the Publish workflow runs it before uploading a release. Locally, the pre-commit hook is the gate on commits. It checks formatting and conventions on every commit, runs clippy, rustdoc, and every test when Rust or Cargo files are staged, runs every test when casefiles or engine samples are, and runs `cargo deny` when the dependencies or `deny.toml` change. Never bypass the hook (`git commit --no-verify`, `-n`, `HK=0`); when it fails, fix the cause.
 
 ## Priorities
 
