@@ -1,0 +1,31 @@
+# Runs `just ci` on every branch push and pull request: every check and test of the pre-commit
+# hook (`just verify`, hk.pkl), then what the hook leaves out because it is slow or rarely
+# affected: the static build (`just build-static`, ADR-009) and the tests of the packaged crate
+# (`just test-package`). The Publish workflow calls this one before uploading a release, so a
+# tag push runs it there, not here.
+name: Check
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a commit: a moved tag can't change what runs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Installs the tools mise.toml pins (Rust, hk, just, dprint, cargo-deny, zig, actionlint,
+      # shellcheck), so CI runs the same versions as the hook.
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+
+      - name: Run every check, the static build, and the packaged crate's tests
+        run: just ci

@@ -63,15 +63,33 @@ test:
 doc:
     RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --document-private-items --locked
 
-# Check dependencies against deny.toml: advisories, licenses, duplicate versions, and sources (needs the network).
+# Check dependencies against deny.toml: advisories, licenses, duplicate versions, and sources. Offline, it checks against the advisory database fetched last time and prints a note.
 deny:
-    cargo deny --locked check
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Fetch on its own first, so only a failed fetch falls back to offline; a failed check fails.
+    if cargo deny --locked fetch db; then
+        cargo deny --locked check
+    else
+        echo "note: could not fetch the RustSec advisory database (offline?); checking against the copy fetched last time, so new advisories may be missing" >&2
+        cargo deny --locked --offline check
+    fi
+
+# Package the crate as crates.io would, then run its tests in the unpacked package, which holds only the files `include` in Cargo.toml selects.
+test-package:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # --allow-dirty: like every other check, test the working tree, uncommitted edits included.
+    cargo package --locked --allow-dirty
+    id=$(cargo pkgid)
+    # The shared target dir reuses the dependencies already built for the repository.
+    cargo test --locked --manifest-path "target/package/outln-${id##*[#@]}/Cargo.toml" --target-dir target
 
 # Run only the casefiles whose path contains `filter` (all of them without one).
 case filter="":
     CASE='{{ filter }}' cargo test --locked --quiet --test casefiles
 
-# Rewrite the expected output of failing casefiles (optionally only those matching `filter`); review with `git diff`.
+# Write the actual output into the casefiles (optionally only those matching `filter`): differing or missing output sections, in canonical form; review with `git diff`.
 update-cases filter="":
     CASE='{{ filter }}' UPDATE_CASES=1 cargo test --locked --quiet --test casefiles
 
@@ -88,6 +106,9 @@ check: fix verify
 # Read-only: every check and test (the steps in hk.pkl) without changing any file.
 verify:
     hk check --all
+
+# What CI runs (.github/workflows/check.yml): every check, the static build, and the packaged crate's tests.
+ci: verify build-static test-package
 
 # Release `level` (major, minor, patch, or an exact version like 0.3.0): package the crate as crates.io would, dry-run cargo-release (release.toml) so a failing check changes no file, then bump, commit, tag, and push after you confirm; CI publishes.
 release level:

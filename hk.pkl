@@ -44,6 +44,11 @@ local fixerSteps = new Mapping<String, Step> {
 local allSteps = (fixerSteps) {
   ["check_merge_conflict"] = Builtins.check_merge_conflict
   ["check_added_large_files"] = Builtins.check_added_large_files
+  // Workflow syntax, expressions, and action inputs; with shellcheck on PATH (mise.toml), also
+  // the shell of every `run:` step.
+  ["actionlint"] = Builtins.actionlint
+  // The shell scripts in scripts/, found by extension or shebang.
+  ["shellcheck"] = Builtins.shellcheck
 
   // Check-only: clippy fixes change logic, so they are applied deliberately with `just fix`
   // (the builtin `cargo_clippy` would run `--fix` and re-stage the result).
@@ -53,13 +58,15 @@ local allSteps = (fixerSteps) {
     check = "cargo clippy --all-targets --locked --quiet -- -D warnings"
     env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
   }
-  // Every test, doc examples included: the hook is the only automatic gate on commits, so broken behaviour
-  // must not be committable.
+  // Every test, doc examples included: CI (check.yml) only reports after a push, so the hook keeps
+  // broken behaviour from being committed at all.
   ["tests"] {
     // The engine contract tests read the engine samples at run time, so a changed sample runs them.
     glob = rustFiles + List(casefiles, engineSamples)
     depends = List("clippy")
-    check = "cargo test --locked --quiet"
+    // The `repo_conventions` step runs the two repository-wide checks on every commit, so they
+    // are skipped here rather than run twice; the checker's own unit tests still run.
+    check = "cargo test --locked --quiet -- --exact --skip repository_follows_conventions --skip pinned_tool_versions_agree"
     env { ["CARGO_TERM_PROGRESS_WHEN"] = "never" }
   }
   // Broken intra-doc links and doc markup only surface when rustdoc renders the docs, which
@@ -74,11 +81,12 @@ local allSteps = (fixerSteps) {
     }
   }
   // Dependency policy in deny.toml: advisories, licenses, duplicate versions, sources (ADR-015).
-  // Fetches the RustSec advisory database, so it needs the network; it runs only when the
-  // dependency set or the policy changes, and in `hk check --all` (`just check`, `just verify`).
+  // Fetches the RustSec advisory database; offline, `just deny` falls back to the copy fetched
+  // last time and prints a note. It runs only when the dependency set or the policy changes,
+  // and in `hk check --all` (`just check`, `just verify`).
   ["cargo_deny"] {
     glob = List("**/Cargo.toml", "Cargo.lock", "deny.toml")
-    check = "cargo deny --locked check"
+    check = "just deny"
   }
   // Header comments, frontmatter, links, and version pins (tests/repo_conventions.rs).
   // No glob: renaming any file can break a link, and any pinned file can drift.

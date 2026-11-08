@@ -1,5 +1,7 @@
 # Dev tools for this repo, pinned for reproducible hooks and checks.
 [tools]
+# Lints the GitHub Actions workflows (.github/workflows), shell snippets included (hk.pkl).
+actionlint = "1.7.12"
 # Bumps the version, commits, tags, and pushes for `just release` (release.toml, ADR-013).
 cargo-release = "1.1.7"
 # Checks dependencies against deny.toml: advisories, licenses, duplicates, sources (ADR-015).
@@ -11,5 +13,7 @@ just = "1.59.0"
 # the active rust, which overrides rust-toolchain.toml (a global `rust = "latest"`
 # would otherwise win inside this repo).
 rust = "1.99.1"
+# Lints the shell scripts in scripts/ (hk.pkl); actionlint also runs it on workflow `run:` steps.
+shellcheck = "0.11.0"
 # The C compiler of the static musl build (`just build-static`, scripts/zig-cc-musl).
 zig = "0.17.1"
