@@ -9,10 +9,10 @@ input/pkg
 == file input/pkg/nested/middle.md
 # middle
 == stdout
-\x1b[32m# aFirst\x1b[0m
+«# aFirst»
 
-\x1b[32m# middle\x1b[0m
+«# middle»
 
-\x1b[32m# zLast\x1b[0m
+«# zLast»
 == stderr
 == exit 0

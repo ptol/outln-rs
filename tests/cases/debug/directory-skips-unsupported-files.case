@@ -9,8 +9,8 @@ input/mixed
 == file input/mixed/raw.txt
 plain text
 == stdout
-\x1b[32m# a\x1b[0m
+«# a»
 
-\x1b[32m# c\x1b[0m
+«# c»
 == stderr
 == exit 0

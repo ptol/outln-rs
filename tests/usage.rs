@@ -6,7 +6,7 @@ mod scratch_dir;
 use std::io;
 use std::num::NonZeroUsize;
 
-use outln::{Context, ExitStatus};
+use outln::{Context, ExitStatus, HighlightStyle};
 use scratch_dir::ScratchDir;
 
 /// Runs outln in `dir` on one thread and returns its stdout, stderr, and exit status.
@@ -24,6 +24,7 @@ fn run_on_threads(
         version: "1.2.3",
         global_gitignore: None,
         threads,
+        highlight_style: HighlightStyle::Markers,
     };
     let (mut out, mut err) = (Vec::new(), Vec::new());
     let status = outln::run(arguments, &context, &mut out, &mut err)?;
@@ -69,6 +70,59 @@ fn directory_arguments_print_a_glob_view() {
     assert_eq!(status, ExitStatus::Success);
 }
 
+/// Past 300 files, a glob view without `--depth` suggests it on stderr, so stdout stays only
+/// file summaries; with `--depth 1`, the same tree is one directory summary.
+#[test]
+fn a_long_glob_view_suggests_a_depth_limit_on_stderr() {
+    let dir = ScratchDir::new("usage-long-glob-view").expect("temp dir");
+    for number in 0..301 {
+        dir.write(&format!("docs/part/{number:03}.md"), b"# Part\n")
+            .expect("write");
+    }
+
+    let (out, err, status) = run_in(&dir, &["docs"]).expect("writing to a Vec cannot fail");
+    assert_eq!(
+        out.lines().count(),
+        302,
+        "the glob view line, then 301 files"
+    );
+    assert_eq!(
+        err,
+        "Hint: found 301 files; for an overview, try --depth 1 or a narrower path\n"
+    );
+    assert_eq!(status, ExitStatus::Success);
+
+    let (out, err, _) =
+        run_in(&dir, &["--depth", "1", "docs"]).expect("writing to a Vec cannot fail");
+    assert_eq!(out, "glob view: docs\ndocs/part/ (301 files, 301 lines)\n");
+    assert_eq!(err, "");
+}
+
+/// `src/main.rs` picks the style: green for a terminal, markers for agents and pipes.
+#[test]
+fn debug_mode_highlights_in_green_or_between_markers() {
+    let dir = ScratchDir::new("usage-debug-mode").expect("temp dir");
+    dir.write("guide.md", b"# Guide\ntext\n").expect("write");
+
+    for (highlight_style, expected) in [
+        (HighlightStyle::Markers, "«# Guide»\ntext\n"),
+        (HighlightStyle::AnsiGreen, "\x1b[32m# Guide\x1b[0m\ntext\n"),
+    ] {
+        let context = Context {
+            cwd: dir.path(),
+            version: "1.2.3",
+            global_gitignore: None,
+            threads: NonZeroUsize::MIN,
+            highlight_style,
+        };
+        let mut out = Vec::new();
+        outln::run(["--debug", "guide.md"], &context, &mut out, &mut io::sink())
+            .expect("writing to a Vec cannot fail");
+
+        assert_eq!(String::from_utf8_lossy(&out), expected);
+    }
+}
+
 #[test]
 fn a_global_gitignore_hides_matching_files() {
     let dir = ScratchDir::new("usage-global-gitignore").expect("temp dir");
@@ -82,6 +136,7 @@ fn a_global_gitignore_hides_matching_files() {
         version: "1.2.3",
         global_gitignore: Some(&global_gitignore),
         threads: NonZeroUsize::MIN,
+        highlight_style: HighlightStyle::Markers,
     };
     let (mut out, mut err) = (Vec::new(), Vec::new());
 
@@ -177,6 +232,62 @@ fn an_unreadable_file_is_reported_while_the_others_still_print() {
     assert_eq!(status, ExitStatus::Failure);
 }
 
+#[cfg(unix)]
+#[test]
+fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
+    use std::fs::{self, Permissions};
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = ScratchDir::new("usage-unsearchable").expect("temp dir");
+    dir.write("secret/b.rs", b"//! b\n").expect("write");
+    let secret = dir.path().join("secret");
+    fs::set_permissions(&secret, Permissions::from_mode(0o000)).expect("chmod");
+    let searchable_anyway = fs::metadata(secret.join("b.rs")).is_ok();
+
+    let result = run_in(&dir, &["secret/b.rs"]);
+    fs::set_permissions(&secret, Permissions::from_mode(0o755)).expect("chmod back");
+    if searchable_anyway {
+        skip_because_permissions_are_ignored("a_file_in_an_unsearchable_directory");
+        return;
+    }
+    let (out, err, status) = result.expect("writing to a Vec cannot fail");
+
+    // The file may exist, so it isn't reported as missing.
+    assert_eq!(out, "");
+    assert_eq!(
+        err,
+        "File secret/b.rs could not be read: permission denied\n"
+    );
+    assert_eq!(status, ExitStatus::Failure);
+}
+
+/// A FIFO named like a source file would block a read until something writes to it, so outln
+/// reports such arguments without opening them. A socket stands in for the FIFO here: std can
+/// create one, and both are files that aren't regular.
+#[cfg(unix)]
+#[test]
+fn an_argument_that_is_not_a_regular_file_is_reported_without_reading_it() {
+    use std::os::unix::net::UnixListener;
+
+    let dir = ScratchDir::new("usage-socket").expect("temp dir");
+    dir.write("ok.md", b"# Ok\n").expect("write");
+    let _listener = UnixListener::bind(dir.path().join("live.md")).expect("bind a socket");
+
+    for arguments in [
+        &["live.md", "ok.md"][..],
+        &["--debug", "live.md"],
+        &[".", "live.md"],
+    ] {
+        let (_, err, status) = run_in(&dir, arguments).expect("writing to a Vec cannot fail");
+
+        assert_eq!(
+            err, "File live.md is not a regular file (a FIFO, socket, or device)\n",
+            "{arguments:?}"
+        );
+        assert_eq!(status, ExitStatus::Failure, "{arguments:?}");
+    }
+}
+
 /// Root (or a process with `CAP_DAC_OVERRIDE`) reads files whatever their permissions, so a
 /// permission test can't fail there; it says so instead of passing without checking anything.
 #[cfg(unix)]
@@ -241,9 +352,17 @@ fn output_is_the_same_on_any_number_of_threads() {
 
         assert_eq!(one_thread, eight_threads);
         let (_, err, status) = one_thread;
+        // The glob view of 1 102 files also ends with a hint to use `--depth`.
+        let errors: Vec<&str> = err
+            .lines()
+            .filter(|line| !line.starts_with("Hint: "))
+            .collect();
         assert_eq!(
-            err,
-            "FILE docs/0100-broken.md IS NOT UTF-8 TEXT\nFILE docs/0900-broken.md IS NOT UTF-8 TEXT\n"
+            errors,
+            [
+                "File docs/0100-broken.md is not UTF-8 text",
+                "File docs/0900-broken.md is not UTF-8 text"
+            ]
         );
         assert_eq!(status, ExitStatus::Failure);
     }

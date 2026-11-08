@@ -11,10 +11,10 @@ class Example {
   }
 }
 == stdout
-\x1b[32mclass Example\x1b[0m {
+«class Example» {
   private secret: string;
   public count = 0;
-  \x1b[32mgetSecret(): string\x1b[0m {
+  «getSecret(): string» {
     return this.secret;
   }
 }

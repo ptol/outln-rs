@@ -6,7 +6,7 @@ input/import-alias-namespace.ts
 import ReadFile = FS.readFileSync;
 import MyUtil = MyNamespace.Utils.helper;
 == stdout
-\x1b[32mimport ReadFile\x1b[0m = FS.readFileSync;
-\x1b[32mimport MyUtil\x1b[0m = MyNamespace.Utils.helper;
+«import ReadFile» = FS.readFileSync;
+«import MyUtil» = MyNamespace.Utils.helper;
 == stderr
 == exit 0

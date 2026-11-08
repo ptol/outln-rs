@@ -22,22 +22,22 @@ export function createService(config: Config): Service {
   return new Service(config);
 }
 == stdout
-\x1b[32m// Main service module.\x1b[0m
-\x1b[32m// Provides core functionality.\x1b[0m
+«// Main service module.»
+«// Provides core functionality.»
 
-\x1b[32mexport interface Config\x1b[0m {
+«export interface Config» {
   name: string;
 }
 
-\x1b[32mexport class Service\x1b[0m {
-  \x1b[32mconstructor(private config: Config)\x1b[0m {}
+«export class Service» {
+  «constructor(private config: Config)» {}
 
-  \x1b[32mstart(): void\x1b[0m {
+  «start(): void» {
     console.log('starting');
   }
 }
 
-\x1b[32mexport function createService(config: Config): Service\x1b[0m {
+«export function createService(config: Config): Service» {
   return new Service(config);
 }
 == stderr

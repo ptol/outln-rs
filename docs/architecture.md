@@ -9,11 +9,11 @@ readWhen: 'adding or moving modules, adding a language engine, or changing how d
 
 One Cargo package, `outln`, with a library and a binary:
 
-- `src/main.rs`: the binary, the imperative shell. It reads the process state (arguments, working directory, the global gitignore's path, the available parallelism), opens stdout (buffered) and stderr (which flushes stdout first, so merged streams keep their order), and turns the result into an exit code; a closed pipe exits 0.
+- `src/main.rs`: the binary, the imperative shell. It reads the process state (arguments, working directory, the global gitignore's path, the available parallelism, and whether stdout is a terminal and `NO_COLOR` unset, which picks debug mode's `HighlightStyle`), opens stdout (buffered) and stderr (which flushes stdout first, so merged streams keep their order), and turns the result into an exit code; a closed pipe exits 0.
 - `src/lib.rs`: `run`, `Context` (what `run` needs from the process), and `ExitStatus`. It parses the arguments and picks the mode.
 - `src/cli.rs`: the clap definition and help text; parsing returns help, version, and usage errors as a `clap::Error` that `run` writes to the injected writers.
 - Modes: `src/file_mode.rs`, `src/glob_view.rs`, `src/debug_mode.rs`.
-- `src/discovery.rs`: classifies each path argument once (`ArgumentKind`: existing or missing directory or file, or glob) and walks directories and globs with the `ignore` crate (with its parallel walker once a walk outgrows one thread), keeping supported files.
+- `src/discovery.rs`: classifies each path argument once from its metadata (`ArgumentKind`: existing or missing directory or regular file, glob, or unusable: a FIFO or device, a file with a trailing `/`, or a path it may not look up) and walks directories and globs with the `ignore` crate (with its parallel walker once a walk outgrows one thread), keeping supported files.
 - `src/per_file.rs`: the loop file mode and debug mode share: render each file, print it, report failures.
 - `src/parallel.rs`: `map_in_order`, which runs per-file work on `Context::threads` threads and returns the results in input order ([ADR-022](adr.md)); every mode loads and renders its files through it.
 - `src/source_file.rs`: loads one file argument: picks its engine, reads it, normalizes its text.
@@ -31,8 +31,9 @@ New modules go under `src/` as `src/<name>.rs` (with `src/<name>/` for its child
 
 1. `main` builds a `Context` and calls `outln::run(arguments, &context, &mut stdout, &mut stderr)`.
 2. `run` parses the arguments and classifies each path. With `--debug` it runs debug mode; otherwise the glob view if any path is a directory (existing or not) or a glob, else file mode.
-3. Each mode loads files through `source_file::load`, on several threads with `parallel::map_in_order`, asks the file's engine for an `Outline` (file mode, debug mode) or a `FileSummary` (glob view: a header, a data file's field summary, a Markdown file's first heading, or nothing), and renders it with shared code.
-4. Results are printed in input order once all are ready, so output doesn't depend on the thread count. A failing input is written to `err` as an `InputError` and makes the status `ExitStatus::Failure`; the other inputs are still printed. Only a failed write to `out` or `err` ends `run` early, as an `io::Error`.
+3. With a depth limit (`--depth`), the glob view assigns each walked file below the limit to the directory at the limit that holds it, which prints as one directory summary ([ADR-025](adr.md)).
+4. Each mode loads files through `source_file::load`, on several threads with `parallel::map_in_order`, asks the file's engine for an `Outline` (file mode, debug mode) or a `FileSummary` (glob view: a header, a data file's field summary, a Markdown file's first heading, or nothing), and renders it with shared code.
+5. Results are printed in input order once all are ready, so output doesn't depend on the thread count. A failing input is written to `err` as an `InputError` and makes the status `ExitStatus::Failure`; the other inputs are still printed. Only a failed write to `out` or `err` ends `run` early, as an `io::Error`.
 
 ## Adding a language engine
 

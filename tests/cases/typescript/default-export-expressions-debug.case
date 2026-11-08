@@ -11,12 +11,12 @@ export default {
 };
 export default settings.production;
 == stdout
-\x1b[32mexport default defineConfig\x1b[0m({
+«export default defineConfig»({
   plugins: [],
 });
-\x1b[32mexport default {\x1b[0m
+«export default {»
   name: "x",
 };
-\x1b[32mexport default\x1b[0m settings.production;
+«export default» settings.production;
 == stderr
 == exit 0

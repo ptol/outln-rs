@@ -5,7 +5,7 @@ use std::path::Path;
 
 use crate::input_error::InputError;
 use crate::language_engine::{LanguageEngine, engine_for};
-use crate::source_text::normalize;
+use crate::source_text::{NotUtf8Text, normalize};
 
 /// A supported file's normalized text and the engine that outlines it.
 pub(crate) struct SourceFile {
@@ -18,7 +18,13 @@ pub(crate) struct SourceFile {
 pub(crate) fn load(cwd: &Path, path: &str) -> Result<SourceFile, InputError> {
     let engine =
         engine_for(path).ok_or_else(|| InputError::UnsupportedFileType(path.to_owned()))?;
-    let bytes = fs::read(cwd.join(path)).map_err(|_| InputError::Unreadable(path.to_owned()))?;
-    let text = normalize(bytes).map_err(|_| InputError::NotUtf8Text(path.to_owned()))?;
+    let bytes = fs::read(cwd.join(path)).map_err(|error| InputError::Unreadable {
+        path: path.to_owned(),
+        detail: error.kind().to_string(),
+    })?;
+    let text = normalize(bytes).map_err(|error| match error {
+        NotUtf8Text::InvalidUtf8 => InputError::NotUtf8Text(path.to_owned()),
+        NotUtf8Text::LooksBinary => InputError::LooksBinary(path.to_owned()),
+    })?;
     Ok(SourceFile { engine, text })
 }

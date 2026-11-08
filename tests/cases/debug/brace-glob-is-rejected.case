@@ -8,5 +8,5 @@ docs/{a,b}.md
 # B
 == stdout
 == stderr
---debug requires exactly one input file path.
+--debug requires a file or directory path, not the glob pattern docs/{a,b}.md
 == exit 1

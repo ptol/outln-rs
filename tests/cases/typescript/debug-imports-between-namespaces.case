@@ -19,19 +19,19 @@ export namespace PublicAPI {
   export const version = '1.0';
 }
 == stdout
-\x1b[32mimport FS\x1b[0m = require('fs');
+«import FS» = require('fs');
 
-\x1b[32mnamespace Utils\x1b[0m {
+«namespace Utils» {
   export const helper = () => {};
 }
 
-\x1b[32mimport Path\x1b[0m = require('path');
+«import Path» = require('path');
 
-\x1b[32mmodule Config\x1b[0m {
+«module Config» {
   export const setting = 'value';
 }
 
-\x1b[32mexport namespace PublicAPI\x1b[0m {
+«export namespace PublicAPI» {
   export const version = '1.0';
 }
 == stderr

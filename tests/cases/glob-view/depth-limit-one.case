@@ -1,0 +1,34 @@
+With `--depth 1`, a directory argument lists the files directly inside it, and each subdirectory holding supported files prints one directory summary with its supported files (nested ones included) and their total line count, in the sorted position its files would have: `api/` after `api-notes.md` and `api.md`, as `api/client.ts` sorts after them (`-` and `.` come before `/`). `assets/` holds only unsupported files, so it prints nothing, and the unsupported `raw.txt` counts in no summary.
+== args
+--depth
+1
+input
+== file input/README.md
+# Readme
+== file input/api-notes.md
+# Notes
+== file input/api.md
+# Api
+== file input/api/client.ts
+// Client.
+export function get() {}
+== file input/api/server/handler.rs
+//! Handler.
+pub fn handle() {}
+
+fn helper() {}
+== file input/api/raw.txt
+plain
+== file input/assets/logo.txt
+logo
+== file input/single/only.md
+# Only
+== stdout
+glob view: input
+input/README.md (1 line): # Readme
+input/api-notes.md (1 line): # Notes
+input/api.md (1 line): # Api
+input/api/ (2 files, 6 lines)
+input/single/ (1 file, 1 line)
+== stderr
+== exit 0

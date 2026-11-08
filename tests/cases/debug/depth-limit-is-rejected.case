@@ -1,0 +1,16 @@
+`--depth` applies to the glob view only, so combining it with `--debug` is a usage error with exit 2.
+== args
+--debug
+--depth
+1
+input
+== file input/a.md
+# a
+== stdout
+== stderr
+error: the argument '--debug' cannot be used with '--depth <N>'
+
+Usage: outln --debug <PATH>...
+
+For more information, try '--help'.
+== exit 2

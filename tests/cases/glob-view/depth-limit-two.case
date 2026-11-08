@@ -1,0 +1,20 @@
+`--depth=2` lists the files in the argument and one directory level down, and summarizes each directory two levels down with every file below it (`src/deep/b.ts` included); the trailing `/` of `pkg/` doesn't appear in the display paths.
+== args
+--depth=2
+pkg/
+== file pkg/top.md
+# Top
+== file pkg/core/index.ts
+export const a = 1;
+== file pkg/core/src/a.ts
+export const a = 1;
+== file pkg/core/src/deep/b.ts
+export const b = 2;
+export const c = 3;
+== stdout
+glob view: pkg/
+pkg/core/index.ts (1 line): (no header available)
+pkg/core/src/ (2 files, 3 lines)
+pkg/top.md (1 line): # Top
+== stderr
+== exit 0

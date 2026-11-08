@@ -65,13 +65,13 @@ fn usage_errors_exit_with_code_2() {
 fn errors_stay_in_order_with_the_output_when_both_streams_share_one_pipe() {
     let dir = ScratchDir::new("cli-merged-streams").expect("temp dir");
     dir.write("a.md", b"# A\n").expect("write");
-    dir.write("notes.txt", b"notes\n").expect("write");
+    dir.write("latin1.md", b"# Caf\xe9\n").expect("write");
     dir.write("b.md", b"# B\n").expect("write");
     // One pipe for both streams, as agent tools that merge stdout and stderr read them.
     let (mut reader, writer) = io::pipe().expect("pipe");
     let mut command = outln_binary();
     command
-        .args(["a.md", "notes.txt", "b.md"])
+        .args(["a.md", "latin1.md", "b.md"])
         .current_dir(dir.path())
         .stdout(writer.try_clone().expect("clone the pipe"))
         .stderr(writer);
@@ -85,6 +85,6 @@ fn errors_stay_in_order_with_the_output_when_both_streams_share_one_pipe() {
     assert_eq!(status.code(), Some(1));
     assert_eq!(
         merged,
-        "a.md (1 line)\n[L1-L1] # A\nFILE notes.txt HAS UNSUPPORTED FILE TYPE\n\nb.md (1 line)\n[L1-L1] # B\n"
+        "a.md (1 line)\n[L1-L1] # A\nFile latin1.md is not UTF-8 text\n\nb.md (1 line)\n[L1-L1] # B\n"
     );
 }

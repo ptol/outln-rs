@@ -1,4 +1,4 @@
-In file mode a UTF-16 file (with an `FF FE` byte order mark) is reported as not UTF-8 text and outln exits 1, while the other file argument is still outlined.
+In file mode a UTF-16 file (with an `FF FE` byte order mark) is reported as looking like a binary or UTF-16 file, from its NUL bytes, and outln exits 1, while the other file argument is still outlined.
 == args
 input/utf16.md
 input/ok.md
@@ -10,5 +10,5 @@ input/ok.md
 input/ok.md (1 line)
 [L1-L1] # ok
 == stderr
-FILE input/utf16.md IS NOT UTF-8 TEXT
+File input/utf16.md looks like a binary or UTF-16 file, not UTF-8 text
 == exit 1

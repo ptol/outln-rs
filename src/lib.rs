@@ -14,6 +14,7 @@
 //!     version: "1.0.0",
 //!     global_gitignore: None,
 //!     threads: std::num::NonZeroUsize::MIN,
+//!     highlight_style: outln::HighlightStyle::Markers,
 //! };
 //! let (mut out, mut err) = (Vec::new(), Vec::new());
 //! let status = outln::run(["guide.md"], &context, &mut out, &mut err).unwrap();
@@ -62,6 +63,19 @@ pub struct Context<'a> {
     /// How many threads may walk directories and outline files; output is the same for any
     /// count. `src/main.rs` passes the available parallelism.
     pub threads: NonZeroUsize,
+    /// How debug mode marks its highlights.
+    pub highlight_style: HighlightStyle,
+}
+
+/// How debug mode marks the highlighted parts of a file's source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HighlightStyle {
+    /// ANSI green, for a person at a terminal. `src/main.rs` picks it when stdout is a terminal
+    /// and `NO_COLOR` isn't set.
+    AnsiGreen,
+    /// `«` before and `»` after each highlighted part of a line, readable without a terminal:
+    /// by agents, in files, and through pipes.
+    Markers,
 }
 
 /// How a run ended; [`ExitStatus::code`] is the process exit code.
@@ -131,7 +145,7 @@ pub fn run(
         })
         .collect();
     if arguments.debug {
-        return debug_mode::run(&classified, &walker, out, err);
+        return debug_mode::run(&classified, &walker, context.highlight_style, out, err);
     }
     let is_glob_view = classified.iter().any(|(_, kind)| {
         matches!(
@@ -140,7 +154,7 @@ pub fn run(
         )
     });
     if is_glob_view {
-        glob_view::run(&classified, &walker, out, err)
+        glob_view::run(&classified, &walker, arguments.depth, out, err)
     } else {
         file_mode::run(&classified, context.cwd, context.threads, out, err)
     }

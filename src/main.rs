@@ -3,7 +3,7 @@
 //! It owns the real process I/O and turns the result into an exit code.
 
 use std::cell::RefCell;
-use std::io::{self, BufWriter, StderrLock, StdoutLock, Write};
+use std::io::{self, BufWriter, IsTerminal, StderrLock, StdoutLock, Write};
 use std::num::NonZeroUsize;
 use std::process::ExitCode;
 
@@ -28,6 +28,15 @@ fn main() -> ExitCode {
         global_gitignore: global_gitignore.as_deref(),
         // The CPUs this process may run on; when that's unknown, one thread is always correct.
         threads: std::thread::available_parallelism().unwrap_or(NonZeroUsize::MIN),
+        // Colour only for a person at a terminal who hasn't opted out (https://no-color.org:
+        // any non-empty value); agents and pipes get markers that need no terminal.
+        highlight_style: if io::stdout().is_terminal()
+            && std::env::var_os("NO_COLOR").is_none_or(|value| value.is_empty())
+        {
+            outln::HighlightStyle::AnsiGreen
+        } else {
+            outln::HighlightStyle::Markers
+        },
     };
 
     let stdout = RefCell::new(BufWriter::with_capacity(

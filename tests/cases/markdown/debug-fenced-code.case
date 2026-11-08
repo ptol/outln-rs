@@ -11,12 +11,12 @@ input/fences.md
 
 ## Real heading
 == stdout
-\x1b[32m# Overview\x1b[0m
+«# Overview»
 
 ```md
 ## Not a heading
 ```
 
-\x1b[32m## Real heading\x1b[0m
+«## Real heading»
 == stderr
 == exit 0

@@ -18,7 +18,7 @@ Each language below works in every mode (file mode, glob view, debug mode). What
 - Markdown: `src/languages/markdown.rs`.
 - TypeScript and JavaScript: `src/languages/script.rs`.
 - Rust: `src/languages/rust.rs`.
-- TOML, YAML, and JSON data files: `src/languages/data_file.rs`.
+- TOML, YAML, and JSON data files (JSON with comments, `.jsonc`, included): `src/languages/data_file.rs`.
 - CSS: `src/languages/css.rs`.
 
 Beyond the engines:

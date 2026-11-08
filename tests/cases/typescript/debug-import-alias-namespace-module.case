@@ -20,21 +20,21 @@ export namespace ExportedNamespace {
 
 export module 'exported/module' {}
 == stdout
-\x1b[32mimport FS\x1b[0m = require('node:fs');
-\x1b[32mimport ReadFile\x1b[0m = FS.readFileSync;
+«import FS» = require('node:fs');
+«import ReadFile» = FS.readFileSync;
 
-\x1b[32mnamespace PlainNamespace\x1b[0m {
+«namespace PlainNamespace» {
   export const enabled = true;
 }
 
-\x1b[32mmodule PlainModule\x1b[0m {
+«module PlainModule» {
   export const mode = 'plain';
 }
 
-\x1b[32mexport namespace ExportedNamespace\x1b[0m {
+«export namespace ExportedNamespace» {
   export const ready = true;
 }
 
-\x1b[32mexport module 'exported/module'\x1b[0m {}
+«export module 'exported/module'» {}
 == stderr
 == exit 0

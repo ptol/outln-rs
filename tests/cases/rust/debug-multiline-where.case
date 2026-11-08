@@ -15,9 +15,9 @@ where
 == stdout
 use std::collections::{HashMap, HashSet};
 
-\x1b[32mpub(crate) fn generic_where<T>(value: T) -> T\x1b[0m
-\x1b[32mwhere\x1b[0m
-\x1b[32m    T: Clone,\x1b[0m
+«pub(crate) fn generic_where<T>(value: T) -> T»
+«where»
+«    T: Clone,»
 {
     value.clone()
 }

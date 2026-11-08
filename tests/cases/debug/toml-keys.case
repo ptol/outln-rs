@@ -10,11 +10,11 @@ key = 1
 [table.name]
 x = 2
 == stdout
-\x1b[32m# Settings.\x1b[0m
+«# Settings.»
 
 # The root key.
-\x1b[32mkey\x1b[0m = 1
-\x1b[32m[table.name]\x1b[0m
+«key» = 1
+«[table.name]»
 x = 2
 == stderr
 == exit 0

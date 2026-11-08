@@ -25,7 +25,7 @@ A test that can't check anything in some environment (a permission test running 
 
 ## Casefiles
 
-A casefile (`tests/cases/<group>/<name>.case`) is one test of outln's behaviour: the arguments, the input files, and the expected stdout, stderr, and exit code. The runner writes the input files into a fresh directory under the system temp dir, calls `outln::run` there with version `0.0.0-test` and no global gitignore, and compares all three outputs.
+A casefile (`tests/cases/<group>/<name>.case`) is one test of outln's behaviour: the arguments, the input files, and the expected stdout, stderr, and exit code. The runner writes the input files into a fresh directory under the system temp dir, calls `outln::run` there with version `0.0.0-test`, no global gitignore, and debug mode's `«` `»` highlight markers (as when stdout is a pipe), and compares all three outputs.
 
 The format, with an example, is the `//!` header of `tests/support/casefile.rs`; read it before writing a casefile. Beyond it:
 

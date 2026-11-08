@@ -1,0 +1,13 @@
+`--depth 0` is a usage error with exit 2: depth 1 is already only the files directly inside a directory.
+== args
+--depth
+0
+input
+== file input/a.md
+# a
+== stdout
+== stderr
+error: invalid value '0' for '--depth <N>': expected a whole number of directory levels, 1 or more
+
+For more information, try '--help'.
+== exit 2

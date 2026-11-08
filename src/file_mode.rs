@@ -21,16 +21,19 @@ pub(crate) fn run(
     out: &mut impl Write,
     err: &mut impl Write,
 ) -> io::Result<ExitStatus> {
-    // File mode only runs when every argument is a file, existing or missing.
-    let (existing, missing): (Vec<_>, Vec<_>) = arguments
+    // File mode only runs when no argument is a directory or glob, so every other argument
+    // is missing or unusable.
+    let (existing, failing): (Vec<_>, Vec<_>) = arguments
         .iter()
         .partition(|(_, kind)| *kind == ArgumentKind::File);
-    for (path, _) in &missing {
-        writeln!(err, "{}", InputError::FileMissing(path.clone()))?;
+    for (path, kind) in &failing {
+        if let Some(error) = kind.error(path) {
+            writeln!(err, "{error}")?;
+        }
     }
     let existing: Vec<&str> = existing.iter().map(|(path, _)| path.as_str()).collect();
     let print_status = print_each(&existing, threads, |path| outline_file(cwd, path), out, err)?;
-    Ok(ExitStatus::failure_if(!missing.is_empty()).and(print_status))
+    Ok(ExitStatus::failure_if(!failing.is_empty()).and(print_status))
 }
 
 fn outline_file(cwd: &Path, path: &str) -> Result<String, InputError> {

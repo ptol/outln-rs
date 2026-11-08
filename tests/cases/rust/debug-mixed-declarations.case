@@ -27,13 +27,13 @@ pub trait Service {
   fn process(&self, input: u64) -> u64;
 }
 == stdout
-\x1b[32m// Main entry point for the application.\x1b[0m
+«// Main entry point for the application.»
 
-\x1b[32mpub struct App\x1b[0m {
+«pub struct App» {
   name: String,
 }
 
-\x1b[32mimpl App\x1b[0m {
+«impl App» {
   pub fn new() -> Self {
     Self { name: String::new() }
   }
@@ -41,13 +41,13 @@ pub trait Service {
   pub fn run(&self) {}
 }
 
-\x1b[32masync fn handle_request(req: Request) -> Response\x1b[0m {
+«async fn handle_request(req: Request) -> Response» {
   Response::new()
 }
 
 use std::collections::HashMap;
 
-\x1b[32mpub trait Service\x1b[0m {
+«pub trait Service» {
   fn process(&self, input: u64) -> u64;
 }
 == stderr

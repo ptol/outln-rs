@@ -11,8 +11,8 @@ owner: docs
 Body text.
 == stdout
 ---
-\x1b[32mtitle: "Guide"\x1b[0m
-\x1b[32mowner: docs\x1b[0m
+«title: "Guide"»
+«owner: docs»
 ---
 
 Body text.

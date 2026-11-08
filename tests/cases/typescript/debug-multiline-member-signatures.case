@@ -18,17 +18,17 @@ class MultiLine {
   }
 }
 == stdout
-\x1b[32mclass MultiLine\x1b[0m {
-  \x1b[32mconstructor(\x1b[0m
-\x1b[32m    a: number,\x1b[0m
-\x1b[32m    b: string\x1b[0m
-\x1b[32m  )\x1b[0m {
+«class MultiLine» {
+  «constructor(»
+«    a: number,»
+«    b: string»
+«  )» {
     console.log(a, b);
   }
-  \x1b[32mcalculate(\x1b[0m
-\x1b[32m    x: number,\x1b[0m
-\x1b[32m    y: number\x1b[0m
-\x1b[32m  ): number\x1b[0m {
+  «calculate(»
+«    x: number,»
+«    y: number»
+«  ): number» {
     return x + y;
   }
 }

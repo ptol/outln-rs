@@ -13,11 +13,11 @@ namespace NestedNamespace {
   }
 }
 == stdout
-\x1b[32mnamespace PlainNamespace\x1b[0m {
+«namespace PlainNamespace» {
   export const enabled = true;
 }
 
-\x1b[32mnamespace NestedNamespace\x1b[0m {
+«namespace NestedNamespace» {
   export module Inner {
     export const value = 42;
   }

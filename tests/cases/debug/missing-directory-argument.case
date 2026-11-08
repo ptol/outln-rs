@@ -1,0 +1,10 @@
+A missing debug mode argument ending in `/` is reported as a missing directory, as the glob view reports it, and outln exits 1.
+== args
+--debug
+input/nope/
+== file input/a.md
+# a
+== stdout
+== stderr
+Directory input/nope/ does not exist
+== exit 1

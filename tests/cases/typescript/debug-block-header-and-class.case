@@ -19,18 +19,18 @@ export class Service {
   }
 }
 == stdout
-\x1b[32m/**\x1b[0m
-\x1b[32m * Service module with class members.\x1b[0m
-\x1b[32m */\x1b[0m
-\x1b[32mexport class Service\x1b[0m {
+«/**»
+« * Service module with class members.»
+« */»
+«export class Service» {
   private data: number;
-  \x1b[32mconstructor(initial: number)\x1b[0m {
+  «constructor(initial: number)» {
     this.data = initial;
   }
-  \x1b[32mget value(): number\x1b[0m {
+  «get value(): number» {
     return this.data;
   }
-  \x1b[32mprocess(input: number): number\x1b[0m {
+  «process(input: number): number» {
     return input * 2;
   }
 }

@@ -9,5 +9,5 @@ input/b.md
 # b
 == stdout
 == stderr
---debug requires exactly one input file path.
+--debug requires exactly one file or directory path, not 2
 == exit 1

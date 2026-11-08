@@ -511,6 +511,29 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 - The Markdown engine parses a frontmatter block with tree-sitter on every glob view; frontmatter is short, so this costs microseconds per file.
 - Quoted frontmatter text is still not unescaped (`'it''s'` prints `"it''s"`), and a `|` block's line breaks print as spaces.
 
+## ADR-025: A depth limit for the glob view, with directory summaries
+
+**Status**: Accepted (2026-11-08)
+
+### Decision
+
+- `--depth N` (N ≥ 1) limits how many levels of each directory argument a glob view lists: depth 1 is the files directly inside, like `find -maxdepth 1`. Each directory N levels down that holds supported files prints one directory summary instead of its files: its path with a trailing `/`, its supported files below, and their total line count, sorted where its files would have been.
+- The walk itself is not limited: a directory is walked whole, with its ignore rules, and `glob_view` assigns each file below the limit to its directory at the limit (`discovery::directory_at_depth_limit`). The summarized files are loaded on `Context::threads` threads to count their lines; one that fails to load counts as a file without lines and isn't reported.
+- The limit applies to directory arguments only: a glob pattern already walks only as deep as it can match, and a file argument is listed as given. `--depth` conflicts with `--debug`.
+- Without a limit, a glob view of more than 300 files ends with a hint on stderr naming `--depth 1` (or a narrower path or pattern for globs only).
+
+### Rationale
+
+- `outln .` printed 989 lines (about 48k tokens) on a 1 028-file TypeScript repo, and 18 112 lines on `~/.cargo/registry/src`, with no warning; an agent asking for an overview wanted a few dozen lines.
+- A cut-off directory that printed nothing would hide most of a tree; its file and line counts say how big it is and whether to look inside.
+- Counting needs every file below the limit, so the walk can't stop at the limit. Measured on `~/.cargo/registry/src` (18k files, 16 vCPUs, a busy machine): `--depth 1` took about 25 ms counting files only and 60 ms with line counts, against 100 ms or more for the unlimited glob view; line counts are worth the 35 ms, because a size in lines is what an agent weighs before reading.
+- The hint goes to stderr so stdout stays only the glob view's lines, and comes last, where the reader of a long output looks.
+
+### Consequences
+
+- A depth-limited glob view of a huge tree still reads every supported file in it.
+- A file below the limit that can't be read is reported only by a glob view that lists it.
+
 ## Dependencies
 
 One line per crate: why std was not enough.

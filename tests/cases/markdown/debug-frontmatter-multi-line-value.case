@@ -14,12 +14,12 @@ title: Doc
 # Doc
 == stdout
 ---
-\x1b[32mdescription: >\x1b[0m
-\x1b[32m  Folded over\x1b[0m
-\x1b[32m  two lines\x1b[0m
+«description: >»
+«  Folded over»
+«  two lines»
 # A comment.
-\x1b[32mtitle: Doc\x1b[0m
+«title: Doc»
 ---
-\x1b[32m# Doc\x1b[0m
+«# Doc»
 == stderr
 == exit 0

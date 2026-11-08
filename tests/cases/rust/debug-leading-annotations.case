@@ -15,12 +15,12 @@ pub type Id = u64;
 == stdout
 /// Configuration.
 #[derive(Debug)]
-\x1b[32mpub struct Config\x1b[0m {
+«pub struct Config» {
     pub verbose: bool,
 }
 
-\x1b[32mpub const LIMIT: usize\x1b[0m = 3;
+«pub const LIMIT: usize» = 3;
 
-\x1b[32mpub type Id = u64\x1b[0m;
+«pub type Id = u64»;
 == stderr
 == exit 0

@@ -48,7 +48,9 @@ pub(crate) struct DataFile {
 }
 
 pub(crate) static JSON: DataFile = DataFile {
-    extensions: &["json"],
+    // JSON with comments (`tsconfig`-style `.jsonc`) is the same grammar, which reads comments
+    // and trailing commas; JSON5's unquoted keys and single quotes are not, so `.json5` isn't.
+    extensions: &["json", "jsonc"],
     grammar: || tree_sitter_json::LANGUAGE.into(),
     comment_syntax: json::COMMENT_SYNTAX,
     preamble_end: |_, _| None,

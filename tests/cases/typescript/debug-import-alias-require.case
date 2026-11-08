@@ -6,7 +6,7 @@ input/import-alias-require.ts
 import FS = require('node:fs');
 import Path = require('path');
 == stdout
-\x1b[32mimport FS\x1b[0m = require('node:fs');
-\x1b[32mimport Path\x1b[0m = require('path');
+«import FS» = require('node:fs');
+«import Path» = require('path');
 == stderr
 == exit 0
