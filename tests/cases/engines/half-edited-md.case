@@ -1,0 +1,22 @@
+A Markdown file with a code fence that never closes, as while typing one: CommonMark runs the
+fence to the end of the file, so the `## Usage` line after it is code, not a heading, and the
+open sections run to the last line.
+== args
+input/broken.md
+== file input/broken.md
+# Guide
+
+## Install
+
+```sh
+npm install
+
+## Usage
+
+Text.
+== stdout
+input/broken.md (10 lines)
+[L1-L10] # Guide
+[L3-L10] ## Install
+== stderr
+== exit 0

@@ -1,0 +1,133 @@
+Files with CRLF line endings outline in every engine as with LF: line counts and line ranges
+count each CRLF once, header comments of several lines print one line each, and multi-line
+signatures, selectors, and values print on one line, with no `\r` left anywhere (a TOML `"""`
+string and a YAML `|` block join their lines with spaces, as with LF).
+== args
+input/crlf.md
+input/crlf.ts
+input/crlf.tsx
+input/crlf.js
+input/crlf.rs
+input/crlf.css
+input/crlf.json
+input/crlf.toml
+input/crlf.yaml
+== file input/crlf.md escaped
+Title\r
+=====\r
+\r
+Intro.\r
+\r
+## Section\r
+text\r
+== file input/crlf.ts escaped
+// Header\r
+// continues.\r
+export function a(\r
+  x: number,\r
+): void {}\r
+export type B = string;\r
+== file input/crlf.tsx escaped
+/**\r
+ * Components.\r
+ */\r
+export function App() {\r
+  return <div />;\r
+}\r
+== file input/crlf.js escaped
+// Header\r
+function a(\r
+  x,\r
+) {}\r
+class B {\r
+  m() {}\r
+}\r
+== file input/crlf.rs escaped
+//! Crate\r
+//! docs.\r
+\r
+/// Doc.\r
+pub fn a() {}\r
+pub struct B;\r
+== file input/crlf.css escaped
+/* Styles\r
+   wrap. */\r
+.a,\r
+.b { color: red }\r
+@media print {\r
+  .c { color: blue }\r
+}\r
+== file input/crlf.json escaped
+{\r
+  "name": "crlf",\r
+  "list": [\r
+    1\r
+  ]\r
+}\r
+== file input/crlf.toml escaped
+name = "crlf"\r
+description = """\r
+Two\r
+lines\r
+"""\r
+\r
+[table]\r
+key = 1\r
+== file input/crlf.yaml escaped
+# Workflow\r
+name: CI\r
+run: |\r
+  one\r
+  two\r
+list:\r
+  - a\r
+== stdout
+input/crlf.md (7 lines)
+[L1-L7] # Title
+[L6-L7] ## Section
+
+input/crlf.ts (6 lines)
+Header
+continues.
+[L3-L5] export function a(x: number): void
+[L6-L6] export type B
+
+input/crlf.tsx (6 lines)
+Components.
+[L4-L6] export function App()
+
+input/crlf.js (7 lines)
+Header
+[L2-L4] function a(x)
+[L5-L7] class B
+  [L6-L6] m()
+
+input/crlf.rs (6 lines)
+Crate
+docs.
+[L4-L5] pub fn a()
+[L6-L6] pub struct B
+
+input/crlf.css (7 lines)
+Styles
+wrap.
+[L3-L4] .a, .b
+[L5-L7] @media print
+  [L6-L6] .c
+
+input/crlf.json (6 lines)
+[L2-L2] name: "crlf"
+[L3-L5] list
+
+input/crlf.toml (8 lines)
+[L1-L1] name = "crlf"
+[L2-L5] description = """ Two lines """
+[L7-L8] [table]
+
+input/crlf.yaml (7 lines)
+Workflow
+[L2-L2] name: CI
+[L3-L5] run: | one two
+[L6-L7] list
+== stderr
+== exit 0

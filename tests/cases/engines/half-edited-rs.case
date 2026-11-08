@@ -1,0 +1,24 @@
+A Rust function whose parameter list never closes is still listed, its signature cut where the
+`)` is missing, and the declarations after it are listed as usual: tree-sitter recovers the
+function with its body.
+== args
+input/broken.rs
+== file input/broken.rs
+//! Half-edited.
+pub fn before() {}
+pub fn broken(x: u32 {
+    let y = 1;
+}
+pub struct After;
+impl After {
+    pub fn new() -> Self { After }
+}
+== stdout
+input/broken.rs (9 lines)
+Half-edited.
+[L2-L2] pub fn before()
+[L3-L5] pub fn broken(x: u32
+[L6-L6] pub struct After
+[L7-L9] impl After
+== stderr
+== exit 0

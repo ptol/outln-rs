@@ -1,0 +1,23 @@
+A TSX file with broken JSX keeps the declarations tree-sitter recovers: the unclosed `<div>` in
+`Header` stays inside its function, and `Footer` after it is listed. The stray `{` in `Card`'s JSX
+puts the rest of the file in an `ERROR` node, so `Card` and `Page` are missing (techdebt.md,
+"Declarations inside syntax errors are dropped").
+== args
+input/broken.tsx
+== file input/broken.tsx
+// Components.
+export function Header() {
+  return <div className="x">
+}
+export function Footer() {
+  return <footer />;
+}
+export const Card = () => <section>{</section>;
+export default class Page {}
+== stdout
+input/broken.tsx (9 lines)
+Components.
+[L2-L4] export function Header()
+[L5-L7] export function Footer()
+== stderr
+== exit 0

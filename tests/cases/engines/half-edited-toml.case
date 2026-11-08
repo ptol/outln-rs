@@ -1,0 +1,18 @@
+A TOML key whose value is missing, as while typing one, isn't listed, because a key's outline
+line needs its value; the keys and tables around it are listed as usual.
+== args
+input/broken.toml
+== file input/broken.toml
+name = "demo"
+version =
+edition = "2024"
+
+[dependencies]
+serde = "1"
+== stdout
+input/broken.toml (6 lines)
+[L1-L1] name = "demo"
+[L3-L3] edition = "2024"
+[L5-L6] [dependencies]
+== stderr
+== exit 0

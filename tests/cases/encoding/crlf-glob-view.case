@@ -1,0 +1,88 @@
+The glob view reads CRLF files like LF ones in every engine: a header comment of several lines
+joins them with spaces, a Markdown file without frontmatter shows its setext heading, and data
+files without a header show their field summary, with a multi-line TOML string on one line and no
+`\r` anywhere.
+== args
+input
+== file input/crlf.md escaped
+Title\r
+=====\r
+\r
+Intro.\r
+\r
+## Section\r
+text\r
+== file input/crlf.ts escaped
+// Header\r
+// continues.\r
+export function a(\r
+  x: number,\r
+): void {}\r
+export type B = string;\r
+== file input/crlf.tsx escaped
+/**\r
+ * Components.\r
+ */\r
+export function App() {\r
+  return <div />;\r
+}\r
+== file input/crlf.js escaped
+// Header\r
+function a(\r
+  x,\r
+) {}\r
+class B {\r
+  m() {}\r
+}\r
+== file input/crlf.rs escaped
+//! Crate\r
+//! docs.\r
+\r
+/// Doc.\r
+pub fn a() {}\r
+pub struct B;\r
+== file input/crlf.css escaped
+/* Styles\r
+   wrap. */\r
+.a,\r
+.b { color: red }\r
+@media print {\r
+  .c { color: blue }\r
+}\r
+== file input/crlf.json escaped
+{\r
+  "name": "crlf",\r
+  "list": [\r
+    1\r
+  ]\r
+}\r
+== file input/crlf.toml escaped
+name = "crlf"\r
+description = """\r
+Two\r
+lines\r
+"""\r
+\r
+[table]\r
+key = 1\r
+== file input/crlf.yaml escaped
+# Workflow\r
+name: CI\r
+run: |\r
+  one\r
+  two\r
+list:\r
+  - a\r
+== stdout
+glob view: input
+input/crlf.css (7 lines): Styles wrap.
+input/crlf.js (7 lines): Header
+input/crlf.json (6 lines): {name: "crlf"}
+input/crlf.md (7 lines): # Title
+input/crlf.rs (6 lines): Crate docs.
+input/crlf.toml (8 lines): {description = """ Two lines """, name = "crlf"}
+input/crlf.ts (6 lines): Header continues.
+input/crlf.tsx (6 lines): Components.
+input/crlf.yaml (7 lines): Workflow
+== stderr
+== exit 0

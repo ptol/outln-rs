@@ -1,0 +1,41 @@
+An empty file of every supported extension prints only its path and `(0 lines)`: no header, no
+outline lines, and no blank line of its own beyond the one that separates files.
+== args
+input/empty.md
+input/empty.ts
+input/empty.tsx
+input/empty.js
+input/empty.rs
+input/empty.css
+input/empty.json
+input/empty.toml
+input/empty.yaml
+== file input/empty.md
+== file input/empty.ts
+== file input/empty.tsx
+== file input/empty.js
+== file input/empty.rs
+== file input/empty.css
+== file input/empty.json
+== file input/empty.toml
+== file input/empty.yaml
+== stdout
+input/empty.md (0 lines)
+
+input/empty.ts (0 lines)
+
+input/empty.tsx (0 lines)
+
+input/empty.js (0 lines)
+
+input/empty.rs (0 lines)
+
+input/empty.css (0 lines)
+
+input/empty.json (0 lines)
+
+input/empty.toml (0 lines)
+
+input/empty.yaml (0 lines)
+== stderr
+== exit 0

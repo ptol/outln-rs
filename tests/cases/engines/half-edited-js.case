@@ -1,0 +1,20 @@
+A JavaScript file with a function whose parameter list never closes: the declarations before
+and after the broken spot are listed, the class with its method, while the broken function and
+the `const` it swallows sit in an `ERROR` node and are missing (techdebt.md, "Declarations inside
+syntax errors are dropped").
+== args
+input/broken.js
+== file input/broken.js
+export function before() {}
+function broken(a, {
+const lost = 1;
+export class After {
+  method() {}
+}
+== stdout
+input/broken.js (6 lines)
+[L1-L1] export function before()
+[L4-L6] export class After
+  [L5-L5] method()
+== stderr
+== exit 0
