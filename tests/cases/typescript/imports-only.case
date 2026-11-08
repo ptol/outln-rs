@@ -1,0 +1,11 @@
+Plain `import` statements (named, `import type`, and namespace) aren't declarations, so a file of only imports prints just its path and line count.
+== args
+input/imports.ts
+== file input/imports.ts
+import { readFile } from 'node:fs/promises';
+import type { Config } from './types';
+import * as path from 'node:path';
+== stdout
+input/imports.ts (3 lines)
+== stderr
+== exit 0

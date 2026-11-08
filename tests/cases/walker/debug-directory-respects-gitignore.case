@@ -1,0 +1,20 @@
+Debug mode on a directory skips files its `.gitignore` ignores, dot directories, and `node_modules`, so only `a.md` prints. `input/.git/HEAD` makes `input` a git repository: outln applies `.gitignore` files only inside one.
+== args
+--debug
+input
+== file input/.git/HEAD
+ref: refs/heads/main
+== file input/.gitignore
+ignored.md
+== file input/a.md
+# a
+== file input/ignored.md
+# ignored
+== file input/.hidden/h.md
+# h
+== file input/node_modules/dep/index.md
+# dep
+== stdout
+\x1b[32m# a\x1b[0m
+== stderr
+== exit 0

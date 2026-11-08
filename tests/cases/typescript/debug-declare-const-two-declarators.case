@@ -1,0 +1,10 @@
+Debug mode highlights both declarators of a `declare const` statement, `declare const declaredConst` and then `declaredConst2` by its bare name, leaving their `: string` types plain.
+== args
+--debug
+input/declare-const-multi.ts
+== file input/declare-const-multi.ts
+declare const declaredConst: string, declaredConst2: string;
+== stdout
+\x1b[32mdeclare const declaredConst\x1b[0m: string, \x1b[32mdeclaredConst2\x1b[0m: string;
+== stderr
+== exit 0

@@ -1,0 +1,17 @@
+A `#!` shebang line is skipped before the header comment, so the two `//` lines after it print as the header.
+== args
+input/shebang.rs
+== file input/shebang.rs
+#!/usr/bin/env rust-script
+
+// Header comment after shebang.
+// Second line of header.
+
+fn main() {}
+== stdout
+input/shebang.rs (6 lines)
+Header comment after shebang.
+Second line of header.
+[L6-L6] fn main()
+== stderr
+== exit 0

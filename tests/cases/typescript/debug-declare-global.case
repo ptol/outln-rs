@@ -1,0 +1,14 @@
+Debug mode highlights a `declare global` block through `global`, leaving the `var` declared inside it plain.
+== args
+--debug
+input/declare-global.ts
+== file input/declare-global.ts
+declare global {
+  var declaredGlobalValue: string;
+}
+== stdout
+\x1b[32mdeclare global\x1b[0m {
+  var declaredGlobalValue: string;
+}
+== stderr
+== exit 0

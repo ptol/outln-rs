@@ -1,0 +1,13 @@
+A `.rs` file goes to the Rust language engine, which prints its `//` header comment and `fn main()`.
+== args
+input/main.rs
+== file input/main.rs
+// Entry point.
+
+fn main() {}
+== stdout
+input/main.rs (3 lines)
+Entry point.
+[L3-L3] fn main()
+== stderr
+== exit 0

@@ -1,0 +1,15 @@
+A file with an unsupported extension (`.py`) is reported on stderr and makes the exit code 1, while the `.ts` file after it is still outlined.
+== args
+input/script.py
+input/valid.ts
+== file input/script.py
+def hello():
+    print("Hello")
+== file input/valid.ts
+function greet() {}
+== stdout
+input/valid.ts (1 line)
+[L1-L1] function greet()
+== stderr
+FILE input/script.py HAS UNSUPPORTED FILE TYPE
+== exit 1

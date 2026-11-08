@@ -1,0 +1,19 @@
+In a glob view, a missing file argument and an unsupported file argument each get an error on stderr and outln exits 1, while the directory's file summary still prints.
+== args
+input/src
+input/missing.md
+input/notes.txt
+== file input/src/a.md
+---
+description: A summary.
+---
+# a
+== file input/notes.txt
+plain text
+== stdout
+glob view: input/src input/missing.md input/notes.txt
+input/src/a.md (4 lines): description: "A summary."
+== stderr
+File input/missing.md does not exist
+FILE input/notes.txt HAS UNSUPPORTED FILE TYPE
+== exit 1

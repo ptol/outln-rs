@@ -1,0 +1,10 @@
+Debug mode highlights both declarators of `let a = 1, b = 2`, `let a` and then `b` by its bare name, never their values.
+== args
+--debug
+input/let-multi.ts
+== file input/let-multi.ts
+let a = 1, b = 2;
+== stdout
+\x1b[32mlet a\x1b[0m = 1, \x1b[32mb\x1b[0m = 2;
+== stderr
+== exit 0

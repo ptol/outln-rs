@@ -1,0 +1,13 @@
+An `async function*` keeps both `async` and `*` in its signature, and a two-declarator `const` lists each declarator on its own outline line.
+== args
+input/non-export-variations.ts
+== file input/non-export-variations.ts
+async function* stream() {}
+const alpha = 1, beta = 2;
+== stdout
+input/non-export-variations.ts (2 lines)
+[L1-L1] async function* stream()
+[L2-L2] const alpha
+[L2-L2] const beta
+== stderr
+== exit 0

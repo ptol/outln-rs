@@ -1,0 +1,22 @@
+Debug mode on a directory walks every level of nesting, printing files down to `level1/level2/level3/d.md` in path order with a blank line between files.
+== args
+--debug
+input/deep
+== file input/deep/a.md
+# a
+== file input/deep/level1/b.md
+# b
+== file input/deep/level1/level2/c.md
+# c
+== file input/deep/level1/level2/level3/d.md
+# d
+== stdout
+\x1b[32m# a\x1b[0m
+
+\x1b[32m# b\x1b[0m
+
+\x1b[32m# c\x1b[0m
+
+\x1b[32m# d\x1b[0m
+== stderr
+== exit 0

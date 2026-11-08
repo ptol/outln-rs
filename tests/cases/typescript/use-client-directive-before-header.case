@@ -1,0 +1,18 @@
+A `'use client'` directive and a blank line before a `/** */` header comment don't hide it, so file mode prints `Client-side product page.` as the header.
+== args
+input/page.tsx
+== file input/page.tsx
+'use client';
+
+/**
+ * Client-side product page.
+ */
+export default function Page() {
+  return null;
+}
+== stdout
+input/page.tsx (8 lines)
+Client-side product page.
+[L6-L8] export default function Page()
+== stderr
+== exit 0

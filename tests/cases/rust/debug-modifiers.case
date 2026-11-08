@@ -1,0 +1,22 @@
+Debug mode's highlight starts at a declaration's visibility and modifiers, so `pub async fn load` and `pub(crate) struct Store` are highlighted from `pub`.
+== args
+--debug
+input/modifiers.rs
+== file input/modifiers.rs
+pub async fn load() -> Result<(), Error> {
+  Ok(())
+}
+
+pub(crate) struct Store {
+  id: u64,
+}
+== stdout
+\x1b[32mpub async fn load() -> Result<(), Error>\x1b[0m {
+  Ok(())
+}
+
+\x1b[32mpub(crate) struct Store\x1b[0m {
+  id: u64,
+}
+== stderr
+== exit 0

@@ -1,0 +1,11 @@
+`--` ends the options, and the path after it, whose file name starts with `-`, is outlined in file mode.
+== args
+--
+input/-dash.md
+== file input/-dash.md
+# dash
+== stdout
+input/-dash.md (1 line)
+[L1-L1] # dash
+== stderr
+== exit 0

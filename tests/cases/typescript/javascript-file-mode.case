@@ -1,0 +1,37 @@
+`.js`, `.jsx`, `.mjs`, and `.cjs` files outline in file mode, with headers from `//` and `/* */` comments; the `module.exports = cache` assignment isn't a declaration, so it isn't listed.
+== args
+input/basic.js
+input/view.jsx
+input/module.mjs
+input/common.cjs
+== file input/basic.js
+// js summary
+function plain(value) {
+  return value;
+}
+== file input/view.jsx
+export function View() {
+  return <main>Hello</main>;
+}
+== file input/module.mjs
+export const version = '1.0.0';
+== file input/common.cjs
+/* cjs summary */
+const cache = {};
+module.exports = cache;
+== stdout
+input/basic.js (4 lines)
+js summary
+[L2-L4] function plain(value)
+
+input/view.jsx (3 lines)
+[L1-L3] export function View()
+
+input/module.mjs (1 line)
+[L1-L1] export const version
+
+input/common.cjs (3 lines)
+cjs summary
+[L2-L2] const cache
+== stderr
+== exit 0

@@ -1,0 +1,14 @@
+Blank lines at the start of the file are skipped, so the `//` comment after them is still the header comment.
+== args
+input/blank-lines.ts
+== file input/blank-lines.ts
+
+
+// After blank lines.
+const x = 1;
+== stdout
+input/blank-lines.ts (4 lines)
+After blank lines.
+[L4-L4] const x
+== stderr
+== exit 0

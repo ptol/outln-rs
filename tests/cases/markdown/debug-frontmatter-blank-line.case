@@ -1,0 +1,22 @@
+Debug mode highlights each frontmatter field on its own and leaves a blank line between fields unhighlighted.
+== args
+--debug
+input/frontmatter-empty-line.md
+== file input/frontmatter-empty-line.md
+---
+title: Guide
+
+owner: docs
+---
+
+Body text.
+== stdout
+---
+\x1b[32mtitle: Guide\x1b[0m
+
+\x1b[32mowner: docs\x1b[0m
+---
+
+Body text.
+== stderr
+== exit 0

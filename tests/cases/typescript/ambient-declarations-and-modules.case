@@ -1,0 +1,31 @@
+`declare` function, class, two-declarator `const`, `global`, and string-named and identifier-named `module` blocks keep `declare`, beside plain `namespace` and `module` blocks; block contents aren't listed.
+== args
+input/ambient-and-modules.ts
+== file input/ambient-and-modules.ts
+declare function ambientFn(x: string): number;
+declare class AmbientThing {}
+declare const ambientValue: string, ambientFlag: boolean;
+declare global {
+  interface Window { foo: string; }
+}
+declare module 'pkg' {
+  export function make(): void;
+}
+declare module InternalPkg {
+  export const ok: true;
+}
+namespace X {}
+module Y {}
+== stdout
+input/ambient-and-modules.ts (14 lines)
+[L1-L1] declare function ambientFn(x: string): number
+[L2-L2] declare class AmbientThing
+[L3-L3] declare const ambientValue
+[L3-L3] declare const ambientFlag
+[L4-L6] declare global
+[L7-L9] declare module 'pkg'
+[L10-L12] declare module InternalPkg
+[L13-L13] namespace X
+[L14-L14] module Y
+== stderr
+== exit 0

@@ -1,0 +1,15 @@
+Outside a git repository a `.gitignore` doesn't apply: the parent's `*.md` rule doesn't hide `pkg/a.md` from the glob view.
+== args
+input/pkg
+== file input/.gitignore
+*.md
+== file input/pkg/a.md
+---
+description: Parent .gitignore does not apply outside a git repo.
+---
+# a
+== stdout
+glob view: input/pkg
+input/pkg/a.md (4 lines): description: "Parent .gitignore does not apply outside a git repo."
+== stderr
+== exit 0

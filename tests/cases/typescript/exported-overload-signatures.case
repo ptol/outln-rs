@@ -1,0 +1,16 @@
+An exported function's two overload signatures and its implementation are three outline lines: each overload on its own line, the implementation spanning its body.
+== args
+input/exported-overloads.ts
+== file input/exported-overloads.ts
+export function overloaded(x: string): string;
+export function overloaded(x: number): number;
+export function overloaded(x: string | number): string | number {
+  return x;
+}
+== stdout
+input/exported-overloads.ts (5 lines)
+[L1-L1] export function overloaded(x: string): string
+[L2-L2] export function overloaded(x: number): number
+[L3-L5] export function overloaded(x: string | number): string | number
+== stderr
+== exit 0

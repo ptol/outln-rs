@@ -1,0 +1,18 @@
+Debug mode highlights an empty class through its name, just like the class after it, whose one-line method `doSomething(): void` is highlighted too.
+== args
+--debug
+input/empty-class.ts
+== file input/empty-class.ts
+class Empty {
+}
+class WithMethod {
+  doSomething(): void {}
+}
+== stdout
+\x1b[32mclass Empty\x1b[0m {
+}
+\x1b[32mclass WithMethod\x1b[0m {
+  \x1b[32mdoSomething(): void\x1b[0m {}
+}
+== stderr
+== exit 0

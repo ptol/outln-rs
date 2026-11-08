@@ -1,0 +1,28 @@
+CRLF line endings outline like LF ones: the `/** */` header prints without `\r`, multi-line signatures of a function and a class member print on one line, and line ranges and the line count count CRLF lines.
+== args
+input/crlf.ts
+== file input/crlf.ts escaped
+/**\r
+ * CRLF header.\r
+ */\r
+export function add(\r
+  a: number,\r
+  b: number\r
+): number {\r
+  return a + b;\r
+}\r
+export class Box {\r
+  get(\r
+    key: string\r
+  ): string {\r
+    return key;\r
+  }\r
+}\r
+== stdout
+input/crlf.ts (16 lines)
+CRLF header.
+[L4-L9] export function add(a: number, b: number): number
+[L10-L16] export class Box
+  [L11-L15] get(key: string): string
+== stderr
+== exit 0

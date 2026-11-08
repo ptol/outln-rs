@@ -1,0 +1,35 @@
+A directory, a directory with a trailing slash, and a glob give one glob view of all their files in path order; a Markdown file without frontmatter prints its first heading.
+== args
+input/src
+input/docs/
+input/config/*.md
+== file input/src/utils.md
+---
+description: Utility functions.
+---
+# utils
+== file input/src/helpers/nested.md
+---
+description: Helper functions.
+---
+# helpers
+== file input/docs/readme.md
+---
+title: Documentation
+---
+== file input/docs/guide.md
+# User Guide
+== file input/config/settings.md
+---
+description: Config settings.
+---
+# settings
+== stdout
+glob view: input/src input/docs/ input/config/*.md
+input/config/settings.md (4 lines): description: "Config settings."
+input/docs/guide.md (1 line): # User Guide
+input/docs/readme.md (3 lines): title: "Documentation"
+input/src/helpers/nested.md (4 lines): description: "Helper functions."
+input/src/utils.md (4 lines): description: "Utility functions."
+== stderr
+== exit 0

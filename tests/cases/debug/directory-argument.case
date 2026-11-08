@@ -1,0 +1,10 @@
+Debug mode accepts a directory argument and prints the source of its one Markdown file with the heading highlighted.
+== args
+--debug
+input/src
+== file input/src/file.md
+# a
+== stdout
+\x1b[32m# a\x1b[0m
+== stderr
+== exit 0

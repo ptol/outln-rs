@@ -1,0 +1,13 @@
+A multi-line `declare namespace` is one outline line spanning its block; the exported function and const inside it aren't listed.
+== args
+input/ambient-namespace-nested.ts
+== file input/ambient-namespace-nested.ts
+declare namespace App {
+  export function init(): void;
+  export const config: any;
+}
+== stdout
+input/ambient-namespace-nested.ts (4 lines)
+[L1-L4] declare namespace App
+== stderr
+== exit 0

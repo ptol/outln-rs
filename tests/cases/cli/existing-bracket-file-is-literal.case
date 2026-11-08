@@ -1,0 +1,14 @@
+An existing file path with `[id]` is taken literally and outlined in file mode, not matched as a glob pattern.
+== args
+input/app/[id]/page.md
+== file input/app/[id]/page.md
+---
+description: Product detail page.
+---
+# Page
+== stdout
+input/app/[id]/page.md (4 lines)
+description: "Product detail page."
+[L4-L4] # Page
+== stderr
+== exit 0

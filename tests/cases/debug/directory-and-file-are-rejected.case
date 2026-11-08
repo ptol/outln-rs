@@ -1,0 +1,13 @@
+Debug mode takes exactly one path, so a directory plus a file argument is rejected with an error and exit 1.
+== args
+--debug
+input/pkg
+input/extra.md
+== file input/pkg/a.md
+# a
+== file input/extra.md
+# extra
+== stdout
+== stderr
+--debug requires exactly one input file path.
+== exit 1

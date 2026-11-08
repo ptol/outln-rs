@@ -1,0 +1,23 @@
+File mode prints the frontmatter fields as the header, single-quoted values re-quoted with double quotes, then each heading with a line range running to the end of its section.
+== args
+input/sample.md
+== file input/sample.md
+---
+title: 'Sample doc'
+owner: 'docs-team'
+---
+
+# Overview
+
+## Scope
+
+### Notes
+== stdout
+input/sample.md (10 lines)
+title: "Sample doc"
+owner: "docs-team"
+[L6-L10] # Overview
+[L8-L10] ## Scope
+[L10-L10] ### Notes
+== stderr
+== exit 0

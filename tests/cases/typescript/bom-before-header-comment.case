@@ -1,0 +1,12 @@
+A UTF-8 byte order mark before the first `//` comment is skipped, so that comment is still the header comment and the BOM doesn't appear in the printed header.
+== args
+input/bom-with-comment.ts
+== file input/bom-with-comment.ts escaped
+﻿// File with BOM.
+export const x = 1;\
+== stdout
+input/bom-with-comment.ts (2 lines)
+File with BOM.
+[L2-L2] export const x
+== stderr
+== exit 0

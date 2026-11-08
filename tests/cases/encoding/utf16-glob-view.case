@@ -1,0 +1,16 @@
+In a glob view a UTF-16 file is reported on stderr as not UTF-8 text and outln exits 1, while the other file's file summary still prints.
+== args
+input
+== file input/utf16.md escaped
+\xff\xfe/\x00*\x00*\x00 \x00H\x00i\x00 \x00*\x00/\x00\
+== file input/ok.md
+---
+description: OK file.
+---
+# ok
+== stdout
+glob view: input
+input/ok.md (4 lines): description: "OK file."
+== stderr
+FILE input/utf16.md IS NOT UTF-8 TEXT
+== exit 1

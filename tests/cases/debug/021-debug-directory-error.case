@@ -1,9 +1,0 @@
-== args
---debug
-input/
-== file input/sample.md
-# Hello
-== stdout
-\x1b[32m# Hello\x1b[0m
-== stderr
-== exit 0

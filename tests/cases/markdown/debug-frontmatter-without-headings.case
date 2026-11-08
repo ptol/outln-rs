@@ -1,0 +1,20 @@
+Debug mode highlights the frontmatter fields of a file without headings; the `---` lines and body text stay plain.
+== args
+--debug
+input/frontmatter.md
+== file input/frontmatter.md
+---
+title: Guide
+owner: docs
+---
+
+Body text.
+== stdout
+---
+\x1b[32mtitle: Guide\x1b[0m
+\x1b[32mowner: docs\x1b[0m
+---
+
+Body text.
+== stderr
+== exit 0

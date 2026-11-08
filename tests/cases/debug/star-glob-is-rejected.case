@@ -1,0 +1,10 @@
+Debug mode takes one path, so a `*` glob pattern is rejected with an error and exit 1, even though it matches only one file.
+== args
+--debug
+input/*.md
+== file input/a.md
+# a
+== stdout
+== stderr
+--debug requires exactly one input file path.
+== exit 1

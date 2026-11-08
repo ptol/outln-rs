@@ -1,0 +1,12 @@
+A glob that matches no supported file prints `No supported files matched:` and the pattern on stderr, and exits 1.
+== args
+input/none/**/*.md
+== file input/reference.md
+---
+description: Reference file.
+---
+# ref
+== stdout
+== stderr
+No supported files matched: input/none/**/*.md
+== exit 1

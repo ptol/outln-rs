@@ -1,0 +1,10 @@
+Debug mode accepts a directory path ending in `/` and prints its file's source with the heading highlighted, exiting 0.
+== args
+--debug
+input/
+== file input/sample.md
+# Hello
+== stdout
+\x1b[32m# Hello\x1b[0m
+== stderr
+== exit 0

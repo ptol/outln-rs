@@ -1,0 +1,12 @@
+Debug mode highlights only a heading's own line, closing `##` included, and not the rest of its section.
+== args
+--debug
+input/doc.md
+== file input/doc.md
+## Closed ##
+text
+== stdout
+\x1b[32m## Closed ##\x1b[0m
+text
+== stderr
+== exit 0

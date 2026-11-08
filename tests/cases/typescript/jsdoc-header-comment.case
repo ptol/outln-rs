@@ -1,0 +1,16 @@
+A `/** */` comment at the top of the file is the header comment, printed without its `*` markers, not a leading annotation of the `interface` under it, whose line range starts at L4.
+== args
+input/with-top-comment.ts
+== file input/with-top-comment.ts
+/**
+ * Domain model for account sessions.
+ */
+export interface Session {
+  id: string;
+}
+== stdout
+input/with-top-comment.ts (6 lines)
+Domain model for account sessions.
+[L4-L6] export interface Session
+== stderr
+== exit 0

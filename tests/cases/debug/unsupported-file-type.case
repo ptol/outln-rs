@@ -1,0 +1,10 @@
+Debug mode on a file with an unsupported extension (`.txt`) prints no source, only the unsupported-file-type error, and exits 1.
+== args
+--debug
+input/raw.txt
+== file input/raw.txt
+plain text
+== stdout
+== stderr
+FILE input/raw.txt HAS UNSUPPORTED FILE TYPE
+== exit 1

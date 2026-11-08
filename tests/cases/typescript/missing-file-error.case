@@ -1,0 +1,12 @@
+A missing file argument is reported on stderr as `File … does not exist` and makes the exit code 1, while the existing file after it is still outlined.
+== args
+input/missing.ts
+input/existing.ts
+== file input/existing.ts
+// This file exists
+== stdout
+input/existing.ts (1 line)
+This file exists
+== stderr
+File input/missing.ts does not exist
+== exit 1

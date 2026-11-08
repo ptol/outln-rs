@@ -1,0 +1,21 @@
+`declare` is kept before `namespace`, `var`, `let`, `enum`, `interface`, and `type`, and a two-declarator `declare var` lists each declarator on its own outline line.
+== args
+input/ambient-missing-forms.ts
+== file input/ambient-missing-forms.ts
+declare namespace Toolkit {}
+declare var legacyCount: number, legacyTotal: number;
+declare let cacheReady: boolean;
+declare enum Mode { On, Off }
+declare interface Options { retry: number }
+declare type Id = string | number;
+== stdout
+input/ambient-missing-forms.ts (6 lines)
+[L1-L1] declare namespace Toolkit
+[L2-L2] declare var legacyCount
+[L2-L2] declare var legacyTotal
+[L3-L3] declare let cacheReady
+[L4-L4] declare enum Mode
+[L5-L5] declare interface Options
+[L6-L6] declare type Id
+== stderr
+== exit 0

@@ -1,0 +1,12 @@
+In a file with only comments, the header comment ends at the first blank line, so only its first `//` line prints.
+== args
+input/comment-only-blank-break.rs
+== file input/comment-only-blank-break.rs
+// First line is part of header.
+
+// This line is not contiguous and must be excluded.
+== stdout
+input/comment-only-blank-break.rs (3 lines)
+First line is part of header.
+== stderr
+== exit 0

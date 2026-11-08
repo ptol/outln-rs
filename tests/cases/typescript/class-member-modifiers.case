@@ -1,0 +1,19 @@
+Class member signatures drop the `static`, `async`, and `abstract` modifiers and keep a `#touch` private name; the field and the computed `[Symbol.iterator]` member aren't listed.
+== args
+input/member-variants.ts
+== file input/member-variants.ts
+abstract class Example {
+  private value = 0;
+  static async load(id: string): Promise<Example> { throw new Error("x"); }
+  #touch(): void {}
+  [Symbol.iterator](): Iterator<number> { return [][Symbol.iterator](); }
+  abstract run(task: string): number;
+}
+== stdout
+input/member-variants.ts (7 lines)
+[L1-L7] abstract class Example
+  [L3-L3] load(id: string): Promise<Example>
+  [L4-L4] #touch(): void
+  [L6-L6] run(task: string): number
+== stderr
+== exit 0

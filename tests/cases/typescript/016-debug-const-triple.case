@@ -1,9 +1,0 @@
-== args
---debug
-input/const-triple.ts
-== file input/const-triple.ts
-const x = 1, y = 2, z = 3;
-== stdout
-\x1b[32mconst x\x1b[0m = 1, \x1b[32my\x1b[0m = 2, \x1b[32mz\x1b[0m = 3;
-== stderr
-== exit 0

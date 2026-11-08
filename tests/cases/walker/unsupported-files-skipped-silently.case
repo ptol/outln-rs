@@ -1,0 +1,19 @@
+Walking a directory skips files with unsupported extensions (`.txt`, `.scss`, `.png`) without any error, listing only `a.md` and exiting 0.
+== args
+input
+== file input/a.md
+---
+description: Source a.
+---
+# a
+== file input/data.txt
+{"a": 1}
+== file input/styles.scss
+body {}
+== file input/logo.png
+not really a png
+== stdout
+glob view: input
+input/a.md (4 lines): description: "Source a."
+== stderr
+== exit 0

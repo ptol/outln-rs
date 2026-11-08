@@ -1,9 +1,0 @@
-== args
---debug
-input/declare-var-multi.ts
-== file input/declare-var-multi.ts
-declare var varX: any, varY: unknown;
-== stdout
-\x1b[32mdeclare var varX\x1b[0m: any, \x1b[32mvarY\x1b[0m: unknown;
-== stderr
-== exit 0

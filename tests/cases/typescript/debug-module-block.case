@@ -1,0 +1,22 @@
+Debug mode highlights a `module` block through its name and leaves the `export const` inside it plain, since only top-level declarations are listed.
+== args
+--debug
+input/module.ts
+== file input/module.ts
+module PlainModule {
+  export const mode = 'plain';
+}
+
+module StringLiteralModule {
+  export const key = 'value';
+}
+== stdout
+\x1b[32mmodule PlainModule\x1b[0m {
+  export const mode = 'plain';
+}
+
+\x1b[32mmodule StringLiteralModule\x1b[0m {
+  export const key = 'value';
+}
+== stderr
+== exit 0

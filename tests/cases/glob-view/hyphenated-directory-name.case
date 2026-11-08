@@ -1,0 +1,13 @@
+A directory argument whose name contains a `-` is walked like any directory, giving a glob view of the one file inside it.
+== args
+input/dir-special
+== file input/dir-special/file.md
+---
+description: Special dir file.
+---
+# special
+== stdout
+glob view: input/dir-special
+input/dir-special/file.md (4 lines): description: "Special dir file."
+== stderr
+== exit 0

@@ -1,0 +1,16 @@
+Debug mode highlights type parameters as part of the signature, in `export function id<T>(value: T): T` and `export class Box<T>`.
+== args
+--debug
+input/generic.ts
+== file input/generic.ts
+export function id<T>(value: T): T {
+  return value;
+}
+export class Box<T> {}
+== stdout
+\x1b[32mexport function id<T>(value: T): T\x1b[0m {
+  return value;
+}
+\x1b[32mexport class Box<T>\x1b[0m {}
+== stderr
+== exit 0

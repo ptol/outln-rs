@@ -1,0 +1,25 @@
+A `**/*` glob matches files in every subdirectory, sorted by path, and skips the unsupported `raw.txt`; a Markdown file without frontmatter prints its first heading.
+== args
+input/**/*
+== file input/docs/guide.md
+---
+summary: Guide overview.
+---
+
+# Guide
+== file input/src/with-comment.md
+---
+description: Utility helpers for HTTP requests.
+---
+# fetcher
+== file input/src/no-summary.md
+# value
+== file input/misc/raw.txt
+plain text
+== stdout
+glob view: input/**/*
+input/docs/guide.md (5 lines): summary: "Guide overview."
+input/src/no-summary.md (1 line): # value
+input/src/with-comment.md (4 lines): description: "Utility helpers for HTTP requests."
+== stderr
+== exit 0

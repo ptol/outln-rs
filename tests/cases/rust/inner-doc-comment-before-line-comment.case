@@ -1,0 +1,13 @@
+The `//!` comment is the header comment, and a plain `//` comment directly after it isn't added to it.
+== args
+input/doc-comment-before-regular-comment.rs
+== file input/doc-comment-before-regular-comment.rs
+//! Module docs stay excluded.
+// Regular comment should not be treated as file header in this case.
+fn main() {}
+== stdout
+input/doc-comment-before-regular-comment.rs (3 lines)
+Module docs stay excluded.
+[L3-L3] fn main()
+== stderr
+== exit 0

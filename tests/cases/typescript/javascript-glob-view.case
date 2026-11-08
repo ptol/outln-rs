@@ -1,0 +1,22 @@
+The glob view lists `.js`, `.jsx`, and `.mjs` files with their line count and header, or `(no header available)` without one, and skips the unsupported `delta.txt`.
+== args
+input/**/*
+== file input/alpha.js
+// Alpha summary
+const alpha = 1;
+== file input/bravo.jsx
+/** Bravo summary */
+export function Bravo() {
+  return <div />;
+}
+== file input/charlie.mjs
+export const charlie = 3;
+== file input/delta.txt
+plain text
+== stdout
+glob view: input/**/*
+input/alpha.js (2 lines): Alpha summary
+input/bravo.jsx (4 lines): Bravo summary
+input/charlie.mjs (1 line): (no header available)
+== stderr
+== exit 0

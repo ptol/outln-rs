@@ -1,0 +1,16 @@
+The glob view skips a `'use client'` directive to find the `/** */` header comment below it; a file with only a `'use server'` directive and no comment shows `(no header available)`.
+== args
+input
+== file input/page.tsx
+'use client';
+/** Client-side product page. */
+export default function Page() {}
+== file input/server.ts
+'use server';
+export async function save() {}
+== stdout
+glob view: input
+input/page.tsx (3 lines): Client-side product page.
+input/server.ts (2 lines): (no header available)
+== stderr
+== exit 0

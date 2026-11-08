@@ -1,0 +1,26 @@
+Debug mode highlights `export namespace` and `export module` blocks from `export` through their name, including a module named by the string `'exported/string-module'`.
+== args
+--debug
+input/exported-namespace.ts
+== file input/exported-namespace.ts
+export namespace ExportedNamespace {
+  export const ready = true;
+}
+
+export module ExportedModule {
+  export const data = 'test';
+}
+
+export module 'exported/string-module' {}
+== stdout
+\x1b[32mexport namespace ExportedNamespace\x1b[0m {
+  export const ready = true;
+}
+
+\x1b[32mexport module ExportedModule\x1b[0m {
+  export const data = 'test';
+}
+
+\x1b[32mexport module 'exported/string-module'\x1b[0m {}
+== stderr
+== exit 0

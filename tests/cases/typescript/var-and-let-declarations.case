@@ -1,0 +1,16 @@
+`let` and `var` declarations, exported or not, are listed like `const`: keywords and name, without the value.
+== args
+input/varlet.ts
+== file input/varlet.ts
+let count = 0;
+var globalFlag = true;
+export let mutable = 'hello';
+export var legacy = 123;
+== stdout
+input/varlet.ts (4 lines)
+[L1-L1] let count
+[L2-L2] var globalFlag
+[L3-L3] export let mutable
+[L4-L4] export var legacy
+== stderr
+== exit 0

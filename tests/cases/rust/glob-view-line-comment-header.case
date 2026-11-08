@@ -1,0 +1,18 @@
+The glob view prints a Rust file's `//` header comment with its lines joined by a space, `(no header available)` for a file without one, and skips the unsupported `raw.txt`.
+== args
+input/**/*
+== file input/src/with-header.rs
+// Rust service worker.
+// Handles background jobs.
+
+fn run() {}
+== file input/src/no-header.rs
+fn ping() {}
+== file input/misc/raw.txt
+plain text
+== stdout
+glob view: input/**/*
+input/src/no-header.rs (1 line): (no header available)
+input/src/with-header.rs (4 lines): Rust service worker. Handles background jobs.
+== stderr
+== exit 0

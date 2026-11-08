@@ -1,0 +1,20 @@
+A directory argument and a file argument together give one glob view, the file summaries of both sorted by path.
+== args
+input/src
+input/direct.md
+== file input/src/a.md
+---
+description: A summary.
+---
+# a
+== file input/direct.md
+---
+description: Direct file.
+---
+# direct
+== stdout
+glob view: input/src input/direct.md
+input/direct.md (4 lines): description: "Direct file."
+input/src/a.md (4 lines): description: "A summary."
+== stderr
+== exit 0

@@ -1,0 +1,11 @@
+Without a header comment the outline goes straight from the path and line count to the declarations; the plain `import` isn't listed.
+== args
+input/no-top-comment.ts
+== file input/no-top-comment.ts
+import { build } from './lib';
+export const ready = build();
+== stdout
+input/no-top-comment.ts (2 lines)
+[L2-L2] export const ready
+== stderr
+== exit 0
