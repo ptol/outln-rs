@@ -5,8 +5,10 @@ use std::num::NonZeroUsize;
 
 use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
 
-/// Printed after the options in `--help`.
-const MODES_AND_EXAMPLES: &str = "\
+use crate::language_engine::supported_extensions;
+
+/// Printed after the options in `--help`, before the supported extensions.
+const MODES: &str = "\
 Modes:
   outln <file>...            Full outline for each file (line count, header, declarations,
                              line ranges).
@@ -22,11 +24,17 @@ Modes:
                              Glob patterns set their own depth.
   outln --debug <file|dir>   Source text with the extracted outline highlighted: green on a
                              terminal; between « and » when stdout isn't a terminal or
-                             NO_COLOR is set.
+                             NO_COLOR is set.";
+
+/// Printed after the supported extensions in `--help`.
+const QUOTING_AND_EXAMPLES: &str = "\
+Quote glob patterns: the shell expands an unquoted one into file arguments, and outln then
+prints the full outline of every matching file instead of a glob view.
 
 Examples:
   outln docs/guide.md
   outln docs \"src/**/*.md\"
+  outln --depth 1 .
   outln --debug docs/guide.md";
 
 /// Print a compact structural outline of source files.
@@ -36,8 +44,7 @@ Examples:
     // `run` receives the arguments without the program name.
     no_binary_name = true,
     // Replaced by `-v`/`--version` below; clap's default short flag is `-V`.
-    disable_version_flag = true,
-    after_help = MODES_AND_EXAMPLES
+    disable_version_flag = true
 )]
 pub(crate) struct Arguments {
     /// Print the source with the parts that became the outline highlighted (debug mode).
@@ -84,6 +91,20 @@ pub(crate) fn parse(
 ) -> Result<Arguments, clap::Error> {
     let matches = Arguments::command()
         .version(version.to_owned())
+        .after_help(after_help())
         .try_get_matches_from(arguments)?;
     Arguments::from_arg_matches(&matches)
+}
+
+/// The text after the options in `--help`. The extensions come from the engine registry, so
+/// a new engine's appear without an edit here.
+fn after_help() -> String {
+    let extensions: Vec<String> = supported_extensions()
+        .map(|extension| format!(".{extension}"))
+        .collect();
+    format!(
+        "{MODES}\n\nSupported files (by extension; others are skipped in a glob view):\n  {}\n\n\
+         {QUOTING_AND_EXAMPLES}",
+        extensions.join(", ")
+    )
 }

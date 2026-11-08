@@ -34,9 +34,16 @@ Modes:
                              terminal; between « and » when stdout isn't a terminal or
                              NO_COLOR is set.
 
+Supported files (by extension; others are skipped in a glob view):
+  .md, .ts, .mts, .cts, .tsx, .js, .jsx, .mjs, .cjs, .rs, .css, .json, .jsonc, .toml, .yaml, .yml
+
+Quote glob patterns: the shell expands an unquoted one into file arguments, and outln then
+prints the full outline of every matching file instead of a glob view.
+
 Examples:
   outln docs/guide.md
   outln docs "src/**/*.md"
+  outln --depth 1 .
   outln --debug docs/guide.md
 == stderr
 == exit 0
