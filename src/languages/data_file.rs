@@ -586,6 +586,31 @@ mod tests {
     }
 
     #[test]
+    fn indicators_inside_a_quoted_yaml_scalar_on_its_line_are_not_nesting() {
+        let dashes = "- ".repeat(250);
+        for value in [format!("\"{dashes}\""), format!("'it''s {dashes}'")] {
+            let text = format!("x: {value}\ny: 1\n");
+            assert_eq!(yaml::parsable_part(&text), text);
+        }
+        // Each of these may nest too deep for the scanner once a syntax error makes it read
+        // every indicator (a quoted scalar continued on the next line, or after a plain scalar
+        // continued from the line before, where a `: ` ends that scalar), so the line with the
+        // dashes is left out.
+        for deep in [
+            format!("x: 'a' {dashes}"),
+            format!("x: \"a\n{dashes}\""),
+            format!("a\n\"b: {dashes}\""),
+        ] {
+            let text = format!("first: 1\n{deep}\n");
+            let parsed = yaml::parsable_part(&text);
+            assert!(
+                parsed.starts_with("first: 1\n") && !parsed.contains(&dashes),
+                "{deep:?}"
+            );
+        }
+    }
+
+    #[test]
     fn a_yaml_key_ending_in_a_comment_line_keeps_its_key_inside_its_range() {
         for text in ["? :\n", "? a\n# comment\n: 1\n", "? a\n  # comment\n"] {
             for line in outline_of(&YAML, text).lines {

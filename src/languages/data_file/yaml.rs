@@ -48,46 +48,122 @@ const MAX_OPEN_BLOCK_NODES: usize = 200;
 /// The count over-approximates the scanner's stack: each line that isn't blank or a comment
 /// closes the nodes opened right of its indentation, then opens one where its content starts and
 /// one at each `-`, `?`, `:`, `|`, or `>` followed by whitespace, before any comment, at most two
-/// per column (a mapping and the sequence written at its column). A line inside a flow
-/// collection (`[`, `{`) that is indented less than its parent may close nodes the scanner keeps
-/// open, so a file built to defeat the count can still nest deeper (docs/techdebt.md).
+/// per column (a mapping and the sequence written at its column). A quoted scalar that opens
+/// where a node may start and closes on its line is skipped, unless it holds a `: `: the scanner
+/// reads it as one token, even while recovering from a syntax error, but after a plain scalar
+/// continued from the line before, the quotes are part of that scalar, which ends at a `: `.
+///
+/// Everything else counts, though YAML reads much of it as part of a value: a syntax error
+/// makes tree-sitter call the scanner with every token valid, and it then opens a block node at
+/// each indicator, so `x: a: - - …`, `x: 'a' - - …`, a line of `- ` inside an unclosed `[`, and
+/// the lines of a quoted scalar continued on the next line (one indented too little is a syntax
+/// error) abort the process like real nesting. A line inside a flow collection that is indented
+/// less than its parent may close nodes the scanner keeps open, so a file built to defeat the
+/// count can still nest deeper (docs/techdebt.md).
 pub(super) fn parsable_part(text: &str) -> &str {
-    let mut open_columns: Vec<usize> = Vec::new();
+    let mut count = BlockNodeCount::default();
     for (start, line) in lines_with_offsets(text) {
-        open_block_nodes(line, &mut open_columns);
-        if open_columns.len() > MAX_OPEN_BLOCK_NODES {
+        count.read_line(line);
+        if count.open_columns.len() > MAX_OPEN_BLOCK_NODES {
             return &text[..start];
         }
     }
     text
 }
 
-/// Updates the columns of the open block nodes for one line, as [`parsable_part`] counts them.
-fn open_block_nodes(line: &str, open_columns: &mut Vec<usize>) {
-    let content = line.trim_start_matches(' ');
-    if content.is_empty() || content.starts_with('#') {
-        return;
-    }
-    let indent = line.len() - content.len();
-    while open_columns.last().is_some_and(|&column| column > indent) {
-        open_columns.pop();
-    }
-    open_at(indent, open_columns);
-    // Columns count characters, as the scanner's do.
-    let mut characters = content.chars().peekable();
-    let mut column = indent;
-    let mut after_whitespace = false;
-    while let Some(character) = characters.next() {
-        if character == '#' && after_whitespace {
+/// The open block nodes as [`parsable_part`] counts them, line by line.
+#[derive(Default)]
+struct BlockNodeCount {
+    /// The column of each open block node; columns only grow up the stack.
+    open_columns: Vec<usize>,
+    /// The quote of the quoted scalar being read character by character: one that a line before
+    /// opened and didn't close, or one holding a `: `.
+    continued_quote: Option<char>,
+}
+
+impl BlockNodeCount {
+    /// Updates the count for one line.
+    fn read_line(&mut self, line: &str) {
+        let content = line.trim_start_matches(' ');
+        let is_comment = content.starts_with('#') && self.continued_quote.is_none();
+        if content.is_empty() || is_comment {
             return;
         }
-        let ends_indicator = characters.peek().is_none_or(|next| next.is_whitespace());
-        if matches!(character, '-' | '?' | ':' | '|' | '>') && ends_indicator {
-            open_at(column, open_columns);
+        let indent = line.len() - content.len();
+        while self
+            .open_columns
+            .last()
+            .is_some_and(|&column| column > indent)
+        {
+            self.open_columns.pop();
         }
-        after_whitespace = character.is_whitespace();
-        column += 1;
+        open_at(indent, &mut self.open_columns);
+        // Columns count characters, as the scanner's do.
+        let mut characters = content.chars();
+        let mut column = indent;
+        let mut after_whitespace = false;
+        // Where a node may start: at the line's content, or after whitespace or a flow indicator.
+        let mut at_node_start = self.continued_quote.is_none();
+        while let Some(character) = characters.next() {
+            match self.continued_quote {
+                Some(quote) if character == quote => {
+                    if quote == '\'' && characters.clone().next() == Some('\'') {
+                        // `''` is an escaped quote.
+                        characters.next();
+                        column += 1;
+                    } else {
+                        self.continued_quote = None;
+                    }
+                }
+                Some('"') if character == '\\' => {
+                    characters.next();
+                    column += 1;
+                }
+                None if character == '#' && after_whitespace => return,
+                None if at_node_start && matches!(character, '"' | '\'') => {
+                    match quoted_scalar_on_line(character, characters.as_str()) {
+                        Some(scalar) if !scalar.contains(": ") => {
+                            characters = characters.as_str()[scalar.len()..].chars();
+                            column += 1 + scalar.chars().count();
+                            after_whitespace = false;
+                            at_node_start = false;
+                            continue;
+                        }
+                        // Counted character by character, up to its closing quote.
+                        Some(_) | None => self.continued_quote = Some(character),
+                    }
+                }
+                Some(_) | None => {}
+            }
+            let ends_indicator = characters.clone().next().is_none_or(char::is_whitespace);
+            if matches!(character, '-' | '?' | ':' | '|' | '>') && ends_indicator {
+                open_at(column, &mut self.open_columns);
+            }
+            after_whitespace = character.is_whitespace();
+            at_node_start = after_whitespace || matches!(character, '[' | '{' | ',');
+            column += 1;
+        }
     }
+}
+
+/// The rest of the quoted scalar that `quote` (`"` or `'`) opens before `rest`, up to and
+/// including its closing quote, or `None` if it doesn't close on its line. A backslash escapes
+/// the character after it in a `"` scalar, and `''` is an escaped quote in a `'` scalar.
+fn quoted_scalar_on_line(quote: char, rest: &str) -> Option<&str> {
+    let mut characters = rest.char_indices();
+    while let Some((index, character)) = characters.next() {
+        if character == '\\' && quote == '"' {
+            characters.next();
+        } else if character == quote {
+            let end = index + character.len_utf8();
+            if quote == '\'' && rest[end..].starts_with('\'') {
+                characters.next();
+                continue;
+            }
+            return Some(&rest[..end]);
+        }
+    }
+    None
 }
 
 /// Opens a block node at `column`, unless two are open there already. Columns only grow up the
