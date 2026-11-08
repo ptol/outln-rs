@@ -14,7 +14,7 @@ setup:
 # Build and run the CLI, passing every argument through unchanged (quoting and globs included).
 [positional-arguments]
 run *args:
-    cargo run --quiet -- "$@"
+    @cargo run --quiet -- "$@"
 
 # Build the static release binary (musl libc, C grammars compiled by zig), then fail unless it is static and outlines every engine sample (tests/engine-samples) exactly as the dev build does.
 build-static:
