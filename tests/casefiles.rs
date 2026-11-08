@@ -12,6 +12,7 @@ mod casefile;
 mod scratch_dir;
 
 use std::fs;
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 
 use casefile::{Casefile, Section};
@@ -21,6 +22,8 @@ const CASES_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cases");
 const CASEFILE_EXTENSION: &str = "case";
 /// Printed by `--version` in every casefile, so a release doesn't change expected output.
 const VERSION: &str = "0.0.0-test";
+/// More than one, so every casefile also covers the parallel directory walk.
+const THREADS: NonZeroUsize = NonZeroUsize::new(4).unwrap();
 
 /// What the environment asks this run to do.
 struct Settings {
@@ -123,6 +126,7 @@ fn run_outln(casefile: &Casefile, index: usize) -> Result<(Vec<u8>, Vec<u8>, u8)
         cwd: dir.path(),
         version: VERSION,
         global_gitignore: None,
+        threads: THREADS,
     };
     let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
     let status = outln::run(

@@ -4,6 +4,7 @@
 
 use std::cell::RefCell;
 use std::io::{self, BufWriter, StderrLock, StdoutLock, Write};
+use std::num::NonZeroUsize;
 use std::process::ExitCode;
 
 /// Large enough that a glob view of thousands of files takes a few writes instead of one per
@@ -25,6 +26,8 @@ fn main() -> ExitCode {
         cwd: &cwd,
         version: env!("CARGO_PKG_VERSION"),
         global_gitignore: global_gitignore.as_deref(),
+        // The CPUs this process may run on; when that's unknown, one thread is always correct.
+        threads: std::thread::available_parallelism().unwrap_or(NonZeroUsize::MIN),
     };
 
     let stdout = RefCell::new(BufWriter::with_capacity(

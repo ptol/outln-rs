@@ -1,6 +1,7 @@
 //! File mode: prints a full outline for each file argument.
 
 use std::io::{self, Write};
+use std::num::NonZeroUsize;
 use std::path::Path;
 
 use crate::ExitStatus;
@@ -16,6 +17,7 @@ use crate::source_text::LineIndex;
 pub(crate) fn run(
     arguments: &[(String, ArgumentKind)],
     cwd: &Path,
+    threads: NonZeroUsize,
     out: &mut impl Write,
     err: &mut impl Write,
 ) -> io::Result<ExitStatus> {
@@ -26,12 +28,8 @@ pub(crate) fn run(
     for (path, _) in &missing {
         writeln!(err, "{}", InputError::FileMissing(path.clone()))?;
     }
-    let print_status = print_each(
-        existing.iter().map(|(path, _)| path.as_str()),
-        |path| outline_file(cwd, path),
-        out,
-        err,
-    )?;
+    let existing: Vec<&str> = existing.iter().map(|(path, _)| path.as_str()).collect();
+    let print_status = print_each(&existing, threads, |path| outline_file(cwd, path), out, err)?;
     Ok(ExitStatus::failure_if(!missing.is_empty()).and(print_status))
 }
 

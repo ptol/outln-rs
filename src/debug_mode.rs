@@ -44,8 +44,10 @@ pub(crate) fn run(
             (found.files, status)
         }
     };
+    let files: Vec<&str> = files.iter().map(String::as_str).collect();
     let print_status = print_each(
-        files.iter().map(String::as_str),
+        &files,
+        walker.threads,
         |file| highlighted_source(walker.cwd, file),
         out,
         err,

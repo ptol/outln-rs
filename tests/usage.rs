@@ -4,16 +4,26 @@
 mod scratch_dir;
 
 use std::io;
+use std::num::NonZeroUsize;
 
 use outln::{Context, ExitStatus};
 use scratch_dir::ScratchDir;
 
-/// Runs outln in `dir` and returns its stdout, stderr, and exit status.
+/// Runs outln in `dir` on one thread and returns its stdout, stderr, and exit status.
 fn run_in(dir: &ScratchDir, arguments: &[&str]) -> io::Result<(String, String, ExitStatus)> {
+    run_on_threads(dir, NonZeroUsize::MIN, arguments)
+}
+
+fn run_on_threads(
+    dir: &ScratchDir,
+    threads: NonZeroUsize,
+    arguments: &[&str],
+) -> io::Result<(String, String, ExitStatus)> {
     let context = Context {
         cwd: dir.path(),
         version: "1.2.3",
         global_gitignore: None,
+        threads,
     };
     let (mut out, mut err) = (Vec::new(), Vec::new());
     let status = outln::run(arguments, &context, &mut out, &mut err)?;
@@ -71,6 +81,7 @@ fn a_global_gitignore_hides_matching_files() {
         cwd: dir.path(),
         version: "1.2.3",
         global_gitignore: Some(&global_gitignore),
+        threads: NonZeroUsize::MIN,
     };
     let (mut out, mut err) = (Vec::new(), Vec::new());
 
@@ -161,4 +172,37 @@ fn invalid_arguments_print_usage_to_err() {
     assert_eq!(out, "");
     assert!(err.contains("--no-such-flag"), "{err}");
     assert_eq!(status, ExitStatus::UsageError);
+}
+
+#[test]
+fn output_is_the_same_on_any_number_of_threads() {
+    let dir = ScratchDir::new("usage-threads").expect("temp dir");
+    let mut paths = Vec::new();
+    for index in 0..300 {
+        let path = format!("docs/{index:03}.md");
+        dir.write(&path, format!("# Doc {index}\n").as_bytes())
+            .expect("write");
+        paths.push(path);
+    }
+    // Failing files among the others, so their errors must keep their order too.
+    for broken in ["docs/100-broken.md", "docs/200-broken.md"] {
+        dir.write(broken, b"\xff").expect("write");
+        paths.push(broken.to_owned());
+    }
+    paths.sort();
+    let file_arguments: Vec<&str> = paths.iter().map(String::as_str).collect();
+    let eight = NonZeroUsize::new(8).expect("8 is not zero");
+
+    for arguments in [&["docs"][..], &file_arguments] {
+        let one_thread = run_on_threads(&dir, NonZeroUsize::MIN, arguments).expect("write");
+        let eight_threads = run_on_threads(&dir, eight, arguments).expect("write");
+
+        assert_eq!(one_thread, eight_threads);
+        let (_, err, status) = one_thread;
+        assert_eq!(
+            err,
+            "FILE docs/100-broken.md IS NOT UTF-8 TEXT\nFILE docs/200-broken.md IS NOT UTF-8 TEXT\n"
+        );
+        assert_eq!(status, ExitStatus::Failure);
+    }
 }

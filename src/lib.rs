@@ -9,7 +9,12 @@
 //! std::fs::create_dir_all(&dir).unwrap();
 //! std::fs::write(dir.join("guide.md"), "# Guide\n\n## Install\n").unwrap();
 //!
-//! let context = outln::Context { cwd: &dir, version: "1.0.0", global_gitignore: None };
+//! let context = outln::Context {
+//!     cwd: &dir,
+//!     version: "1.0.0",
+//!     global_gitignore: None,
+//!     threads: std::num::NonZeroUsize::MIN,
+//! };
 //! let (mut out, mut err) = (Vec::new(), Vec::new());
 //! let status = outln::run(["guide.md"], &context, &mut out, &mut err).unwrap();
 //!
@@ -30,6 +35,7 @@ mod language_engine;
 mod languages;
 mod leading_annotations;
 mod outline;
+mod parallel;
 mod per_file;
 mod signature;
 mod source_file;
@@ -38,6 +44,7 @@ mod syntax_tree;
 
 use std::ffi::OsString;
 use std::io::{self, Write};
+use std::num::NonZeroUsize;
 use std::path::Path;
 
 use discovery::{ArgumentKind, FileWalker, classify};
@@ -51,6 +58,9 @@ pub struct Context<'a> {
     pub version: &'a str,
     /// The user's global gitignore file (git's `core.excludesFile`), if any.
     pub global_gitignore: Option<&'a Path>,
+    /// How many threads may walk directories and outline files; output is the same for any
+    /// count. `src/main.rs` passes the available parallelism.
+    pub threads: NonZeroUsize,
 }
 
 /// How a run ended; [`ExitStatus::code`] is the process exit code.
@@ -104,6 +114,7 @@ pub fn run(
     let walker = FileWalker {
         cwd: context.cwd,
         global_gitignore: context.global_gitignore,
+        threads: context.threads,
     };
     let classified: Vec<(String, ArgumentKind)> = arguments
         .paths
@@ -125,7 +136,7 @@ pub fn run(
     if is_glob_view {
         glob_view::run(&classified, &walker, out, err)
     } else {
-        file_mode::run(&classified, context.cwd, out, err)
+        file_mode::run(&classified, context.cwd, context.threads, out, err)
     }
 }
 
