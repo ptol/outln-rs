@@ -142,7 +142,7 @@ pub(super) fn fields(root: Node<'_>, text: &str) -> Option<Vec<YamlField>> {
     let fields = root_pairs(root)?
         .iter()
         .map(|pair| YamlField {
-            key: super::one_line(source(pair.key, text), usize::MAX),
+            key: super::printed_key(source(pair.key, text)),
             value: pair.value.map_or(YamlValue::Plain(String::new()), |value| {
                 field_value(value, text)
             }),

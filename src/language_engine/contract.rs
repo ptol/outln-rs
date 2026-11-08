@@ -32,9 +32,9 @@ const ENGINE_SAMPLES: &str = "tests/engine-samples";
 
 /// Inputs no engine's sample covers: nothing, whitespace only, markers that open a comment,
 /// string, or block and never close it, multi-byte characters at the end (a BOM that doesn't
-/// start the file survives normalization), line breaks written as CR, and half-edited lines
-/// that once printed a multi-line or blank outline line (a TOML `[[bin` header, a CSS rule
-/// without a selector).
+/// start the file survives normalization) and a key of them, line breaks written as CR, and
+/// half-edited lines that once printed a multi-line or blank outline line (a TOML `[[bin`
+/// header, a CSS rule without a selector).
 const EDGE_INPUTS: &[&str] = &[
     "",
     "\n",
@@ -47,6 +47,7 @@ const EDGE_INPUTS: &[&str] = &[
     "---\n",
     "{[(\"'`",
     "\u{2028}\u{feff}",
+    "\u{2028}:\n-",
     "\r",
     "a\r\rb\r\n",
     "[[bin\n\nname = \"x\"\n[[bin]]\n",

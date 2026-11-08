@@ -22,6 +22,7 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
   - **TOML**: a table header that doesn't close on its line (`[[bin` in a half-edited file) prints only that line, in outline lines and a field summary's table name.
   - **YAML**: an empty first document (`---` right before another `---`) is skipped, so the next document's keys are listed; a root mapping broken by a syntax error lists its keys before the error.
   - **Deeply nested YAML** (`- ` written 254 times on one line, in a YAML file or Markdown frontmatter) is read up to the line that nests too deep, instead of aborting the whole run with a tree-sitter assertion; a file nested less than 100 levels deep is read whole.
+  - **YAML**: a key of whitespace only (a lone U+2028 line separator) prints quoted with escapes, `"\u{2028}"`, instead of as a blank outline line.
   - **JSON**: an object missing a comma (`"version": "1.0.0"` followed by `"private": true`, in a half-edited file) lists the keys before the gap too, instead of only those after it.
   - **YAML**: a key written over several lines that ends in a comment line (`? key` then `# comment`) gets a line range that holds the whole key, so debug mode's highlight of it no longer runs past its line range.
 - File mode: an outline's first line prints the file's line count after its path, as the glob view does: `src/cli.rs (120 lines)` ([ADR-020](adr.md)).

@@ -210,8 +210,7 @@ struct Pair<'text> {
 impl Key {
     /// The key of a pair: a scalar value prints after the key, shortened by [`value_text`].
     fn pair(pair: &Pair<'_>) -> Self {
-        // Keys are never cut by length: a key is what an agent looks for.
-        let key = one_line(pair.key, usize::MAX);
+        let key = printed_key(pair.key);
         let text = match pair.value {
             Value::Scalar => {
                 let value = value_text(&key, pair.value_source);
@@ -228,6 +227,19 @@ impl Key {
             node: pair.node,
             highlight: pair.key_range,
         }
+    }
+}
+
+/// A key as printed: as written, on one line ([`one_line`]), never cut by length, because a key
+/// is what an agent looks for. A key of whitespace only (a YAML key of a lone U+2028 line
+/// separator, which [`str::trim`] removes) would print as nothing, so it prints quoted, with
+/// escapes.
+fn printed_key(source: &str) -> String {
+    let key = one_line(source, usize::MAX);
+    if key.is_empty() {
+        format!("{source:?}")
+    } else {
+        key
     }
 }
 
@@ -583,6 +595,13 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn a_yaml_key_of_whitespace_only_prints_quoted() {
+        assert_eq!(outline_texts(&YAML, "\u{2028}: 1\n"), ["\"\\u{2028}\": 1"]);
+        let fields = yaml_fields("\u{2028}: 1\n").unwrap_or_default();
+        assert_eq!(fields[0].key, "\"\\u{2028}\"");
     }
 
     #[test]
