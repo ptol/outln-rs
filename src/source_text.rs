@@ -1,4 +1,4 @@
-//! Source text: normalizes a file's bytes for language engines, and maps byte ranges to line ranges.
+//! Source text: normalizes a file's bytes for language engines, maps byte ranges to line ranges, and scans text for line ends, whitespace, and quoted strings.
 
 use std::fmt;
 use std::ops::Range;
