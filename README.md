@@ -29,7 +29,7 @@ An agent runs outln only when its instructions say to, and outln's output doesn'
 
 Cheapest first. Run each step as its own command, because its output picks the target of the next one:
 
-1. **Find the file**: `outln <dir>` (or a glob such as `outln "src/**/*.ts"`) prints one line per file: its path, its line count, and its header comment or frontmatter.
+1. **Find the file**: `outln <dir>` (or a glob such as `outln "src/**/*.ts"`) prints one line per file: its path, its line count, and its header comment or frontmatter, or else a data file's first scalar keys or a Markdown file's first heading. Quote a glob: the shell expands an unquoted one into files, and outln prints their full outlines instead.
 2. **Find the section**: `outln <file>...` prints each file's line count, header, and declarations with line ranges like `[L12-L40]`.
 3. **Read**: read only those line ranges (`Read` with `offset`/`limit`); read a file whole when its line count is small.
 
