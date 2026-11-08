@@ -8,7 +8,7 @@ use crate::language_engine::LanguageEngine;
 use crate::leading_annotations::PrecedingNode;
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
-use crate::source_text::{ByteRange, line_around};
+use crate::source_text::{ByteRange, SourceText, line_end};
 use crate::syntax_tree::{child_of_kind, children, source};
 
 /// The language engine for CSS.
@@ -19,11 +19,11 @@ impl LanguageEngine for Css {
         &["css"]
     }
 
-    fn outline(&self, text: &str) -> Outline {
+    fn outline(&self, source: &SourceText<'_>) -> Outline {
         code_outline(
-            text,
+            source,
             &tree_sitter_css::LANGUAGE.into(),
-            header(text),
+            header(source.text),
             preceding_node,
             rule_lines,
         )
@@ -44,7 +44,7 @@ fn header(text: &str) -> Option<Header> {
         }
         // The preamble ends after the rule's `;`, so a comment or rule after it on its line is
         // still seen; an encoding name never contains a `;`. Without one, the line ends it.
-        let line_end = line_around(text, start).end;
+        let line_end = line_end(text, start);
         Some(
             text[..line_end]
                 .find(';')
@@ -95,7 +95,8 @@ const PRELUDE_END_KINDS: &[&str] = &["block", "keyframe_block_list", ";"];
 
 /// The outline lines of a top-level node with line range `range`: its own, then one per rule in
 /// its block when it lists them ([`lists_nested_rules`]).
-fn rule_lines(node: Node<'_>, range: ByteRange, text: &str) -> Vec<OutlineLine> {
+fn rule_lines(node: Node<'_>, range: ByteRange, source: &SourceText<'_>) -> Vec<OutlineLine> {
+    let text = source.text;
     let Some(line) = rule_line(node, range, text, TOP_LEVEL_DEPTH) else {
         return Vec::new();
     };
@@ -103,7 +104,7 @@ fn rule_lines(node: Node<'_>, range: ByteRange, text: &str) -> Vec<OutlineLine> 
     if let Some(block) = child_of_kind(node, "block").filter(|_| lists_nested_rules(node, text)) {
         let siblings = children(block);
         lines.extend(
-            with_line_ranges(&siblings, text, NO_HEADER_END, preceding_node)
+            with_line_ranges(&siblings, source, NO_HEADER_END, preceding_node)
                 .filter_map(|(rule, range)| rule_line(rule, range, text, NESTED_DEPTH)),
         );
     }
@@ -272,7 +273,7 @@ mod tests {
     use super::*;
 
     fn outline_lines(text: &str) -> Vec<(String, ByteRange, usize)> {
-        Css.outline(text)
+        Css.outline(&SourceText::new(text))
             .lines
             .into_iter()
             .map(|line| (line.text, line.range, line.depth))
@@ -362,7 +363,7 @@ mod tests {
     #[test]
     fn the_highlight_ends_at_the_last_printed_character() {
         let text = ".a /* note */ {}\n";
-        let line = &Css.outline(text).lines[0];
+        let line = &Css.outline(&SourceText::new(text)).lines[0];
         assert_eq!(&text[line.highlight.as_range()], ".a");
     }
 

@@ -16,7 +16,7 @@ One Cargo package, `outln`, with a library and a binary:
 - `src/discovery.rs`: classifies each path argument once (`ArgumentKind`: existing or missing directory or file, or glob) and walks directories and globs with the `ignore` crate, keeping supported files.
 - `src/per_file.rs`: the loop file mode and debug mode share: render each file, print it, report failures.
 - `src/source_file.rs`: loads one file argument: picks its engine, reads it, normalizes its text.
-- `src/source_text.rs`: normalization (UTF-8 only, BOM stripped, CRLF to LF), `ByteRange`, and `LineIndex`, which turns byte ranges into line ranges.
+- `src/source_text.rs`: normalization (UTF-8 only, BOM stripped, CRLF to LF), `ByteRange`, `LineIndex`, which turns byte ranges into line ranges, and `SourceText`, a file's text with its `LineIndex`, built once per file for the engine's `outline` and the rendering. Engines find the line around an offset with `SourceText::line_around` (a binary search), never by scanning the text back and forth, which is quadratic on long lines.
 - `src/outline.rs`: the data engines return (`Outline`, `Header`, `OutlineLine`, `FileSummary`) and its rendering.
 - `src/language_engine.rs`: the `LanguageEngine` trait and the `ENGINES` registry; `src/language_engine/contract.rs` holds the unit tests every registered engine must pass ([ADR-017](adr.md)).
 - `src/languages/<language>.rs`: one engine per language: `src/languages/markdown.rs`, `src/languages/script.rs` for TypeScript and JavaScript (with its children in `src/languages/script/`), `src/languages/rust.rs`, `src/languages/css.rs`, and `src/languages/data_file.rs` for TOML, YAML, and JSON (with one child per format in `src/languages/data_file/`).

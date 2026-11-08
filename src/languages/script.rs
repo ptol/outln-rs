@@ -17,7 +17,7 @@ use crate::language_engine::LanguageEngine;
 use crate::leading_annotations::PrecedingNode;
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
-use crate::source_text::{ByteRange, line_around};
+use crate::source_text::{ByteRange, SourceText, line_end};
 use crate::syntax_tree::{
     child_of_kind, children, first_syntax_child, has_child_of_kind, one_line_source, source,
 };
@@ -67,11 +67,11 @@ impl LanguageEngine for Script {
         }
     }
 
-    fn outline(&self, text: &str) -> Outline {
+    fn outline(&self, source: &SourceText<'_>) -> Outline {
         code_outline(
-            text,
+            source,
             &self.language(),
-            header(text),
+            header(source.text),
             preceding_node,
             statement_lines,
         )
@@ -87,7 +87,7 @@ impl LanguageEngine for Script {
 /// lines, and directives (`'use strict';`) come before it.
 fn header(text: &str) -> Option<Header> {
     find_header_comment(text, COMMENT_SYNTAX, |text, start| {
-        let line_end = line_around(text, start).end;
+        let line_end = line_end(text, start);
         let line_text = &text[start..line_end];
         let is_shebang = start == 0 && line_text.starts_with("#!");
         (is_shebang || is_directive(line_text)).then_some(line_end)
@@ -120,6 +120,7 @@ pub(super) fn preceding_node(node: Node<'_>, text: &str) -> PrecedingNode {
 struct Statement<'tree> {
     node: Node<'tree>,
     range: ByteRange,
+    source: &'tree SourceText<'tree>,
 }
 
 /// Whether a line is a directive prologue such as `'use client';` or `"use strict"`.
@@ -146,8 +147,13 @@ fn one_line(node: Node<'_>, text: &str) -> String {
 
 /// The outline lines of one top-level statement with line range `range`; most statements give
 /// none.
-fn statement_lines(node: Node<'_>, range: ByteRange, text: &str) -> Vec<OutlineLine> {
-    let statement = Statement { node, range };
+fn statement_lines(node: Node<'_>, range: ByteRange, source: &SourceText<'_>) -> Vec<OutlineLine> {
+    let text = source.text;
+    let statement = Statement {
+        node,
+        range,
+        source,
+    };
     match node.kind() {
         "export_statement" => export_lines(statement, text),
         "expression_statement" => expression_statement_lines(statement, text),
@@ -185,7 +191,7 @@ fn declaration_lines(
                 signatures::type_like(declaration, text),
             )];
             if let Some(body) = declaration.child_by_field_name("body") {
-                lines.extend(class_members::member_lines(body, text));
+                lines.extend(class_members::member_lines(body, statement.source));
             }
             lines
         }
@@ -381,7 +387,9 @@ fn re_export_line(statement: Statement<'_>, text: &str) -> OutlineLine {
     let statement_text = one_line(node, text);
     let signature = Signature {
         text: statement_text.trim_end_matches(';').trim_end().to_owned(),
-        highlight_end: line_around(text, node.start_byte())
+        highlight_end: statement
+            .source
+            .line_around(node.start_byte())
             .end
             .min(node.end_byte()),
     };
@@ -428,7 +436,7 @@ mod tests {
 
     fn outline_texts(engine: &Script, text: &str) -> Vec<String> {
         engine
-            .outline(text)
+            .outline(&SourceText::new(text))
             .lines
             .into_iter()
             .map(|line| line.text)
@@ -468,5 +476,17 @@ mod tests {
     #[test]
     fn a_comment_after_code_is_no_header() {
         assert_eq!(header("run();\n// Not a header.\n"), None);
+    }
+
+    /// Finding each declaration's line once scanned to the line's ends, so a minified file of
+    /// many declarations on one line took time quadratic in its length (5 s for 1.6 MB); now
+    /// `SourceText::line_around` looks lines up in the line index.
+    #[test]
+    fn many_declarations_on_one_line_are_listed_without_rescanning_the_line() {
+        let count = 5_000;
+        let text = "/** Doc. */ @a class C { m() {} } export * from 'x'; ".repeat(count);
+        let lines = TYPESCRIPT.outline(&SourceText::new(&text)).lines;
+        assert_eq!(lines.len(), count * 3);
+        assert!(lines.iter().all(|line| line.range.start < line.range.end));
     }
 }

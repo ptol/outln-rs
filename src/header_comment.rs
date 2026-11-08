@@ -6,7 +6,7 @@
 //! same for every language.
 
 use crate::outline::{CommentLine, Header};
-use crate::source_text::{ByteRange, line_around, lines_with_offsets};
+use crate::source_text::{ByteRange, after_whitespace, lines_with_offsets};
 
 const BLOCK_COMMENT_OPEN: &str = "/*";
 const BLOCK_COMMENT_CLOSE: &str = "*/";
@@ -137,13 +137,12 @@ fn leading_comment_runs(
 ) -> Vec<CommentRun> {
     let mut runs = Vec::new();
     let mut offset = 0;
-    while offset < text.len() {
-        let line_end = line_around(text, offset).end;
-        if text[offset..line_end].trim().is_empty() {
-            offset = next_line_start(text, line_end);
-            continue;
-        }
+    loop {
+        // Blank lines are whitespace too, so this also steps over them.
         let start = after_whitespace(text, offset);
+        if start == text.len() {
+            break;
+        }
         if let Some(end) = preamble_end(text, start).filter(|&end| end > start) {
             offset = end;
             continue;
@@ -349,18 +348,6 @@ fn line_comment_kind(line: &str, doc_markers: DocMarkers) -> CommentKind {
     }
 }
 
-/// The offset of the first non-whitespace character at or after `offset`, or the end of `text`.
-pub(crate) fn after_whitespace(text: &str, offset: usize) -> usize {
-    text.len() - text[offset..].trim_start().len()
-}
-
-/// Where the line after the one containing `offset` starts, or the end of `text`.
-fn next_line_start(text: &str, offset: usize) -> usize {
-    text[offset..]
-        .find('\n')
-        .map_or(text.len(), |newline| offset + newline + 1)
-}
-
 /// A comment line printed as `printed`, from the source line starting at `start`; its range ends
 /// at the line's last non-whitespace character (so a blank line's range is empty).
 fn comment_line(start: usize, line: &str, printed: &str) -> CommentLine {
@@ -436,6 +423,7 @@ fn strip_line_marker(line: &str, marker: LineMarker) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::source_text::line_end;
 
     const C_LIKE: CommentSyntax = CommentSyntax::CFamily {
         doc_markers: DocMarkers::Ignored,
@@ -505,7 +493,7 @@ mod tests {
     #[test]
     fn preamble_and_blank_lines_may_come_before_the_header() {
         let shebang = |text: &str, start: usize| {
-            (start == 0 && text.starts_with("#!")).then(|| line_around(text, start).end)
+            (start == 0 && text.starts_with("#!")).then(|| line_end(text, start))
         };
         let header = find_header_comment("#!/bin/sh\n\n// Tool.\n", C_LIKE, shebang);
         assert!(matches!(header, Some(Header::Comment(lines)) if lines[0].text == "Tool."));
@@ -617,7 +605,7 @@ mod tests {
         let schema = |text: &str, start: usize| {
             text[start..]
                 .starts_with("#:schema")
-                .then(|| line_around(text, start).end)
+                .then(|| line_end(text, start))
         };
         let header = find_header_comment("#:schema x\n# Tool.\n", CommentSyntax::Hash, schema);
         assert!(matches!(header, Some(Header::Comment(lines)) if lines[0].text == "Tool."));

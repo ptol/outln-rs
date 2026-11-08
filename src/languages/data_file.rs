@@ -13,7 +13,7 @@ use tree_sitter::{Language, Node};
 use crate::header_comment::{CommentSyntax, find_header_comment};
 use crate::language_engine::LanguageEngine;
 use crate::outline::{FieldSummary, FieldsShown, FileSummary, Header, Outline, OutlineLine};
-use crate::source_text::{ByteRange, line_around, trim_end};
+use crate::source_text::{ByteRange, SourceText, trim_end};
 use crate::syntax_tree::{byte_range, parse};
 
 /// The language engine for one data file format.
@@ -47,13 +47,14 @@ impl LanguageEngine for DataFile {
         }
     }
 
-    fn outline(&self, text: &str) -> Outline {
+    fn outline(&self, source: &SourceText<'_>) -> Outline {
+        let text = source.text;
         let tree = parse(text, &self.format.language());
         let header = self.format.header(text);
         let header_end = header.as_ref().map_or(0, Header::end);
         let keys = self.format.keys(tree.root_node(), text);
         let comments = comment_ranges(tree.root_node());
-        let lines = outline_lines(keys, text, &comments, header_end, self.format);
+        let lines = outline_lines(keys, source, &comments, header_end, self.format);
         Outline { header, lines }
     }
 
@@ -301,7 +302,7 @@ fn comment_ranges(root: Node<'_>) -> Vec<ByteRange> {
 /// to the end of its value, without trailing blank and comment lines.
 fn outline_lines(
     keys: Vec<Key>,
-    text: &str,
+    source: &SourceText<'_>,
     comments: &[ByteRange],
     header_end: usize,
     format: Format,
@@ -313,14 +314,19 @@ fn outline_lines(
             let previous_start = index
                 .checked_sub(1)
                 .map_or(0, |previous| keys[previous].node.start);
-            range_start(key, previous_start, text, comments, header_end, format)
+            range_start(key, previous_start, source, comments, header_end, format)
         })
         .collect();
     keys.into_iter()
         .enumerate()
         .map(|(index, key)| {
-            let next_start = starts.get(index + 1).copied().unwrap_or(text.len());
-            let end = content_end(text, starts[index], key.node.end.min(next_start), comments);
+            let next_start = starts.get(index + 1).copied().unwrap_or(source.text.len());
+            let end = content_end(
+                source,
+                starts[index],
+                key.node.end.min(next_start),
+                comments,
+            );
             OutlineLine {
                 text: key.text,
                 range: ByteRange::new(starts[index], end),
@@ -342,17 +348,18 @@ fn outline_lines(
 fn range_start(
     key: &Key,
     previous_start: usize,
-    text: &str,
+    source: &SourceText<'_>,
     comments: &[ByteRange],
     header_end: usize,
     format: Format,
 ) -> usize {
-    let key_line = line_around(text, key.node.start);
+    let text = source.text;
+    let key_line = source.line_around(key.node.start);
     let key_column = key.node.start - key_line.start;
     let mut start = key.node.start;
     let mut line_start = key_line.start;
     while line_start > previous_start && line_start > 0 {
-        let line = line_around(text, line_start - 1);
+        let line = source.line_around(line_start - 1);
         if line.start < header_end {
             return key.node.start;
         }
@@ -371,12 +378,13 @@ fn range_start(
 /// Where a key's line range ends: at `end`, or before the blank and comment-only lines it ends
 /// with, which separate it from the next key or document what comes after it. The key's own
 /// first line (at `start`) always stays.
-fn content_end(text: &str, start: usize, end: usize, comments: &[ByteRange]) -> usize {
+fn content_end(source: &SourceText<'_>, start: usize, end: usize, comments: &[ByteRange]) -> usize {
+    let text = source.text;
     let mut end = trim_end(text, ByteRange::new(start, end)).end;
     while end > start {
         // `end` is just after the range's last non-whitespace character, so the line around it
         // is the range's last line (`end - 1` could fall inside a multi-byte character).
-        let line = line_around(text, end);
+        let line = source.line_around(end);
         if line.start <= start || !is_comment(line_content(text, line), comments) {
             break;
         }
@@ -408,7 +416,7 @@ mod tests {
 
     fn outline_texts(engine: &DataFile, text: &str) -> Vec<String> {
         engine
-            .outline(text)
+            .outline(&SourceText::new(text))
             .lines
             .into_iter()
             .map(|line| line.text)
@@ -431,7 +439,9 @@ mod tests {
     #[test]
     fn a_range_ending_in_a_multi_byte_character_is_trimmed_without_panicking() {
         assert_eq!(outline_texts(&YAML, "name: café\n"), ["name: café"]);
-        let lines = TOML.outline("[t]\nx = 1\n# Café\n[u]\n").lines;
+        let lines = TOML
+            .outline(&SourceText::new("[t]\nx = 1\n# Café\n[u]\n"))
+            .lines;
         let ranges: Vec<ByteRange> = lines.into_iter().map(|line| line.range).collect();
         // `[u]`'s range starts at the comment above it; `é` is two bytes.
         assert_eq!(ranges, [ByteRange::new(0, 9), ByteRange::new(10, 21)]);
@@ -441,6 +451,16 @@ mod tests {
     fn yaml_keys_print_on_one_line_and_flow_keys_may_lack_a_value() {
         assert_eq!(outline_texts(&YAML, "? [a,\n   b]\n: 1\n"), ["[a,…: 1"]);
         assert_eq!(outline_texts(&YAML, "{a, b: 2}\n"), ["a:", "b: 2"]);
+    }
+
+    /// Finding each key's line once scanned to the line's ends, which made a minified file
+    /// quadratic in its length.
+    #[test]
+    fn many_keys_on_one_line_are_listed_without_rescanning_the_line() {
+        let count = 5_000;
+        let pairs: Vec<String> = (0..count).map(|index| format!("\"k{index}\": 1")).collect();
+        let text = format!("{{{}}}", pairs.join(", "));
+        assert_eq!(outline_texts(&JSON, &text).len(), count);
     }
 
     #[test]

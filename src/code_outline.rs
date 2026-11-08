@@ -4,7 +4,7 @@ use tree_sitter::{Language, Node};
 
 use crate::leading_annotations::{PrecedingNode, leading_annotations_start};
 use crate::outline::{Header, Outline, OutlineLine};
-use crate::source_text::ByteRange;
+use crate::source_text::{ByteRange, SourceText};
 use crate::syntax_tree::{children, parse};
 
 /// The outline of a code file: `header`, then the outline lines `declaration_lines` makes from
@@ -20,17 +20,18 @@ use crate::syntax_tree::{children, parse};
 /// so it's skipped before the walk back: walking from each line of a long comment run would
 /// make the outline quadratic in the run's length.
 pub(crate) fn code_outline<Lines: IntoIterator<Item = OutlineLine>>(
-    text: &str,
+    source: &SourceText<'_>,
     language: &Language,
     header: Option<Header>,
     classify: impl Fn(Node<'_>, &str) -> PrecedingNode,
-    declaration_lines: impl Fn(Node<'_>, ByteRange, &str) -> Lines,
+    declaration_lines: impl Fn(Node<'_>, ByteRange, &SourceText<'_>) -> Lines,
 ) -> Outline {
+    let text = source.text;
     let tree = parse(text, language);
     let header_end = header.as_ref().map_or(0, Header::end);
     let nodes = children(tree.root_node());
-    let lines = with_line_ranges(&nodes, text, header_end, &classify)
-        .flat_map(|(node, range)| declaration_lines(node, range, text))
+    let lines = with_line_ranges(&nodes, source, header_end, &classify)
+        .flat_map(|(node, range)| declaration_lines(node, range, source))
         .collect();
     Outline { header, lines }
 }
@@ -41,7 +42,7 @@ pub(crate) fn code_outline<Lines: IntoIterator<Item = OutlineLine>>(
 /// 0 for siblings below the top level, which can't contain it.
 pub(crate) fn with_line_ranges<'tree>(
     siblings: &[Node<'tree>],
-    text: &str,
+    source: &SourceText<'_>,
     header_end: usize,
     classify: impl Fn(Node<'_>, &str) -> PrecedingNode,
 ) -> impl Iterator<Item = (Node<'tree>, ByteRange)> {
@@ -51,13 +52,13 @@ pub(crate) fn with_line_ranges<'tree>(
         .filter_map(move |(index, &node)| {
             // A comment or attribute is skipped before the walk back: walking from each line
             // of a long comment run would be quadratic in the run's length.
-            if classify(node, text) != PrecedingNode::Other {
+            if classify(node, source.text) != PrecedingNode::Other {
                 return None;
             }
             let start = leading_annotations_start(
                 &siblings[..index],
                 node.start_byte(),
-                text,
+                source,
                 header_end,
                 &classify,
             );

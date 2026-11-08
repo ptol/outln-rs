@@ -6,7 +6,7 @@ use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 
 use crate::language_engine::LanguageEngine;
 use crate::outline::{FileSummary, FrontmatterField, Header, Outline, OutlineLine};
-use crate::source_text::{ByteRange, line_around, lines_with_offsets, trim_end};
+use crate::source_text::{ByteRange, SourceText, lines_with_offsets, trim_end};
 
 /// The language engine for `.md` files.
 pub(crate) struct Markdown;
@@ -16,12 +16,12 @@ impl LanguageEngine for Markdown {
         &["md"]
     }
 
-    fn outline(&self, text: &str) -> Outline {
-        let frontmatter = parse_frontmatter(text);
+    fn outline(&self, source: &SourceText<'_>) -> Outline {
+        let frontmatter = parse_frontmatter(source.text);
         let body_start = frontmatter.as_ref().map_or(0, |found| found.body_start);
         Outline {
             header: frontmatter.and_then(Frontmatter::into_header),
-            lines: heading_lines(text, body_start),
+            lines: heading_lines(source, body_start),
         }
     }
 
@@ -180,17 +180,20 @@ struct Heading {
 /// A section ends before the next heading of the same or a higher level, without trailing
 /// blank lines. Headings inside block quotes and lists aren't document sections, so they're
 /// skipped.
-fn heading_lines(text: &str, body_start: usize) -> Vec<OutlineLine> {
+fn heading_lines(source: &SourceText<'_>, body_start: usize) -> Vec<OutlineLine> {
+    let text = source.text;
     let headings: Vec<Heading> = top_level_headings(&text[body_start..], body_start).collect();
     headings
         .iter()
         .enumerate()
         .map(|(index, heading)| {
-            let line_start = line_around(text, heading.range.start).start;
+            let line_start = source.line_around(heading.range.start).start;
             let section_end = headings[index + 1..]
                 .iter()
                 .find(|next| next.level <= heading.level)
-                .map_or(text.len(), |next| line_around(text, next.range.start).start);
+                .map_or(text.len(), |next| {
+                    source.line_around(next.range.start).start
+                });
             OutlineLine {
                 text: heading_text(&text[heading.range.as_range()], heading.level),
                 range: trim_end(text, ByteRange::new(line_start, section_end)),
@@ -281,7 +284,7 @@ mod tests {
 
     fn outline_texts(text: &str) -> Vec<String> {
         Markdown
-            .outline(text)
+            .outline(&SourceText::new(text))
             .lines
             .into_iter()
             .map(|line| line.text)

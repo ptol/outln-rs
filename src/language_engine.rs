@@ -8,17 +8,19 @@ use crate::languages::markdown::Markdown;
 use crate::languages::rust::Rust;
 use crate::languages::script::{JAVASCRIPT, TSX, TYPESCRIPT};
 use crate::outline::{FileSummary, Outline};
+use crate::source_text::SourceText;
 
 /// The component that produces outlines and file summaries for one language.
 ///
-/// Engines receive normalized text (see `source_text::normalize`) and return data with byte
-/// ranges; shared code renders it for every mode. `Sync` lets the registry be a `static`.
+/// Engines receive normalized text (see `source_text::normalize`), with its line index for
+/// outlines, and return data with byte ranges; shared code renders it for every mode. `Sync`
+/// lets the registry be a `static`.
 pub(crate) trait LanguageEngine: Sync {
     /// File extensions this engine handles, lowercase and without the dot.
     fn extensions(&self) -> &'static [&'static str];
 
     /// The full outline, for file mode and debug mode.
-    fn outline(&self, text: &str) -> Outline;
+    fn outline(&self, source: &SourceText<'_>) -> Outline;
 
     /// What the glob view prints for the file: its header, or a field summary or first heading
     /// without one; cheaper than `outline`, because it parses little or nothing.

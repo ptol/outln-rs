@@ -7,7 +7,7 @@ use super::signatures::{FUNCTION_SIGNATURE_FIELDS, push_fields};
 use crate::leading_annotations::leading_annotations_start;
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
-use crate::source_text::ByteRange;
+use crate::source_text::{ByteRange, SourceText};
 use crate::syntax_tree::{child_of_kind, children, source};
 
 /// Class members can't contain the file's header comment, so the walk over their leading
@@ -22,7 +22,8 @@ const MEMBER_DEPTH: usize = 1;
 /// Fields, static blocks, overload signatures, and members with computed names
 /// (`[Symbol.iterator]()`) or quoted names are skipped. Modifiers such as `static`, `private`,
 /// and `async` are left out of the printed signature.
-pub(super) fn member_lines(class_body: Node<'_>, text: &str) -> Vec<OutlineLine> {
+pub(super) fn member_lines(class_body: Node<'_>, source: &SourceText<'_>) -> Vec<OutlineLine> {
+    let text = source.text;
     let members = children(class_body);
     members
         .iter()
@@ -35,7 +36,7 @@ pub(super) fn member_lines(class_body: Node<'_>, text: &str) -> Vec<OutlineLine>
             let start = leading_annotations_start(
                 &members[..index],
                 member.start_byte(),
-                text,
+                source,
                 NO_HEADER_END,
                 preceding_node,
             );

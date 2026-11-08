@@ -14,7 +14,7 @@ use crate::outline::{
     FileSummary, Header, Outline, highlights, render_file_summary, render_outline,
 };
 use crate::source_file::load;
-use crate::source_text::{ByteRange, LineCount, LineIndex};
+use crate::source_text::{ByteRange, LineCount, SourceText};
 
 /// The engine samples, relative to the crate root: one per engine, named `sample.<extension>`
 /// after the engine's first extension. `just build-static` outlines them too.
@@ -106,7 +106,7 @@ fn every_engine_sample_has_a_header_and_declarations() {
     for &engine in ENGINES {
         let name = sample_name(engine);
         let text = sample_text(engine);
-        let outline = engine.outline(&text);
+        let outline = engine.outline(&SourceText::new(&text));
         assert!(
             outline.header.as_ref().is_some_and(Header::has_text),
             "{name} needs a header with text"
@@ -163,7 +163,8 @@ fn check_output(engine: &dyn LanguageEngine, text: &str) {
 /// Outlines and summarizes `text`, checks every byte range in the outline, then renders it as
 /// file mode, debug mode, and the glob view do.
 fn check_ranges_and_render(engine: &dyn LanguageEngine, text: &str) {
-    let outline = engine.outline(text);
+    let source = SourceText::new(text);
+    let outline = engine.outline(&source);
     for range in output_ranges(&outline) {
         assert!(
             text.get(range.as_range()).is_some(),
@@ -180,7 +181,7 @@ fn check_ranges_and_render(engine: &dyn LanguageEngine, text: &str) {
             line.range
         );
     }
-    render_outline("sample", &outline, &LineIndex::new(text));
+    render_outline("sample", &outline, &source.line_index);
     highlight(text, highlights(&outline));
     render_file_summary("sample", LineCount::of(text), &engine.file_summary(text));
 }

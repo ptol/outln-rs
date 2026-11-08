@@ -7,7 +7,7 @@
 
 use tree_sitter::Node;
 
-use crate::source_text::line_around;
+use crate::source_text::SourceText;
 
 /// What a node before a declaration is to the walk that finds its leading annotations.
 ///
@@ -41,10 +41,11 @@ pub(crate) enum PrecedingNode {
 pub(crate) fn leading_annotations_start(
     preceding: &[Node<'_>],
     declaration_start: usize,
-    text: &str,
+    source: &SourceText<'_>,
     header_end: usize,
     classify: impl Fn(Node<'_>, &str) -> PrecedingNode,
 ) -> usize {
+    let text = source.text;
     let mut start = declaration_start;
     // Where the node after the one being looked at starts, and whether a blank line lies
     // between that node and the closest annotation (or the declaration) after it: plain comments
@@ -58,7 +59,7 @@ pub(crate) fn leading_annotations_start(
         let role = classify(node, text);
         let follows_code = index.checked_sub(1).is_some_and(|previous_index| {
             let previous = preceding[previous_index];
-            ends_on_line_of(text, previous, node.start_byte())
+            ends_on_line_of(source, previous, node.start_byte())
                 && classify(previous, text) == PrecedingNode::Other
         });
         let blank_line_before_next = blank_line_between(text, node.end_byte(), next_start);
@@ -79,8 +80,8 @@ pub(crate) fn leading_annotations_start(
 
 /// Whether `node` ends on the line where `offset` is. A line comment's node may include its
 /// newline (tree-sitter-rust's comments do), and then it ends on the line before.
-fn ends_on_line_of(text: &str, node: Node<'_>, offset: usize) -> bool {
-    node.end_byte() > line_around(text, offset).start
+fn ends_on_line_of(source: &SourceText<'_>, node: Node<'_>, offset: usize) -> bool {
+    node.end_byte() > source.line_around(offset).start
 }
 
 /// Whether a blank line lies in the whitespace between a node ending at `end` and the next

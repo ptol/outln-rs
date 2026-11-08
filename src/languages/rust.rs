@@ -4,14 +4,13 @@ use tree_sitter::Node;
 
 use crate::code_outline::code_outline;
 use crate::header_comment::{
-    BlockComments, CommentSyntax, DocMarkers, after_whitespace, block_comment_end,
-    find_header_comment,
+    BlockComments, CommentSyntax, DocMarkers, block_comment_end, find_header_comment,
 };
 use crate::language_engine::LanguageEngine;
 use crate::leading_annotations::PrecedingNode;
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
-use crate::source_text::{ByteRange, line_around, trim_end};
+use crate::source_text::{ByteRange, SourceText, after_whitespace, line_end, trim_end};
 use crate::syntax_tree::{child_of_kind, has_child_of_kind, one_line_source_before};
 
 /// The language engine for Rust.
@@ -22,11 +21,11 @@ impl LanguageEngine for Rust {
         &["rs"]
     }
 
-    fn outline(&self, text: &str) -> Outline {
+    fn outline(&self, source: &SourceText<'_>) -> Outline {
         code_outline(
-            text,
+            source,
             &tree_sitter_rust::LANGUAGE.into(),
-            header(text),
+            header(source.text),
             preceding_node,
             declaration_line,
         )
@@ -62,7 +61,7 @@ fn preamble_end(text: &str, start: usize) -> Option<usize> {
         return attribute_end(text, after_hash_bang);
     }
     // In Rust, `#!` starts a shebang only on the first line and when no `[` follows it.
-    (start == 0).then_some(line_around(text, start).end)
+    (start == 0).then_some(line_end(text, start))
 }
 
 /// Where the attribute whose `[` is at byte `open` ends, after its matching `]`, or `None` if it
@@ -74,7 +73,7 @@ fn attribute_end(text: &str, open: usize) -> Option<usize> {
     while let Some(character) = text[index..].chars().next() {
         let rest = &text[index..];
         index += if rest.starts_with("//") {
-            line_around(text, index).end - index
+            line_end(text, index) - index
         } else if rest.starts_with("/*") {
             block_comment_end(text, index, BlockComments::Nested)? - index
         } else if rest.starts_with('"') || is_raw_string_start(rest) {
@@ -166,7 +165,12 @@ const VERBATIM_KINDS: &[&str] = &["string_literal", "raw_string_literal", "char_
 
 /// The outline line of a top-level node with line range `range`, or `None` for a node that
 /// isn't a listed declaration.
-fn declaration_line(node: Node<'_>, range: ByteRange, text: &str) -> Option<OutlineLine> {
+fn declaration_line(
+    node: Node<'_>,
+    range: ByteRange,
+    source: &SourceText<'_>,
+) -> Option<OutlineLine> {
+    let text = source.text;
     let signature_end = signature_end(node)?;
     let signature = Signature {
         text: one_line_source_before(node, signature_end, text, VERBATIM_KINDS),
@@ -223,7 +227,7 @@ mod tests {
     use super::*;
 
     fn outline_lines(text: &str) -> Vec<(String, ByteRange)> {
-        Rust.outline(text)
+        Rust.outline(&SourceText::new(text))
             .lines
             .into_iter()
             .map(|line| (line.text, line.range))
