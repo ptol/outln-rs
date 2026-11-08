@@ -33,5 +33,6 @@ Library.
 [L10-L10] const LIMIT: usize
 [L12-L12] fn helper()
 [L16-L21] mod tests
+  [L19-L20] fn works()
 == stderr
 == exit 0

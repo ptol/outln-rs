@@ -1,6 +1,6 @@
 Top-level `describe`, `it`, `test`, and `suite` calls with a string or template literal title are listed as test blocks, with `.only`, `.skip`, and `.each` forms.
 A table test (`.each(table)` or `.each` with a tagged template table) prints its callee and title without the table.
-Blocks nested inside a test block aren't listed, nor are calls with other names or with a title that isn't a literal.
+Blocks nested inside a test block's callback are listed one level deeper (`nested-test-blocks.case` covers depth); calls with other names or with a title that isn't a literal aren't listed.
 == args
 input/parser.test.ts
 == file input/parser.test.ts
@@ -26,6 +26,8 @@ beforeEach(() => {});
 == stdout
 input/parser.test.ts (19 lines)
 [L3-L6] describe("parser")
+  [L4-L4] it("parses headings")
+  [L5-L5] describe("nested")
 [L7-L7] it.only('focused')
 [L8-L8] describe.skip(`skipped`)
 [L9-L9] test.each("adds %i")

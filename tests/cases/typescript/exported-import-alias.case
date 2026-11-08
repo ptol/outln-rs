@@ -1,0 +1,15 @@
+An exported import alias, `export import Name = Namespace.member`, is listed as `export import` and the alias name, like an unexported one; the grammar parses it as an `import_alias` inside the `export` statement.
+- `export import R = require('r')` doesn't parse as an alias in this grammar version, but its name is still listed, as `export import R`.
+== args
+input/aliases.ts
+== file input/aliases.ts
+export import Join = path.join;
+import fs = require('fs');
+export import R = require('r');
+== stdout
+input/aliases.ts (3 lines)
+[L1-L1] export import Join
+[L2-L2] import fs
+[L3-L3] export import R
+== stderr
+== exit 0

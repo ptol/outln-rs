@@ -1,0 +1,61 @@
+- The members of a top-level `impl` block or trait (functions, constants, associated types) are listed one level deeper, each with its own line range from its leading annotations, so an agent can read one method of a long `impl` block.
+- An inline module's items are listed one level deeper too, by the same rules as top-level ones (its private `use` isn't listed); an `impl` block inside a module lists its members at depth 2.
+- Nothing below depth 2 is listed: the items of `deeper`, a module inside `inner`, are at depth 2, so the `impl` block among them prints without its member.
+- Macro calls inside an `impl` block aren't members.
+== args
+input/shapes.rs
+== file input/shapes.rs
+//! Shapes.
+
+pub trait Shape {
+    type Unit: Copy;
+    const SIDES: u8;
+    /// The area.
+    fn area(&self) -> f64;
+}
+
+impl Square {
+    pub const ONE: Self = Self(1);
+
+    /// Makes a square.
+    #[must_use]
+    pub fn new(side: u32) -> Self {
+        Self(side)
+    }
+
+    delegate!(side);
+}
+
+mod inner {
+    use super::Square;
+
+    impl Square {
+        fn side(&self) -> u32 { self.0 }
+    }
+
+    mod deeper {
+        fn hidden() {}
+
+        impl super::Square {
+            fn hidden_too() {}
+        }
+    }
+}
+== stdout
+input/shapes.rs (36 lines)
+Shapes.
+[L3-L8] pub trait Shape
+  [L4-L4] type Unit: Copy
+  [L5-L5] const SIDES: u8
+  [L6-L7] fn area(&self) -> f64
+[L10-L20] impl Square
+  [L11-L11] pub const ONE: Self
+  [L13-L17] pub fn new(side: u32) -> Self
+[L22-L36] mod inner
+  [L25-L27] impl Square
+    [L26-L26] fn side(&self) -> u32
+  [L29-L35] mod deeper
+    [L30-L30] fn hidden()
+    [L32-L34] impl super::Square
+== stderr
+== exit 0

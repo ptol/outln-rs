@@ -1,0 +1,855 @@
+A code file without a header comment gets a declaration summary in the glob view instead of `(no header available)`: its first top-level declarations as their outline lines start, up to the parameter list.
+- Repeated declarations, such as several `impl Arg` blocks, print once with their count (`impl Arg ×3`); members aren't summarized.
+- At most five distinct declarations print, then `...` (`arg.rs`); a declaration longer than 48 characters is cut with `…` (`exports.rs`).
+- Type parameters before a parameter list go with it (`pub fn parse`), and a test block keeps its title (`describe('parser')`).
+- Only the first 4 KiB of a long file are read, so `...` follows what they hold (`big.rs`).
+- A file whose header comment has text prints the header as before (`documented.rs`), and a file without declarations still prints `(no header available)` (`empty.rs`).
+== args
+input
+== file input/arg.rs
+pub struct Arg;
+
+impl Arg {
+    pub fn new() -> Self { Arg }
+}
+
+impl Arg {
+    pub fn id(self) -> Self { self }
+}
+
+impl Clone for Arg {
+    fn clone(&self) -> Self { Arg }
+}
+
+impl Arg {}
+
+pub fn parse<T: AsRef<str>>(input: T) -> Arg { Arg }
+pub(crate) fn check(arg: &Arg) {}
+pub trait ArgExt {}
+== file input/big.rs
+pub struct Big;
+
+pub fn helper_0(value: u32) -> u32 {
+    value + 0
+}
+
+pub fn helper_1(value: u32) -> u32 {
+    value + 1
+}
+
+pub fn helper_2(value: u32) -> u32 {
+    value + 2
+}
+
+pub fn helper_3(value: u32) -> u32 {
+    value + 3
+}
+
+pub fn helper_4(value: u32) -> u32 {
+    value + 4
+}
+
+pub fn helper_5(value: u32) -> u32 {
+    value + 5
+}
+
+pub fn helper_6(value: u32) -> u32 {
+    value + 6
+}
+
+pub fn helper_7(value: u32) -> u32 {
+    value + 7
+}
+
+pub fn helper_8(value: u32) -> u32 {
+    value + 8
+}
+
+pub fn helper_9(value: u32) -> u32 {
+    value + 9
+}
+
+pub fn helper_10(value: u32) -> u32 {
+    value + 10
+}
+
+pub fn helper_11(value: u32) -> u32 {
+    value + 11
+}
+
+pub fn helper_12(value: u32) -> u32 {
+    value + 12
+}
+
+pub fn helper_13(value: u32) -> u32 {
+    value + 13
+}
+
+pub fn helper_14(value: u32) -> u32 {
+    value + 14
+}
+
+pub fn helper_15(value: u32) -> u32 {
+    value + 15
+}
+
+pub fn helper_16(value: u32) -> u32 {
+    value + 16
+}
+
+pub fn helper_17(value: u32) -> u32 {
+    value + 17
+}
+
+pub fn helper_18(value: u32) -> u32 {
+    value + 18
+}
+
+pub fn helper_19(value: u32) -> u32 {
+    value + 19
+}
+
+pub fn helper_20(value: u32) -> u32 {
+    value + 20
+}
+
+pub fn helper_21(value: u32) -> u32 {
+    value + 21
+}
+
+pub fn helper_22(value: u32) -> u32 {
+    value + 22
+}
+
+pub fn helper_23(value: u32) -> u32 {
+    value + 23
+}
+
+pub fn helper_24(value: u32) -> u32 {
+    value + 24
+}
+
+pub fn helper_25(value: u32) -> u32 {
+    value + 25
+}
+
+pub fn helper_26(value: u32) -> u32 {
+    value + 26
+}
+
+pub fn helper_27(value: u32) -> u32 {
+    value + 27
+}
+
+pub fn helper_28(value: u32) -> u32 {
+    value + 28
+}
+
+pub fn helper_29(value: u32) -> u32 {
+    value + 29
+}
+
+pub fn helper_30(value: u32) -> u32 {
+    value + 30
+}
+
+pub fn helper_31(value: u32) -> u32 {
+    value + 31
+}
+
+pub fn helper_32(value: u32) -> u32 {
+    value + 32
+}
+
+pub fn helper_33(value: u32) -> u32 {
+    value + 33
+}
+
+pub fn helper_34(value: u32) -> u32 {
+    value + 34
+}
+
+pub fn helper_35(value: u32) -> u32 {
+    value + 35
+}
+
+pub fn helper_36(value: u32) -> u32 {
+    value + 36
+}
+
+pub fn helper_37(value: u32) -> u32 {
+    value + 37
+}
+
+pub fn helper_38(value: u32) -> u32 {
+    value + 38
+}
+
+pub fn helper_39(value: u32) -> u32 {
+    value + 39
+}
+
+pub fn helper_40(value: u32) -> u32 {
+    value + 40
+}
+
+pub fn helper_41(value: u32) -> u32 {
+    value + 41
+}
+
+pub fn helper_42(value: u32) -> u32 {
+    value + 42
+}
+
+pub fn helper_43(value: u32) -> u32 {
+    value + 43
+}
+
+pub fn helper_44(value: u32) -> u32 {
+    value + 44
+}
+
+pub fn helper_45(value: u32) -> u32 {
+    value + 45
+}
+
+pub fn helper_46(value: u32) -> u32 {
+    value + 46
+}
+
+pub fn helper_47(value: u32) -> u32 {
+    value + 47
+}
+
+pub fn helper_48(value: u32) -> u32 {
+    value + 48
+}
+
+pub fn helper_49(value: u32) -> u32 {
+    value + 49
+}
+
+pub fn helper_50(value: u32) -> u32 {
+    value + 50
+}
+
+pub fn helper_51(value: u32) -> u32 {
+    value + 51
+}
+
+pub fn helper_52(value: u32) -> u32 {
+    value + 52
+}
+
+pub fn helper_53(value: u32) -> u32 {
+    value + 53
+}
+
+pub fn helper_54(value: u32) -> u32 {
+    value + 54
+}
+
+pub fn helper_55(value: u32) -> u32 {
+    value + 55
+}
+
+pub fn helper_56(value: u32) -> u32 {
+    value + 56
+}
+
+pub fn helper_57(value: u32) -> u32 {
+    value + 57
+}
+
+pub fn helper_58(value: u32) -> u32 {
+    value + 58
+}
+
+pub fn helper_59(value: u32) -> u32 {
+    value + 59
+}
+
+pub fn helper_60(value: u32) -> u32 {
+    value + 60
+}
+
+pub fn helper_61(value: u32) -> u32 {
+    value + 61
+}
+
+pub fn helper_62(value: u32) -> u32 {
+    value + 62
+}
+
+pub fn helper_63(value: u32) -> u32 {
+    value + 63
+}
+
+pub fn helper_64(value: u32) -> u32 {
+    value + 64
+}
+
+pub fn helper_65(value: u32) -> u32 {
+    value + 65
+}
+
+pub fn helper_66(value: u32) -> u32 {
+    value + 66
+}
+
+pub fn helper_67(value: u32) -> u32 {
+    value + 67
+}
+
+pub fn helper_68(value: u32) -> u32 {
+    value + 68
+}
+
+pub fn helper_69(value: u32) -> u32 {
+    value + 69
+}
+
+pub fn helper_70(value: u32) -> u32 {
+    value + 70
+}
+
+pub fn helper_71(value: u32) -> u32 {
+    value + 71
+}
+
+pub fn helper_72(value: u32) -> u32 {
+    value + 72
+}
+
+pub fn helper_73(value: u32) -> u32 {
+    value + 73
+}
+
+pub fn helper_74(value: u32) -> u32 {
+    value + 74
+}
+
+pub fn helper_75(value: u32) -> u32 {
+    value + 75
+}
+
+pub fn helper_76(value: u32) -> u32 {
+    value + 76
+}
+
+pub fn helper_77(value: u32) -> u32 {
+    value + 77
+}
+
+pub fn helper_78(value: u32) -> u32 {
+    value + 78
+}
+
+pub fn helper_79(value: u32) -> u32 {
+    value + 79
+}
+
+pub fn helper_80(value: u32) -> u32 {
+    value + 80
+}
+
+pub fn helper_81(value: u32) -> u32 {
+    value + 81
+}
+
+pub fn helper_82(value: u32) -> u32 {
+    value + 82
+}
+
+pub fn helper_83(value: u32) -> u32 {
+    value + 83
+}
+
+pub fn helper_84(value: u32) -> u32 {
+    value + 84
+}
+
+pub fn helper_85(value: u32) -> u32 {
+    value + 85
+}
+
+pub fn helper_86(value: u32) -> u32 {
+    value + 86
+}
+
+pub fn helper_87(value: u32) -> u32 {
+    value + 87
+}
+
+pub fn helper_88(value: u32) -> u32 {
+    value + 88
+}
+
+pub fn helper_89(value: u32) -> u32 {
+    value + 89
+}
+
+pub fn helper_90(value: u32) -> u32 {
+    value + 90
+}
+
+pub fn helper_91(value: u32) -> u32 {
+    value + 91
+}
+
+pub fn helper_92(value: u32) -> u32 {
+    value + 92
+}
+
+pub fn helper_93(value: u32) -> u32 {
+    value + 93
+}
+
+pub fn helper_94(value: u32) -> u32 {
+    value + 94
+}
+
+pub fn helper_95(value: u32) -> u32 {
+    value + 95
+}
+
+pub fn helper_96(value: u32) -> u32 {
+    value + 96
+}
+
+pub fn helper_97(value: u32) -> u32 {
+    value + 97
+}
+
+pub fn helper_98(value: u32) -> u32 {
+    value + 98
+}
+
+pub fn helper_99(value: u32) -> u32 {
+    value + 99
+}
+
+pub fn helper_100(value: u32) -> u32 {
+    value + 100
+}
+
+pub fn helper_101(value: u32) -> u32 {
+    value + 101
+}
+
+pub fn helper_102(value: u32) -> u32 {
+    value + 102
+}
+
+pub fn helper_103(value: u32) -> u32 {
+    value + 103
+}
+
+pub fn helper_104(value: u32) -> u32 {
+    value + 104
+}
+
+pub fn helper_105(value: u32) -> u32 {
+    value + 105
+}
+
+pub fn helper_106(value: u32) -> u32 {
+    value + 106
+}
+
+pub fn helper_107(value: u32) -> u32 {
+    value + 107
+}
+
+pub fn helper_108(value: u32) -> u32 {
+    value + 108
+}
+
+pub fn helper_109(value: u32) -> u32 {
+    value + 109
+}
+
+pub fn helper_110(value: u32) -> u32 {
+    value + 110
+}
+
+pub fn helper_111(value: u32) -> u32 {
+    value + 111
+}
+
+pub fn helper_112(value: u32) -> u32 {
+    value + 112
+}
+
+pub fn helper_113(value: u32) -> u32 {
+    value + 113
+}
+
+pub fn helper_114(value: u32) -> u32 {
+    value + 114
+}
+
+pub fn helper_115(value: u32) -> u32 {
+    value + 115
+}
+
+pub fn helper_116(value: u32) -> u32 {
+    value + 116
+}
+
+pub fn helper_117(value: u32) -> u32 {
+    value + 117
+}
+
+pub fn helper_118(value: u32) -> u32 {
+    value + 118
+}
+
+pub fn helper_119(value: u32) -> u32 {
+    value + 119
+}
+
+pub fn helper_120(value: u32) -> u32 {
+    value + 120
+}
+
+pub fn helper_121(value: u32) -> u32 {
+    value + 121
+}
+
+pub fn helper_122(value: u32) -> u32 {
+    value + 122
+}
+
+pub fn helper_123(value: u32) -> u32 {
+    value + 123
+}
+
+pub fn helper_124(value: u32) -> u32 {
+    value + 124
+}
+
+pub fn helper_125(value: u32) -> u32 {
+    value + 125
+}
+
+pub fn helper_126(value: u32) -> u32 {
+    value + 126
+}
+
+pub fn helper_127(value: u32) -> u32 {
+    value + 127
+}
+
+pub fn helper_128(value: u32) -> u32 {
+    value + 128
+}
+
+pub fn helper_129(value: u32) -> u32 {
+    value + 129
+}
+
+pub fn helper_130(value: u32) -> u32 {
+    value + 130
+}
+
+pub fn helper_131(value: u32) -> u32 {
+    value + 131
+}
+
+pub fn helper_132(value: u32) -> u32 {
+    value + 132
+}
+
+pub fn helper_133(value: u32) -> u32 {
+    value + 133
+}
+
+pub fn helper_134(value: u32) -> u32 {
+    value + 134
+}
+
+pub fn helper_135(value: u32) -> u32 {
+    value + 135
+}
+
+pub fn helper_136(value: u32) -> u32 {
+    value + 136
+}
+
+pub fn helper_137(value: u32) -> u32 {
+    value + 137
+}
+
+pub fn helper_138(value: u32) -> u32 {
+    value + 138
+}
+
+pub fn helper_139(value: u32) -> u32 {
+    value + 139
+}
+
+pub fn helper_140(value: u32) -> u32 {
+    value + 140
+}
+
+pub fn helper_141(value: u32) -> u32 {
+    value + 141
+}
+
+pub fn helper_142(value: u32) -> u32 {
+    value + 142
+}
+
+pub fn helper_143(value: u32) -> u32 {
+    value + 143
+}
+
+pub fn helper_144(value: u32) -> u32 {
+    value + 144
+}
+
+pub fn helper_145(value: u32) -> u32 {
+    value + 145
+}
+
+pub fn helper_146(value: u32) -> u32 {
+    value + 146
+}
+
+pub fn helper_147(value: u32) -> u32 {
+    value + 147
+}
+
+pub fn helper_148(value: u32) -> u32 {
+    value + 148
+}
+
+pub fn helper_149(value: u32) -> u32 {
+    value + 149
+}
+
+pub fn helper_150(value: u32) -> u32 {
+    value + 150
+}
+
+pub fn helper_151(value: u32) -> u32 {
+    value + 151
+}
+
+pub fn helper_152(value: u32) -> u32 {
+    value + 152
+}
+
+pub fn helper_153(value: u32) -> u32 {
+    value + 153
+}
+
+pub fn helper_154(value: u32) -> u32 {
+    value + 154
+}
+
+pub fn helper_155(value: u32) -> u32 {
+    value + 155
+}
+
+pub fn helper_156(value: u32) -> u32 {
+    value + 156
+}
+
+pub fn helper_157(value: u32) -> u32 {
+    value + 157
+}
+
+pub fn helper_158(value: u32) -> u32 {
+    value + 158
+}
+
+pub fn helper_159(value: u32) -> u32 {
+    value + 159
+}
+
+pub fn helper_160(value: u32) -> u32 {
+    value + 160
+}
+
+pub fn helper_161(value: u32) -> u32 {
+    value + 161
+}
+
+pub fn helper_162(value: u32) -> u32 {
+    value + 162
+}
+
+pub fn helper_163(value: u32) -> u32 {
+    value + 163
+}
+
+pub fn helper_164(value: u32) -> u32 {
+    value + 164
+}
+
+pub fn helper_165(value: u32) -> u32 {
+    value + 165
+}
+
+pub fn helper_166(value: u32) -> u32 {
+    value + 166
+}
+
+pub fn helper_167(value: u32) -> u32 {
+    value + 167
+}
+
+pub fn helper_168(value: u32) -> u32 {
+    value + 168
+}
+
+pub fn helper_169(value: u32) -> u32 {
+    value + 169
+}
+
+pub fn helper_170(value: u32) -> u32 {
+    value + 170
+}
+
+pub fn helper_171(value: u32) -> u32 {
+    value + 171
+}
+
+pub fn helper_172(value: u32) -> u32 {
+    value + 172
+}
+
+pub fn helper_173(value: u32) -> u32 {
+    value + 173
+}
+
+pub fn helper_174(value: u32) -> u32 {
+    value + 174
+}
+
+pub fn helper_175(value: u32) -> u32 {
+    value + 175
+}
+
+pub fn helper_176(value: u32) -> u32 {
+    value + 176
+}
+
+pub fn helper_177(value: u32) -> u32 {
+    value + 177
+}
+
+pub fn helper_178(value: u32) -> u32 {
+    value + 178
+}
+
+pub fn helper_179(value: u32) -> u32 {
+    value + 179
+}
+
+pub fn helper_180(value: u32) -> u32 {
+    value + 180
+}
+
+pub fn helper_181(value: u32) -> u32 {
+    value + 181
+}
+
+pub fn helper_182(value: u32) -> u32 {
+    value + 182
+}
+
+pub fn helper_183(value: u32) -> u32 {
+    value + 183
+}
+
+pub fn helper_184(value: u32) -> u32 {
+    value + 184
+}
+
+pub fn helper_185(value: u32) -> u32 {
+    value + 185
+}
+
+pub fn helper_186(value: u32) -> u32 {
+    value + 186
+}
+
+pub fn helper_187(value: u32) -> u32 {
+    value + 187
+}
+
+pub fn helper_188(value: u32) -> u32 {
+    value + 188
+}
+
+pub fn helper_189(value: u32) -> u32 {
+    value + 189
+}
+
+pub fn helper_190(value: u32) -> u32 {
+    value + 190
+}
+
+pub fn helper_191(value: u32) -> u32 {
+    value + 191
+}
+
+pub fn helper_192(value: u32) -> u32 {
+    value + 192
+}
+
+pub fn helper_193(value: u32) -> u32 {
+    value + 193
+}
+
+pub fn helper_194(value: u32) -> u32 {
+    value + 194
+}
+
+pub fn helper_195(value: u32) -> u32 {
+    value + 195
+}
+
+pub fn helper_196(value: u32) -> u32 {
+    value + 196
+}
+
+pub fn helper_197(value: u32) -> u32 {
+    value + 197
+}
+
+pub fn helper_198(value: u32) -> u32 {
+    value + 198
+}
+
+pub fn helper_199(value: u32) -> u32 {
+    value + 199
+}
+
+== file input/documented.rs
+//! Parses arguments.
+
+pub fn parse() {}
+== file input/empty.rs
+use std::io;
+== file input/exports.ts
+export const shape = (input: { width: number }): void => {};
+export { aVeryLongExportedName, anotherVeryLongExportedName } from './names';
+== file input/parser.test.ts
+describe('parser', () => {
+  it('parses', () => {});
+});
+it('stands alone', () => {});
+== stdout
+glob view: input
+input/arg.rs (19 lines): pub struct Arg, impl Arg ×3, impl Clone for Arg, pub fn parse, pub(crate) fn check, ...
+input/big.rs (802 lines): pub struct Big, pub fn helper_0, pub fn helper_1, pub fn helper_2, pub fn helper_3, ...
+input/documented.rs (3 lines): Parses arguments.
+input/empty.rs (1 line): (no header available)
+input/exports.ts (2 lines): export const shape, export { aVeryLongExportedName, anotherVeryLongE…
+input/parser.test.ts (4 lines): describe('parser'), it('stands alone')
+== stderr
+== exit 0

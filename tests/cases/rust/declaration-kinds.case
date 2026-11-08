@@ -38,8 +38,11 @@ Shared by CLI and API.
 [L13-L13] static BUILD_ID: &str
 [L14-L14] static mut GLOBAL_COUNT: u64
 [L15-L15] trait Runner
+  [L15-L15] fn run(&self)
 [L16-L16] impl Runner for Account
+  [L16-L16] fn run(&self)
 [L17-L17] impl Account
+  [L17-L17] fn new(id: UserId) -> Self
 [L18-L18] extern "C"
 [L19-L19] macro_rules! make_id
 [L20-L20] async fn load_user(id: UserId) -> Result<Account, ()>

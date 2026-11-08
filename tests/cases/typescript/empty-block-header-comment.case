@@ -1,4 +1,4 @@
-An empty block comment (`/**/`) is a header comment without text, so no header is printed.
+An empty block comment (`/**/`) is a header comment without text, so no header is printed; the glob view prints a declaration summary instead.
 == args
 input/empty-header.ts
 input
@@ -7,6 +7,6 @@ input
 export const x = 1;
 == stdout
 glob view: input/empty-header.ts input
-input/empty-header.ts (2 lines): (no header available)
+input/empty-header.ts (2 lines): export const x
 == stderr
 == exit 0

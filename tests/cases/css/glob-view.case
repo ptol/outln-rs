@@ -1,4 +1,4 @@
-The glob view prints a CSS file's header comment; `//` lines aren't CSS comments, so they are no header.
+The glob view prints a CSS file's header comment; `//` lines aren't CSS comments, so they are no header, and a file without a header prints a declaration summary of its first rules instead.
 == args
 input
 == file input/theme.css
@@ -11,8 +11,8 @@ input
 .a {}
 == stdout
 glob view: input
-input/plain.css (1 line): (no header available)
-input/slashes.css (2 lines): (no header available)
+input/plain.css (1 line): .a
+input/slashes.css (2 lines): .a
 input/theme.css (2 lines): Theme colors and fonts.
 == stderr
 == exit 0

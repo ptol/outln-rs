@@ -31,7 +31,7 @@ _Avoid_: Size, length, LOC
 
 ### Declaration
 
-A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a class member, a test block, a data file's key, or a CSS rule.
+A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a member, a declaration inside an inline module, a test block, a data file's key, or a CSS rule.
 Code says declaration even where a grammar's node kinds say item (tree-sitter-rust's `function_item`).
 _Avoid_: Symbol, definition, item
 
@@ -45,14 +45,14 @@ _Avoid_: Head, prototype
 A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration. Data files and CSS have no doc comments, so the comment lines directly above a key or rule are its leading annotation.
 _Avoid_: Prefix, trivia
 
-### Class member
+### Member
 
-A method, accessor, or constructor of a class, listed under the class one level deeper.
-_Avoid_: Child, nested declaration
+A declaration inside a class, `impl` block, or trait, listed one level under it: a class's method, accessor, or constructor, or an `impl` block's or trait's function, constant, or type.
+_Avoid_: Child, nested declaration, associated item (Rust's own word, fine in Rust-specific code)
 
 ### Test block
 
-A top-level call that opens a group of tests or one test, such as `describe('parser', …)`, listed by its title.
+A call that opens a group of tests or one test, such as `describe('parser', …)`, listed by its title: at the top level, or one level under the test block whose callback holds it.
 _Avoid_: Test case, spec, suite
 
 ### Key
@@ -72,7 +72,7 @@ _Avoid_: File metadata
 
 ### Header comment
 
-The comment at the top of a source file that says what the file is for, such as a Rust file's `//!` comment; outlines print only its first paragraph.
+The comment at the top of a source file that says what the file is for, such as a Rust file's `//!` comment; outlines print only its first prose paragraph, never a license notice.
 _Avoid_: Top comment, file doc, banner
 
 ### Preamble
@@ -87,7 +87,7 @@ _Avoid_: Metadata block, YAML header
 
 ### File summary
 
-The single line a file contributes to a glob view: its path, its line count, and its header, or, for a data file without a header comment, its field summary, and for a Markdown file without frontmatter fields, its first heading.
+The single line a file contributes to a glob view: its path, its line count, and its header, or, for a data file without a header comment, its field summary, for a code file without one, its declaration summary, and for a Markdown file without frontmatter fields, its first heading.
 _Avoid_: Outline, description
 
 ### Field summary
@@ -104,6 +104,11 @@ _Avoid_: Preferred key, summary key, main field
 
 The single line a glob view prints, in place of file summaries, for a directory at its depth limit that holds supported files: the directory's path with a trailing `/`, how many supported files are below it, and their total line count, such as `packages/core/ (257 files, 31234 lines)`.
 _Avoid_: Folder line, rollup, collapsed directory
+
+### Declaration summary
+
+What a glob view prints for a code file without a header comment: its first distinct top-level declarations, each as its outline line starts up to its parameter list, a repeated one with its count, such as `pub struct Arg, impl Arg ×6, impl Clone for Arg, ...`.
+_Avoid_: Symbol list, table of contents, preview
 
 ## Positions
 

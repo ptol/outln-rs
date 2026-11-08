@@ -1,0 +1,27 @@
+A signature with an object type whose members are on separate lines without `;` or `,` prints on one line with `; ` between those members, so they don't run together (`{ readonly visits: number; readonly meanReward: number }`).
+- A member that already ends with its own `;` or `,` keeps it as written, and the last member before `}` gets none.
+- Nested object types are separated the same way; a comment between members is left out.
+== args
+input/stats.ts
+== file input/stats.ts
+export function statsOf(actionKey: string): {
+  readonly visits: number
+  readonly meanReward: number
+} {
+  return { visits: 0, meanReward: 0 };
+}
+
+export const shape = (input: {
+  name: string, // shown in the title
+  size: {
+    width: number
+    height: number
+  }
+  draw(): void;
+}): void => {};
+== stdout
+input/stats.ts (15 lines)
+[L1-L6] export function statsOf(actionKey: string): { readonly visits: number; readonly meanReward: number }
+[L8-L15] export const shape = (input: { name: string, size: { width: number; height: number }; draw(): void; }): void
+== stderr
+== exit 0

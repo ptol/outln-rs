@@ -13,7 +13,7 @@ export const b = 2;
 export const c = 3;
 == stdout
 glob view: pkg/
-pkg/core/index.ts (1 line): (no header available)
+pkg/core/index.ts (1 line): export const a
 pkg/core/src/ (2 files, 3 lines)
 pkg/top.md (1 line): # Top
 == stderr

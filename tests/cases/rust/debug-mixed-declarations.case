@@ -34,11 +34,11 @@ pub trait Service {
 }
 
 «impl App» {
-  pub fn new() -> Self {
+  «pub fn new() -> Self» {
     Self { name: String::new() }
   }
 
-  pub fn run(&self) {}
+  «pub fn run(&self)» {}
 }
 
 «async fn handle_request(req: Request) -> Response» {
@@ -48,7 +48,7 @@ pub trait Service {
 use std::collections::HashMap;
 
 «pub trait Service» {
-  fn process(&self, input: u64) -> u64;
+  «fn process(&self, input: u64) -> u64»;
 }
 == stderr
 == exit 0

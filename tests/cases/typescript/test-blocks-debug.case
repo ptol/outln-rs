@@ -9,7 +9,7 @@ describe("math", () => {
 test.each([[1, 2]])("adds %i", (a, b) => {});
 == stdout
 «describe("math"», () => {
-  it("adds", () => {});
+  «it("adds"», () => {});
 });
 «test.each([[1, 2]])("adds %i"», (a, b) => {});
 == stderr

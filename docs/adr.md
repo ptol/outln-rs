@@ -220,12 +220,12 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-011: Parse Rust with tree-sitter-rust
 
-**Status**: Accepted (2026-11-06)
+**Status**: Accepted (2026-11-06); amended 2026-11-08 (members of `impl` blocks and traits, and inline modules' items, are listed)
 
 ### Decision
 
 - The `Rust` engine (`src/languages/rust.rs`) parses `.rs` files with `tree-sitter-rust` 0.24.2, the latest release, on the shared code-engine layer of ADR-008.
-- It lists top-level declarations only: functions, `struct`, `enum`, `union`, `trait`, `impl`, `mod`, `const`, `static`, `type`, `extern crate`, `extern` blocks, `macro_rules!`, and re-exports (`pub use`, `pub(crate) use`, and other visibilities). Methods, fields, variants, private `use` declarations, and top-level macro calls aren't listed; an inline `mod` (`mod tests { … }`) is one line.
+- It lists top-level declarations: functions, `struct`, `enum`, `union`, `trait`, `impl`, `mod`, `const`, `static`, `type`, `extern crate`, `extern` blocks, `macro_rules!`, and re-exports (`pub use`, `pub(crate) use`, and other visibilities). Fields, variants, private `use` declarations, and macro calls aren't listed. Consecutive bodiless `mod name;` declarations declared alike share one outline line (`mod cli, discovery`); `use` declarations don't, because joined paths read worse. Amended 2026-11-08: the members of an `impl` block or trait (functions, constants, types) and the items of an inline `mod` (`mod tests { … }`) are listed one level deeper, by the same rules, down to depth 2 (`code_outline::DEEPEST_DEPTH`), because a long `impl` block (clap's `Arg` has six of 600 to 1,300 lines) printed as one line located none of its methods.
 - A signature is the declaration's source up to its body (or a `const`'s `=`, or the final `;`), on one line with `syntax_tree::one_line_source_before`.
 
 ### Rationale
@@ -240,12 +240,12 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-012: Doc-aware header comments, first paragraphs, and leading annotations
 
-**Status**: Accepted (2026-11-06); amended by ADR-016 (`CommentSyntax` gains `#` comments, preamble is checked before comments, and a data file's key takes the comment lines directly above it), ADR-018 (every CSS comment directly above a rule is its leading annotation), and ADR-021 (`DocMarkers` splits into a `CommentSyntax` doc marker table and a `HeaderChoice`, and an `Annotations` table replaces each engine's node classifier)
+**Status**: Accepted (2026-11-06); amended by ADR-016 (`CommentSyntax` gains `#` comments, preamble is checked before comments, and a data file's key takes the comment lines directly above it), ADR-018 (every CSS comment directly above a rule is its leading annotation), and ADR-021 (`DocMarkers` splits into a `CommentSyntax` doc marker table and a `HeaderChoice`, and an `Annotations` table replaces each engine's node classifier); amended 2026-11-08 (the header prints the first prose paragraph and passes over license notices; below)
 
 ### Decision
 
 - `header_comment::find_header_comment` reads every comment at the top of the file, up to the first code, as runs: a block comment, or consecutive `//` lines of one kind; scanning goes on right after each comment or preamble, so code or another comment on the same line counts. The engine passes a `CommentSyntax` (a `DocMarkers` value saying what doc markers mean, and whether block comments nest, as Rust's do) and a `preamble_end` function for what may come before or between comments (a shebang, directives, inner attributes spanning lines, skipped with as much of Rust's lexer as brackets need). With `DocMarkers::Ignored` (TypeScript, JavaScript) the header is the first comment; with `DocMarkers::InnerAndOuter` (Rust) it is the first `//!` or `/*!` comment, or else the first plain comment, never a `///` or `/**` one.
-- A header comment is only its first paragraph, up to the first line without text when more text follows, in every engine and mode.
+- A header comment is only its first paragraph, up to the first line without text when more text follows, in every engine and mode. Amended 2026-11-08: its first prose paragraph (code fences, badge rows, link definitions, and HTML tags aren't prose, and rows of decoration have no text); a comment whose first prose paragraph is a license notice, or that has none, is passed over for the next one. Rust's plain-comment fallback passes over a one-line comment directly above code (`// Std` above `use std::…`), which labels that code; `HeaderChoice::FirstComment` keeps a comment right above code, since TypeScript, JavaScript, CSS, and data files have no file-doc marker and often put the header there. TypeScript, JavaScript, and CSS tool directives written as comments (`/// <reference />`, `// @ts-nocheck`, `/* eslint-disable */`, `/* stylelint-disable */`) are preamble. Over the crates.io registry (15,719 `.rs` files) the glob view changed for 1,096 files, 756 of them license-only comments that now print no header; over a 24,158-file `node_modules` tree, for 2,778 (2,138 of them lucide-react's `@license` banner).
 - A declaration's line range starts at its first leading annotation (doc comment, attribute, or decorator directly above it), found by `leading_annotations::leading_annotations_start`; the engine classifies each preceding node. Attributes and decorators stay attached across blank lines, doc comments don't, plain comments are stepped over, and the header's comment is never one.
 
 ### Rationale
@@ -533,6 +533,27 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - A depth-limited glob view of a huge tree still reads every supported file in it.
 - A file below the limit that can't be read is reported only by a glob view that lists it.
+
+## ADR-024: Summarize code files without a header by their declarations
+
+**Status**: Accepted (2026-11-08)
+
+### Decision
+
+- In the glob view, a code file (any `CodeLanguage`) without a header comment with text prints a declaration summary instead of `(no header available)`: its first five distinct top-level declarations, each as `CodeLanguage::summary_text` cuts its outline line (`signature::signature_head`: up to the parameter list and its type parameters; a test block keeps its title; CSS keeps the whole prelude), cut at 48 characters, a repeated one with its count (`impl Arg ×6`), then `...` when more may follow.
+- Only a file without a header is parsed, and only its first 4 KiB (`DECLARATION_SUMMARY_PREFIX_BYTES`), cut before the last line in them that starts at column 0 with neither whitespace nor a closing bracket, so the parse rarely ends inside a declaration, which tree-sitter would drop as a syntax error. A cut file's summary ends with `...`.
+- `source_text::summary_prefix` cuts a text to a byte budget at a line break, for this and for the data file engine's field summary, which still has its own copy.
+
+### Rationale
+
+- 52% of the crates.io registry's `.rs` files and 77% of a `node_modules` tree's script files have no header comment, so their glob view lines said nothing; their first declarations say what they hold, as a data file's field summary does.
+- Parsing is the cost: tree-sitter parses about 15 to 20 MB/s here, so whole files (generated bindings of several megabytes) took the registry's glob view from 0.57 s to 8.3 s. A 4 KiB prefix holds five declarations for most files; 2 KiB left 500 more registry files without any.
+
+### Consequences
+
+- The glob view is slower on code without headers. With hyperfine: the registry (18,136 files, 9,368 headerless `.rs`) 0.62 s before, 2.28 s after (1.73 s with a 2 KiB prefix); a 24,158-file `node_modules` tree (18,569 headerless) 0.44 s before, 2.67 s after. Documented code is unchanged: its header is still found without parsing.
+- Counts (`×3`) are of the declarations in the prefix read, not the whole file.
+- A declaration whose source starts inside the 4 KiB but runs past the cut may be missing or printed from a partial parse.
 
 ## Dependencies
 

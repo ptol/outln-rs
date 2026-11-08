@@ -1,4 +1,4 @@
-//! TypeScript and JavaScript language engine: header comments, top-level declarations, and class members, parsed with tree-sitter.
+//! TypeScript and JavaScript language engine: header comments, top-level declarations, class members, and test blocks with the test blocks nested in them, parsed with tree-sitter.
 //!
 //! Three grammars (`.ts`, `.tsx`, and JavaScript files) share every rule below; the grammars
 //! differ only in syntax one of them lacks.
@@ -11,12 +11,14 @@ use tree_sitter::{Language, Node};
 
 use crate::code_outline::{CodeLanguage, OutlineLevel};
 use crate::comment_syntax::{BlockComments, CommentSyntax, LineMarker, OUTER_DOC_BLOCK};
-use crate::header_comment::HeaderChoice;
+use crate::header_comment::{HeaderChoice, directive_comment_end};
 use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
-use crate::signature::Signature;
+use crate::signature::{Signature, signature_head};
 use crate::source_text::{ByteRange, line_end};
-use crate::syntax_tree::{child_of_kind, children, first_syntax_child, has_child_of_kind, source};
+use crate::syntax_tree::{
+    OneLineRules, child_of_kind, children, first_syntax_child, has_child_of_kind, source,
+};
 
 // `.d.ts` declaration files have the extension `ts`.
 pub(crate) static TYPESCRIPT: CodeLanguage = script(&["ts", "mts", "cts"], || {
@@ -39,13 +41,7 @@ const fn script(extensions: &'static [&'static str], grammar: fn() -> Language) 
     CodeLanguage {
         extensions,
         grammar,
-        // A `/** */` (`JSDoc`) comment documents what follows it; `///` is a directive in
-        // TypeScript, not a doc comment. Block comments don't nest.
-        comment_syntax: CommentSyntax {
-            line: Some(LineMarker::Slashes),
-            block: Some(BlockComments::Flat),
-            doc_markers: &[OUTER_DOC_BLOCK],
-        },
+        comment_syntax: COMMENT_SYNTAX,
         header_choice: HeaderChoice::FirstComment,
         preamble_end,
         // A decorator (a sibling of its class member in the TypeScript grammar, part of it in
@@ -55,22 +51,72 @@ const fn script(extensions: &'static [&'static str], grammar: fn() -> Language) 
             attribute_kinds: &["decorator"],
             plain_comments: PlainComments::SteppedOver,
         },
-        // Kept as written, so whitespace inside them is never changed. Template literals need no
-        // entry: their text is in leaf `string_fragment` nodes, and the code in their `${…}` is
-        // ordinary syntax.
-        verbatim_kinds: &["string", "regex"],
+        one_line: OneLineRules {
+            // Kept as written, so whitespace inside them is never changed. Template literals
+            // need no entry: their text is in leaf `string_fragment` nodes, and the code in
+            // their `${…}` is ordinary syntax.
+            verbatim_kinds: &["string", "regex"],
+            // An object type (`{ a: number }`) may separate its members by line breaks alone. An
+            // interface's body has the same members, but no signature prints it.
+            member_lists: &["object_type"],
+        },
         declaration_lines: statement_or_member_lines,
+        summary_text: signature_head,
     }
 }
 
-/// Where the preamble starting at byte `start` ends: a shebang on the first line, or a
-/// directive.
+/// A `/** */` (`JSDoc`) comment documents what follows it; `///` is a directive in TypeScript,
+/// not a doc comment. Block comments don't nest.
+const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+    line: Some(LineMarker::Slashes),
+    block: Some(BlockComments::Flat),
+    doc_markers: &[OUTER_DOC_BLOCK],
+};
+
+/// Where the preamble starting at byte `start` ends: a shebang on the first line, a directive,
+/// or a tool directive written as a comment ([`TOOL_DIRECTIVES`]).
 fn preamble_end(text: &str, start: usize) -> Option<usize> {
     let line_end = line_end(text, start);
     let line_text = &text[start..line_end];
     let is_shebang = start == 0 && line_text.starts_with("#!");
-    (is_shebang || is_directive(line_text)).then_some(line_end)
+    if is_shebang || is_directive(line_text) {
+        return Some(line_end);
+    }
+    directive_comment_end(text, start, &COMMENT_SYNTAX, &TOOL_DIRECTIVES)
 }
+
+/// How the text of a comment that is a tool directive starts, after its markers: triple-slash
+/// directives (`/// <reference types="node" />`), and the pragmas of TypeScript, Flow, JSX,
+/// test runners, linters, formatters, and coverage tools. They are written for tools, so the
+/// comment after them can be the header.
+const TOOL_DIRECTIVES: [&str; 26] = [
+    "<reference ",
+    "<amd-",
+    "@ts-",
+    "@flow",
+    "@noflow",
+    "@jsx",
+    "@jest-environment",
+    "@vitest-environment",
+    "@refresh ",
+    "eslint-",
+    "eslint ",
+    "global ",
+    "globals ",
+    "exported ",
+    "jshint ",
+    "jslint ",
+    "tslint:",
+    "oxlint-",
+    "prettier-ignore",
+    "biome-ignore",
+    "deno-lint-ignore",
+    "deno-fmt-ignore",
+    "dprint-ignore",
+    "istanbul ",
+    "c8 ",
+    "v8 ignore",
+];
 
 /// Whether a line is a directive prologue such as `'use client';` or `"use strict"`.
 fn is_directive(line: &str) -> bool {
@@ -84,28 +130,40 @@ fn is_directive(line: &str) -> bool {
         && !statement[1..statement.len() - 1].contains(['\'', '"'])
 }
 
-/// A top-level statement with its line range, which starts at the statement's first leading
-/// annotation. Every outline line of the statement itself gets this range; its class members
-/// get their own.
+/// A statement with its line range, which starts at the statement's first leading annotation:
+/// a top-level one, or one in a test block's callback. Every outline line of the statement
+/// itself gets this range; its class members and nested test blocks get their own.
 #[derive(Clone, Copy)]
 struct Statement<'tree> {
     node: Node<'tree>,
     range: ByteRange,
 }
 
-/// The outline lines of a node with line range `range`: a top-level statement's, or, one level
-/// deeper, a class member's, since only class bodies list the declarations inside them.
+/// The outline lines of a node with line range `range`: a top-level statement's, or, deeper, a
+/// class member's or a nested test block's, since only class bodies and test blocks' callbacks
+/// list the declarations inside them.
 fn statement_or_member_lines(
     level: &OutlineLevel<'_>,
     node: Node<'_>,
     range: ByteRange,
     lines: &mut Vec<OutlineLine>,
 ) {
+    let statement = Statement { node, range };
     if level.is_top_level() {
-        lines.extend(statement_lines(level, Statement { node, range }));
+        lines.extend(statement_lines(level, statement));
+    } else if node.kind() == "expression_statement" {
+        lines.extend(nested_test_block_lines(statement, level));
     } else {
         lines.extend(class_members::member_line(level, node, range));
     }
+}
+
+/// The outline lines of a statement in a test block's callback: a test block, or nothing.
+fn nested_test_block_lines(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Vec<OutlineLine> {
+    first_syntax_child(statement.node)
+        .filter(|expression| expression.kind() == "call_expression")
+        .map(|call| test_blocks::test_block_lines(statement, call, level))
+        .unwrap_or_default()
 }
 
 /// The outline lines of one top-level statement; most statements give none.
@@ -114,9 +172,9 @@ fn statement_lines(level: &OutlineLevel<'_>, statement: Statement<'_>) -> Vec<Ou
     match node.kind() {
         "export_statement" => export_lines(statement, level),
         "expression_statement" => expression_statement_lines(statement, level),
-        "import_statement" | "import_alias" => {
-            import_alias_line(statement, level).into_iter().collect()
-        }
+        "import_statement" => import_alias_line(node, statement, "", level)
+            .into_iter()
+            .collect(),
         _ => declaration_lines(node, statement, "", level),
     }
 }
@@ -172,6 +230,10 @@ fn declaration_lines(
             variable_lines(declaration, statement, prefix, level)
         }
         "ambient_declaration" => ambient_lines(declaration, statement, prefix, level),
+        // `export import Name = Namespace.member`.
+        "import_alias" => import_alias_line(declaration, statement, prefix, level)
+            .into_iter()
+            .collect(),
         _ => Vec::new(),
     }
 }
@@ -380,26 +442,30 @@ fn expression_statement_lines(
     };
     match expression.kind() {
         "internal_module" => declaration_lines(expression, statement, "", level),
-        "call_expression" => test_blocks::test_block_line(statement, expression, level)
-            .into_iter()
-            .collect(),
+        "call_expression" => test_blocks::test_block_lines(statement, expression, level),
         _ => Vec::new(),
     }
 }
 
-/// `import Name = require('...')` and `import Name = Namespace.member` print as `import Name`;
-/// other imports aren't declarations.
-fn import_alias_line(statement: Statement<'_>, level: &OutlineLevel<'_>) -> Option<OutlineLine> {
-    let owner = if statement.node.kind() == "import_statement" {
-        child_of_kind(statement.node, "import_require_clause")?
+/// `import Name = require('...')` and `import Name = Namespace.member` print as `import Name`,
+/// after `prefix` (`export import Name`); other imports aren't declarations. `import` is the
+/// import statement, or the `import_alias` the grammar makes of the second form.
+fn import_alias_line(
+    import: Node<'_>,
+    statement: Statement<'_>,
+    prefix: &str,
+    level: &OutlineLevel<'_>,
+) -> Option<OutlineLine> {
+    let owner = if import.kind() == "import_statement" {
+        child_of_kind(import, "import_require_clause")?
     } else {
-        statement.node
+        import
     };
     let name = child_of_kind(owner, "identifier")?;
     Some(statement_line(
         level,
         statement,
-        "import",
+        &prefixed(prefix, "import".to_owned()),
         Signature {
             text: source(name, level.text()).to_owned(),
             highlight_end: name.end_byte(),
@@ -429,6 +495,28 @@ mod tests {
             panic!("expected a header comment");
         };
         assert_eq!(lines[0].text, "Tool.");
+    }
+
+    #[test]
+    fn tool_directive_comments_are_preamble_before_the_header() {
+        let cases = [
+            "/// <reference types=\"node\" />\n// Reads config files.\n",
+            "// @ts-nocheck\n/** Reads config files. */\n",
+            "/* eslint-disable */\n// Reads config files.\n",
+            "/* global window, document */\n/** @jsx h */\n// Reads config files.\n",
+            "/**\n * @jest-environment jsdom\n */\n\n// Reads config files.\n",
+        ];
+        for text in cases {
+            let Some(Header::Comment(lines)) = TYPESCRIPT.header(text) else {
+                panic!("expected a header comment in {text:?}");
+            };
+            assert_eq!(lines[0].text, "Reads config files.", "{text:?}");
+        }
+        assert_eq!(TYPESCRIPT.header("// @ts-check\nrun();\n"), None);
+        let Some(Header::Comment(lines)) = TYPESCRIPT.header("// Global state.\n") else {
+            panic!("expected a header comment");
+        };
+        assert_eq!(lines[0].text, "Global state.");
     }
 
     #[test]

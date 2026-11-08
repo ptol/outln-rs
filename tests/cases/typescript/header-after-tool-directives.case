@@ -1,0 +1,47 @@
+Tool directives written as comments are preamble, not the header: the comment after them is the header, as it is after a shebang or `'use strict'`.
+- A `/// <reference />` line doesn't join the `//` comment below it (`reference.ts`); a block directive such as `/* eslint-disable */` ends at its `*/` (`eslint.js`).
+- `// @ts-nocheck` comes before a `/** */` header (`nocheck.ts`); several directives in a row are all skipped (`several.js`).
+- A file with only directives has no header, so the glob view prints its declaration summary (`only-directive.ts`), and a comment that merely mentions a directive is an ordinary header (`mention.ts`).
+- In CSS, `/* stylelint-disable */` is a directive the same way (`theme.css`).
+== args
+input
+== file input/eslint.js
+/* eslint-disable no-console */
+// Logs build timings.
+console.log(1);
+== file input/mention.ts
+// Why this file needs @ts-nocheck: generated types.
+export {};
+== file input/nocheck.ts
+// @ts-nocheck
+/** Wraps the legacy client. */
+export class Client {}
+== file input/only-directive.ts
+// @ts-check
+export const a = 1;
+== file input/reference.ts
+/// <reference types="node" />
+// Reads config files.
+export function read() {}
+== file input/several.js
+'use strict';
+/* global window */
+// prettier-ignore
+/* istanbul ignore file */
+// Browser entry point.
+window.start();
+== file input/theme.css
+/* stylelint-disable selector-class-pattern */
+/* Theme colors. */
+.a {}
+== stdout
+glob view: input
+input/eslint.js (3 lines): Logs build timings.
+input/mention.ts (2 lines): Why this file needs @ts-nocheck: generated types.
+input/nocheck.ts (3 lines): Wraps the legacy client.
+input/only-directive.ts (2 lines): export const a
+input/reference.ts (3 lines): Reads config files.
+input/several.js (6 lines): Browser entry point.
+input/theme.css (3 lines): Theme colors.
+== stderr
+== exit 0

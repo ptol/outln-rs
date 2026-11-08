@@ -69,11 +69,28 @@ pub(crate) fn first_syntax_child(node: Node<'_>) -> Option<Node<'_>> {
 /// one line. A trailing comma before a line break and a closing bracket is dropped.
 ///
 /// Comments aren't part of a signature, so they are left out like whitespace. Nodes of the
-/// `verbatim_kinds` (string literals, for example) are kept as written, so whitespace inside
-/// them is never changed, except that a line break inside any token prints as `\n`.
-pub(crate) fn one_line_source(node: Node<'_>, text: &str, verbatim_kinds: &[&str]) -> String {
-    one_line_tokens(node, node.end_byte(), text, verbatim_kinds)
+/// language's verbatim kinds (string literals, for example) are kept as written, so whitespace
+/// inside them is never changed, except that a line break inside any token prints as `\n`. Two
+/// members of one of its member lists that only a line break separates get a `;` between them
+/// ([`OneLineRules`]).
+pub(crate) fn one_line_source(node: Node<'_>, text: &str, rules: &OneLineRules) -> String {
+    one_line_tokens(node, node.end_byte(), text, rules)
 }
+
+/// What a language's source needs to print on one line ([`one_line_source`]).
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct OneLineRules {
+    /// Literal node kinds kept as written, such as string literals.
+    pub(crate) verbatim_kinds: &'static [&'static str],
+    /// Node kinds whose members a line break alone may separate, such as TypeScript's object
+    /// types (`{ a: number` newline `b: string }`); joined on one line, the members would run
+    /// together, so they get a `;` between them.
+    pub(crate) member_lists: &'static [&'static str],
+}
+
+/// What [`one_line_source`] prints between two members of a member list that only a line break
+/// separates.
+const MEMBER_SEPARATOR: &str = ";";
 
 /// The source of the node's tokens that start before byte `end` (such as where its body
 /// starts), on one line by the rules of [`one_line_source`], without a final comma: a `where`
@@ -82,9 +99,9 @@ pub(crate) fn one_line_source_before(
     node: Node<'_>,
     end: usize,
     text: &str,
-    verbatim_kinds: &[&str],
+    rules: &OneLineRules,
 ) -> String {
-    let mut line = one_line_tokens(node, end, text, verbatim_kinds);
+    let mut line = one_line_tokens(node, end, text, rules);
     // A verbatim token ends with its closing quote, so a final `,` is always a comma token.
     if line.ends_with(',') {
         line.pop();
@@ -93,7 +110,7 @@ pub(crate) fn one_line_source_before(
 }
 
 /// The node's tokens that start before byte `end`, joined on one line.
-fn one_line_tokens(node: Node<'_>, end: usize, text: &str, verbatim_kinds: &[&str]) -> String {
+fn one_line_tokens(node: Node<'_>, end: usize, text: &str, rules: &OneLineRules) -> String {
     let source = text[node.start_byte()..end].trim_end();
     let is_plain_line = !source.contains(['\n', '\t'])
         && !source.contains("  ")
@@ -103,29 +120,51 @@ fn one_line_tokens(node: Node<'_>, end: usize, text: &str, verbatim_kinds: &[&st
         return source.to_owned();
     }
     let mut tokens = Vec::new();
-    collect_tokens(node, end, verbatim_kinds, &mut tokens);
-    join_tokens(&tokens, text)
+    let mut separators = Vec::new();
+    collect_tokens(node, end, rules, &mut tokens, &mut separators);
+    // Separators are found list by list, so a nested list's come after its enclosing list's.
+    separators.sort_unstable();
+    join_tokens(&tokens, &separators, text)
 }
 
 /// The byte ranges of the node's leaves that start before byte `end`, treating nodes of the
-/// `verbatim_kinds` as leaves and skipping comments.
+/// verbatim kinds as leaves and skipping comments, and in `separators`, where a member of a
+/// member list ends that a line break alone separates from the next ([`OneLineRules`]).
+///
+/// A pre-order walk with a tree cursor rather than recursion, so a signature nested tens of
+/// thousands of levels deep (`Vec<Vec<…>>`) can't overflow the stack.
 fn collect_tokens(
     node: Node<'_>,
     end: usize,
-    verbatim_kinds: &[&str],
+    rules: &OneLineRules,
     tokens: &mut Vec<ByteRange>,
+    separators: &mut Vec<usize>,
 ) {
-    if node.is_extra() || node.start_byte() >= end {
-        return;
-    }
-    if node.child_count() == 0 || verbatim_kinds.contains(&node.kind()) {
-        if node.start_byte() < node.end_byte() {
-            tokens.push(byte_range(node));
+    let mut cursor = node.walk();
+    loop {
+        let current = cursor.node();
+        let is_skipped = current.is_extra() || current.start_byte() >= end;
+        let is_leaf = current.child_count() == 0 || rules.verbatim_kinds.contains(&current.kind());
+        if !is_skipped && is_leaf && current.start_byte() < current.end_byte() {
+            tokens.push(byte_range(current));
         }
-        return;
-    }
-    for child in children(node) {
-        collect_tokens(child, end, verbatim_kinds, tokens);
+        if !is_skipped && rules.member_lists.contains(&current.kind()) {
+            push_missing_separators(current, end, separators);
+        }
+        if !is_skipped && !is_leaf && cursor.goto_first_child() {
+            continue;
+        }
+        // Up to the nearest ancestor with a next sibling, but never past `node`, the cursor's
+        // root at depth 0.
+        loop {
+            if cursor.depth() == 0 {
+                return;
+            }
+            if cursor.goto_next_sibling() {
+                break;
+            }
+            cursor.goto_parent();
+        }
     }
 }
 
@@ -136,10 +175,30 @@ const CLOSING_BRACKETS: [&str; 3] = [")", "]", ">"];
 /// so they aren't in [`CLOSING_BRACKETS`].
 const TRAILING_COMMA_CLOSERS: [&str; 4] = [")", "]", ">", "}"];
 
-/// Joins tokens with the rules of [`one_line_source`]. The gap between two tokens holds only
+/// Appends where each member of `list` ends that is followed by another member starting before
+/// byte `end`, with no separator token (`;`, `,`) between them, only whitespace or comments.
+fn push_missing_separators(list: Node<'_>, end: usize, separators: &mut Vec<usize>) {
+    let mut cursor = list.walk();
+    let mut previous: Option<Node<'_>> = None;
+    for child in list.children(&mut cursor).filter(|child| !child.is_extra()) {
+        if child.start_byte() >= end {
+            break;
+        }
+        if let Some(previous) = previous.filter(tree_sitter::Node::is_named)
+            && child.is_named()
+        {
+            separators.push(previous.end_byte());
+        }
+        previous = Some(child);
+    }
+}
+
+/// Joins tokens with the rules of [`one_line_source`], printing [`MEMBER_SEPARATOR`] after each
+/// token that ends at one of the sorted `separators`. The gap between two tokens holds only
 /// whitespace and skipped comments.
-fn join_tokens(tokens: &[ByteRange], text: &str) -> String {
+fn join_tokens(tokens: &[ByteRange], separators: &[usize], text: &str) -> String {
     let mut joined = String::new();
+    let mut separators = separators.iter().copied().peekable();
     for (index, token) in tokens.iter().enumerate() {
         let token_text = &text[token.as_range()];
         let previous_text = index
@@ -164,6 +223,15 @@ fn join_tokens(tokens: &[ByteRange], text: &str) -> String {
             continue;
         }
         joined.push_str(&token_text.replace('\n', "\\n"));
+        // A member's last token ends where the member does; a separator before it (after a
+        // member ending in a zero-width `MISSING` token, which has no token) is dropped.
+        let mut ends_member = false;
+        while let Some(separator) = separators.next_if(|&separator| separator <= token.end) {
+            ends_member |= separator == token.end;
+        }
+        if ends_member {
+            joined.push_str(MEMBER_SEPARATOR);
+        }
         let Some(next_text) = next_text else { break };
         if gap.is_empty() {
             continue;
@@ -186,15 +254,28 @@ mod tests {
         tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()
     }
 
-    fn one_line_parameters(text: &str, verbatim_kinds: &[&str]) -> String {
+    fn one_line_parameters(text: &str, verbatim_kinds: &'static [&'static str]) -> String {
         let tree = parse(text, &typescript());
         let function = tree.root_node().child(0).unwrap();
         let parameters = function.child_by_field_name("parameters").unwrap();
-        one_line_source(parameters, text, verbatim_kinds)
+        let rules = OneLineRules {
+            verbatim_kinds,
+            member_lists: &["object_type"],
+        };
+        one_line_source(parameters, text, &rules)
     }
 
     fn parameters_of_first_function(text: &str) -> String {
         one_line_parameters(text, &["string"])
+    }
+
+    #[test]
+    fn one_line_source_separates_members_that_only_a_line_break_separated() {
+        let text = "function f(a: {\n  x: number\n  y: { z: 1\n w: 2 }, // note\n  v(): void /* c */\n  u: 1;\n}) {}\n";
+        assert_eq!(
+            parameters_of_first_function(text),
+            "(a: { x: number; y: { z: 1; w: 2 }, v(): void; u: 1; })"
+        );
     }
 
     #[test]
@@ -237,6 +318,28 @@ mod tests {
             parameters_of_first_function("function f(a = [,\n]) {}\n"),
             "(a = [,])"
         );
+    }
+
+    /// Runs on a thread with a small stack, which the recursive walk this replaced overflowed
+    /// at this depth. The depth stays small because tree-sitter's own parse of such source
+    /// takes time quadratic in its depth (seconds at 20 000 levels). The line break makes the
+    /// walk run instead of the shortcut for source already on one line.
+    #[test]
+    fn one_line_source_walks_deeply_nested_source_without_recursion() {
+        const SMALL_STACK_BYTES: usize = 256 * 1024;
+        let depth = 5_000;
+        let text = format!(
+            "function f(\n  a = {}{}) {{}}\n",
+            "[".repeat(depth),
+            "]".repeat(depth)
+        );
+        let parameters = std::thread::Builder::new()
+            .stack_size(SMALL_STACK_BYTES)
+            .spawn(move || parameters_of_first_function(&text))
+            .unwrap()
+            .join()
+            .unwrap();
+        assert_eq!(parameters.len(), "(a = )".len() + 2 * depth);
     }
 
     #[test]

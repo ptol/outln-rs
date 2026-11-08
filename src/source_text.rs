@@ -250,6 +250,27 @@ pub(crate) fn line_end(text: &str, offset: usize) -> usize {
         .map_or(text.len(), |newline| offset + newline)
 }
 
+/// The start of `text` that a summary reads when a glob view shouldn't parse a long file whole:
+/// all of it, if it has at most `max_bytes`, or else its first `max_bytes` up to the last line
+/// break among them (or a character boundary, for a file on one line), and whether it was cut.
+pub(crate) fn summary_prefix(text: &str, max_bytes: usize) -> (&str, Cut) {
+    if text.len() <= max_bytes {
+        return (text, Cut::WholeFile);
+    }
+    let limit = text.floor_char_boundary(max_bytes);
+    let end = text[..limit]
+        .rfind('\n')
+        .map_or(limit, |newline| newline + 1);
+    (&text[..end], Cut::Prefix)
+}
+
+/// Whether [`summary_prefix`] kept the whole text or only its start.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Cut {
+    WholeFile,
+    Prefix,
+}
+
 /// The offset of the first non-whitespace character at or after `offset`, or the end of `text`.
 pub(crate) fn after_whitespace(text: &str, offset: usize) -> usize {
     text.len() - text[offset..].trim_start().len()
