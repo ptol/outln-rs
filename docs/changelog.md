@@ -10,6 +10,7 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 ## Unreleased
 
 - Every engine: a lone CR (a file with classic Mac OS line endings) is a line break, as CRLF already was: such a file's line count, line ranges, and header comment count each CR-ended line, and no raw CR is printed.
+- CSS: a style rule without selectors (`{ color: red }`, in a half-edited file) is no longer listed as a blank outline line.
 - File mode: an outline's first line prints the file's line count after its path, as the glob view does: `src/cli.rs (120 lines)` ([ADR-020](adr.md)).
 
 ## 0.3.0 (2026-11-06)

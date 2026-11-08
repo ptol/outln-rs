@@ -1,0 +1,19 @@
+A style rule without selectors, as a half-edited file has (`{ color: red }`), isn't listed, at
+the top level or inside an at-rule, because its outline line would be blank; the rules around
+it are listed as usual.
+== args
+input/broken.css
+== file input/broken.css
+{ color: red }
+.a { color: blue }
+@media print {
+  { color: black }
+  .b { color: gray }
+}
+== stdout
+input/broken.css (6 lines)
+[L2-L2] .a
+[L3-L6] @media print
+  [L5-L5] .b
+== stderr
+== exit 0
