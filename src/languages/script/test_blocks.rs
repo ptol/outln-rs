@@ -43,19 +43,27 @@ pub(super) fn test_block_line(
 }
 
 /// Whether the node names a test function, possibly with modifiers: `it`, `describe.skip`.
-fn is_test_callee(node: Node<'_>, level: &OutlineLevel<'_>) -> bool {
-    match node.kind() {
-        "identifier" => TEST_FUNCTIONS.contains(&source(node, level.text())),
-        "member_expression" => {
-            let modifier = node
-                .child_by_field_name("property")
-                .is_some_and(|property| TEST_MODIFIERS.contains(&source(property, level.text())));
-            let object = node
-                .child_by_field_name("object")
-                .is_some_and(|object| is_test_callee(object, level));
-            modifier && object
+///
+/// Walks down the chain of modifiers in a loop rather than by recursion, so a chain of
+/// thousands (`describe.only.only…`) can't overflow the stack.
+fn is_test_callee(mut node: Node<'_>, level: &OutlineLevel<'_>) -> bool {
+    loop {
+        match node.kind() {
+            "identifier" => return TEST_FUNCTIONS.contains(&source(node, level.text())),
+            "member_expression" => {
+                let has_modifier = node
+                    .child_by_field_name("property")
+                    .is_some_and(|property| {
+                        TEST_MODIFIERS.contains(&source(property, level.text()))
+                    });
+                let Some(object) = node.child_by_field_name("object").filter(|_| has_modifier)
+                else {
+                    return false;
+                };
+                node = object;
+            }
+            _ => return false,
         }
-        _ => false,
     }
 }
 
@@ -65,4 +73,21 @@ fn ends_with_each(callee: Node<'_>, level: &OutlineLevel<'_>) -> bool {
     callee
         .child_by_field_name("property")
         .is_some_and(|property| source(property, level.text()) == "each")
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::language_engine::outline_texts;
+    use crate::languages::script::JAVASCRIPT;
+
+    /// Deeper than a test thread's stack allowed when the walk down the modifiers recursed.
+    #[test]
+    fn a_long_chain_of_modifiers_is_checked_without_recursion() {
+        let chain = ".only".repeat(100_000);
+        let text = format!("describe{chain}('t', () => {{}});\n");
+        assert_eq!(
+            outline_texts(&JAVASCRIPT, &text),
+            [format!("describe{chain}('t')")]
+        );
+    }
 }

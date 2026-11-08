@@ -109,23 +109,37 @@ fn one_line_tokens(node: Node<'_>, end: usize, text: &str, verbatim_kinds: &[&st
 
 /// The byte ranges of the node's leaves that start before byte `end`, treating nodes of the
 /// `verbatim_kinds` as leaves and skipping comments.
+///
+/// A pre-order walk with a tree cursor rather than recursion, so a signature nested tens of
+/// thousands of levels deep (`Vec<Vec<…>>`) can't overflow the stack.
 fn collect_tokens(
     node: Node<'_>,
     end: usize,
     verbatim_kinds: &[&str],
     tokens: &mut Vec<ByteRange>,
 ) {
-    if node.is_extra() || node.start_byte() >= end {
-        return;
-    }
-    if node.child_count() == 0 || verbatim_kinds.contains(&node.kind()) {
-        if node.start_byte() < node.end_byte() {
-            tokens.push(byte_range(node));
+    let mut cursor = node.walk();
+    loop {
+        let current = cursor.node();
+        let is_skipped = current.is_extra() || current.start_byte() >= end;
+        let is_leaf = current.child_count() == 0 || verbatim_kinds.contains(&current.kind());
+        if !is_skipped && is_leaf && current.start_byte() < current.end_byte() {
+            tokens.push(byte_range(current));
         }
-        return;
-    }
-    for child in children(node) {
-        collect_tokens(child, end, verbatim_kinds, tokens);
+        if !is_skipped && !is_leaf && cursor.goto_first_child() {
+            continue;
+        }
+        // Up to the nearest ancestor with a next sibling, but never past `node`, the cursor's
+        // root at depth 0.
+        loop {
+            if cursor.depth() == 0 {
+                return;
+            }
+            if cursor.goto_next_sibling() {
+                break;
+            }
+            cursor.goto_parent();
+        }
     }
 }
 
@@ -237,6 +251,28 @@ mod tests {
             parameters_of_first_function("function f(a = [,\n]) {}\n"),
             "(a = [,])"
         );
+    }
+
+    /// Runs on a thread with a small stack, which the recursive walk this replaced overflowed
+    /// at this depth. The depth stays small because tree-sitter's own parse of such source
+    /// takes time quadratic in its depth (seconds at 20 000 levels). The line break makes the
+    /// walk run instead of the shortcut for source already on one line.
+    #[test]
+    fn one_line_source_walks_deeply_nested_source_without_recursion() {
+        const SMALL_STACK_BYTES: usize = 256 * 1024;
+        let depth = 5_000;
+        let text = format!(
+            "function f(\n  a = {}{}) {{}}\n",
+            "[".repeat(depth),
+            "]".repeat(depth)
+        );
+        let parameters = std::thread::Builder::new()
+            .stack_size(SMALL_STACK_BYTES)
+            .spawn(move || parameters_of_first_function(&text))
+            .unwrap()
+            .join()
+            .unwrap();
+        assert_eq!(parameters.len(), "(a = )".len() + 2 * depth);
     }
 
     #[test]

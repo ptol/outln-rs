@@ -11,6 +11,7 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 - File mode: an outline's first line prints the file's line count after its path, as the glob view does: `src/cli.rs (120 lines)` ([ADR-020](adr.md)).
 - Rust: the members of an `impl` block or trait (functions, constants, associated types) and the items of an inline `mod` are listed one level deeper, each with its own line range; an `impl` block inside an inline module lists its members at depth 2, and nothing deeper is listed ([ADR-011](adr.md)).
+- Code files nested tens of thousands of levels deep (a Rust type `Vec<Vec<…>>` with a comment inside, a parameter default of nested arrays, `describe.only.only…`) no longer crash outln with a stack overflow, which lost the output of every other file in the run.
 - Header comments, in every engine but Markdown's:
   - A comment whose first prose paragraph is a license notice (`Copyright …`, `SPDX-License-Identifier: …`, `Licensed under …`, `This Source Code Form …`, `@license …`, `This file is part of X` with a license pointer) is passed over for the next comment; a file with only a license comment has no header.
   - Paragraphs that aren't prose are skipped for the next one: a fenced code block (` ```compile_fail `), and lines that are only badges (`[![github]](…)`), link reference definitions, or HTML tags (`<br>`). A comment with no prose paragraph is passed over.
