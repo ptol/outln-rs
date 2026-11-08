@@ -113,7 +113,6 @@ fn an_unreadable_directory_is_reported_while_the_rest_still_prints() {
         .expect("write");
     let locked = dir.path().join("docs/locked");
     fs::set_permissions(&locked, Permissions::from_mode(0o000)).expect("chmod");
-    // Root reads any directory, so there is nothing to test there.
     let readable_anyway = fs::read_dir(&locked).is_ok();
 
     let directory_result = run_in(&dir, &["docs"]);
@@ -121,6 +120,7 @@ fn an_unreadable_directory_is_reported_while_the_rest_still_prints() {
     let glob_result = run_in(&dir, &["{docs,other}/*.md"]);
     fs::set_permissions(&locked, Permissions::from_mode(0o755)).expect("chmod back");
     if readable_anyway {
+        skip_because_permissions_are_ignored("an_unreadable_directory_is_reported");
         return;
     }
     let (out, err, status) = directory_result.expect("writing to a Vec cannot fail");
@@ -135,6 +135,46 @@ fn an_unreadable_directory_is_reported_while_the_rest_still_prints() {
     assert!(glob_out.contains("docs/ok.md"), "{glob_out}");
     assert_eq!(glob_err, "");
     assert_eq!(glob_status, ExitStatus::Success);
+}
+
+#[cfg(unix)]
+#[test]
+fn an_unreadable_file_is_reported_while_the_others_still_print() {
+    use std::fs::{self, Permissions};
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = ScratchDir::new("usage-unreadable-file").expect("temp dir");
+    dir.write("locked.md", b"# Locked\n").expect("write");
+    dir.write("ok.md", b"# Ok\n").expect("write");
+    let locked = dir.path().join("locked.md");
+    fs::set_permissions(&locked, Permissions::from_mode(0o000)).expect("chmod");
+    let readable_anyway = fs::read(&locked).is_ok();
+
+    let result = run_in(&dir, &["locked.md", "ok.md"]);
+    fs::set_permissions(&locked, Permissions::from_mode(0o644)).expect("chmod back");
+    if readable_anyway {
+        skip_because_permissions_are_ignored("an_unreadable_file_is_reported");
+        return;
+    }
+    let (out, err, status) = result.expect("writing to a Vec cannot fail");
+
+    assert_eq!(out, "ok.md (1 line)\n[L1-L1] # Ok\n");
+    // One error line, naming the file; it exists, so it isn't reported as missing.
+    assert_eq!(err.lines().count(), 1, "{err}");
+    assert!(err.contains("locked.md"), "{err}");
+    assert!(!err.contains("does not exist"), "{err}");
+    assert_eq!(status, ExitStatus::Failure);
+}
+
+/// Root (or a process with `CAP_DAC_OVERRIDE`) reads files whatever their permissions, so a
+/// permission test can't fail there; it says so instead of passing without checking anything.
+#[cfg(unix)]
+#[expect(
+    clippy::print_stderr,
+    reason = "a skipped test explains itself in the test output"
+)]
+fn skip_because_permissions_are_ignored(test: &str) {
+    eprintln!("skipped {test}: this process reads files whatever their permissions (root?)");
 }
 
 #[test]

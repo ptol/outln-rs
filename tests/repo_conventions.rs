@@ -1,7 +1,8 @@
 //! Repository conventions that keep `outln` output and the tooling healthy, checked mechanically.
 //!
 //! - Every `.rs` file starts with a `//!` header comment saying what the file is for.
-//! - No `.rs` file silences lints with an inner `allow` attribute at its top, which clippy can't catch.
+//! - No `.rs` file silences lints with an inner `allow` attribute (`#![allow(...)]` starting a
+//!   line, anywhere in the file), which clippy can't catch.
 //! - Every Markdown file starts with YAML frontmatter that has a non-empty `description`.
 //! - Markdown files under `docs/` also have `readWhen`: the tasks that call for reading them.
 //! - Relative inline links (`[text](path)`) outside code point to files that exist;
@@ -81,6 +82,10 @@ fn pinned_tool_versions_agree() {
 }
 
 /// Tracked plus untracked-but-not-ignored files, relative to `root`.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "git knows which files are ignored; this test isn't library code"
+)]
 fn repository_files(root: &Path) -> Result<Vec<PathBuf>, String> {
     let output = Command::new("git")
         .args([
@@ -164,31 +169,33 @@ fn check_rust_header(content: &str) -> Option<String> {
 
 /// Clippy's `allow_attributes` only checks outer `#[allow]`, so inner ones are caught here.
 ///
-/// Inner attributes must come before a file's first item, so only that leading block of
-/// comments and `#![...]` attributes is scanned; text in later raw strings can't trip it.
+/// Inner attributes may open any module or function body (`mod m { #![allow(...)] }`), so the
+/// whole file is scanned. Only attributes that start a line count: rustfmt puts every attribute
+/// on its own line, while a fixture string mentioning one inside a test (`"...\n#![allow..."`)
+/// doesn't start the source line. An attribute rustfmt wraps over several lines is read up to
+/// its closing bracket, so `#![cfg_attr(\n    test,\n    allow(...)\n)]` is caught too.
 fn check_inner_allow(content: &str) -> Vec<String> {
     let mut violations = Vec::new();
-    let mut open_brackets = 0_usize;
+    // The open attribute's first line number and its text so far, without whitespace.
+    let mut open: Option<(usize, String)> = None;
     for (index, line) in content.lines().enumerate() {
         let trimmed = line.trim_start();
-        let starts_attribute = trimmed.starts_with("#!");
-        if open_brackets == 0
-            && !starts_attribute
-            && !trimmed.is_empty()
-            && !trimmed.starts_with("//")
-        {
-            break;
+        let (start, mut attribute) = match open.take() {
+            Some(open_attribute) => open_attribute,
+            None if trimmed.starts_with("#![") => (index + 1, String::new()),
+            None => continue,
+        };
+        attribute.extend(trimmed.split_whitespace());
+        if attribute.matches('[').count() > attribute.matches(']').count() {
+            open = Some((start, attribute));
+            continue;
         }
-        let compact: String = trimmed.split_whitespace().collect();
         // Covers `#![allow(...)]`, `#![allow (...)]`, and `#![cfg_attr(..., allow(...))]`.
-        if starts_attribute && compact.contains("allow(") {
+        if attribute.contains("allow(") {
             violations.push(format!(
-                "line {}: use `#![expect(lint, reason = \"...\")]` instead of an inner `allow`",
-                index + 1
+                "line {start}: use `#![expect(lint, reason = \"...\")]` instead of an inner `allow`"
             ));
         }
-        open_brackets = (open_brackets + trimmed.matches('[').count())
-            .saturating_sub(trimmed.matches(']').count());
     }
     violations
 }
@@ -427,8 +434,20 @@ fn inner_allow_attributes_are_rejected_but_expect_is_fine() {
 }
 
 #[test]
-fn inner_allow_scan_stops_at_the_first_item() {
-    let content = "//! Header.\n\nconst FIXTURE: &str = r\"\n#![allow(dead_code)]\n\";\n";
+fn inner_allow_attributes_inside_items_are_rejected() {
+    let content = "//! Header.\n\nfn f() {}\n\nmod m {\n    #![allow(clippy::unwrap_used, reason = \"x\")]\n}\n\nmod n {\n    #![cfg_attr(\n        test,\n        allow(dead_code)\n    )]\n}\n";
+    assert_eq!(
+        check_inner_allow(content),
+        [
+            "line 6: use `#![expect(lint, reason = \"...\")]` instead of an inner `allow`",
+            "line 10: use `#![expect(lint, reason = \"...\")]` instead of an inner `allow`",
+        ]
+    );
+}
+
+#[test]
+fn inner_allow_mentioned_inside_a_line_is_not_an_attribute() {
+    let content = "//! Header.\n\nconst FIXTURE: &str = \"#![allow(dead_code)]\";\n// A comment about #![allow(...)].\n";
     assert_eq!(check_inner_allow(content), NO_VIOLATIONS);
 }
 

@@ -5,8 +5,10 @@ allow-panic-in-tests = true
 
 # Side effects are injected through parameters; only the imperative shell (src/main.rs) opens
 # the process streams or reads the environment or the clock, and there each use needs
-# `#[expect(clippy::disallowed_methods, reason = "...")]`. The one other exception is the
-# casefile runner's function that reads its own switches (tests/casefiles.rs).
+# `#[expect(clippy::disallowed_methods, reason = "...")]`. Library code reads files but never
+# writes them, starts processes, or sleeps (ADR-004). The other exceptions are test helpers that
+# set up and drive a test (tests/support, the casefile runner, tests/cli.rs, tests/repo_conventions.rs),
+# each with its own `#[expect]`. clippy has no `allow-*-in-tests` switch for this lint.
 disallowed-methods = [
   { path = "std::io::stdout", reason = "write to an injected `impl Write`; src/main.rs passes stdout in" },
   { path = "std::io::stderr", reason = "write to an injected `impl Write`; src/main.rs passes stderr in" },
@@ -18,6 +20,13 @@ disallowed-methods = [
   { path = "std::env::vars", reason = "read the environment in src/main.rs and pass values in" },
   { path = "std::env::vars_os", reason = "read the environment in src/main.rs and pass values in" },
   { path = "std::env::current_dir", reason = "resolve the working directory in src/main.rs and pass it in" },
+  { path = "std::env::set_current_dir", reason = "resolve paths against `Context::cwd` instead of changing the process's directory" },
+  { path = "std::env::temp_dir", reason = "reads TMPDIR from the environment; pass a directory in" },
+  { path = "std::env::home_dir", reason = "reads HOME from the environment; src/main.rs resolves it and passes paths in" },
+  { path = "std::process::Command::new", reason = "library code doesn't start processes; do it in src/main.rs" },
+  { path = "std::thread::sleep", reason = "inject a clock instead of waiting on real time" },
+  { path = "std::fs::write", reason = "library code only reads files (ADR-004); write through an injected `impl Write`" },
+  { path = "std::fs::File::create", reason = "library code only reads files (ADR-004); write through an injected `impl Write`" },
   { path = "std::time::SystemTime::now", reason = "inject a clock instead of reading time directly" },
   { path = "std::time::Instant::now", reason = "inject a clock instead of reading time directly" },
   { path = "std::process::exit", reason = "return an `ExitStatus`; src/main.rs turns it into the exit code" },

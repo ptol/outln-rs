@@ -65,6 +65,11 @@ pub enum ExitStatus {
 }
 
 impl ExitStatus {
+    /// The process exit code: 0 for `Success`, 1 for `Failure`, 2 for `UsageError`.
+    ///
+    /// ```
+    /// assert_eq!(outln::ExitStatus::UsageError.code(), 2);
+    /// ```
     #[must_use]
     pub fn code(self) -> u8 {
         match self {

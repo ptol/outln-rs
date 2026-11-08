@@ -43,6 +43,8 @@ tree-sitter-yaml = { version = "0.7.2", default-features = false }
 unsafe_code = "forbid"
 # Keeps the public surface minimal: items that aren't reachable from the crate root must be pub(crate).
 unreachable_pub = "warn"
+# Public items get `///` docs (docs/codestyle.md); agents learn the API from them.
+missing_docs = "warn"
 
 [lints.clippy]
 all = { level = "warn", priority = -1 }
