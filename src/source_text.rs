@@ -60,6 +60,13 @@ impl LineCount {
     }
 }
 
+/// The total of several files' line counts, for a glob view's directory summary.
+impl std::iter::Sum for LineCount {
+    fn sum<I: Iterator<Item = Self>>(counts: I) -> Self {
+        Self(counts.map(|count| count.0).sum())
+    }
+}
+
 impl fmt::Display for LineCount {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {

@@ -1,6 +1,7 @@
 //! Command-line arguments: the clap definition, its help text, and parsing without touching the process.
 
 use std::ffi::OsString;
+use std::num::NonZeroUsize;
 
 use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
 
@@ -15,6 +16,10 @@ Modes:
                              Respects .gitignore and .git/info/exclude inside git repositories,
                              .ignore files, and git's global excludes file;
                              skips node_modules, dot entries and symlinks.
+  outln --depth N <dir>...   Glob view of only N levels of each directory (1: the files
+                             directly inside); each directory N levels down prints one
+                             line instead of its files: `src/core/ (25 files, 3100 lines)`.
+                             Glob patterns set their own depth.
   outln --debug <file|dir>   Source text with the extracted outline highlighted: green on a
                              terminal; between « and » when stdout isn't a terminal or
                              NO_COLOR is set.
@@ -39,6 +44,10 @@ pub(crate) struct Arguments {
     #[arg(long)]
     pub(crate) debug: bool,
 
+    /// Glob view: list only N levels of each directory argument, summarizing deeper directories.
+    #[arg(long, value_name = "N", value_parser = depth_limit, conflicts_with = "debug")]
+    pub(crate) depth: Option<NonZeroUsize>,
+
     /// Print the version.
     // Never read: clap prints the version and stops when the flag is given. The derive API
     // needs a field to attach the flag to.
@@ -48,6 +57,13 @@ pub(crate) struct Arguments {
     /// Files to outline, or directories and glob patterns for a glob view.
     #[arg(required = true, value_name = "PATH", value_parser = non_empty_path)]
     pub(crate) paths: Vec<String>,
+}
+
+/// Parses `--depth`: a whole number of directory levels, 1 or more.
+fn depth_limit(argument: &str) -> Result<NonZeroUsize, &'static str> {
+    argument
+        .parse()
+        .map_err(|_| "expected a whole number of directory levels, 1 or more")
 }
 
 /// Rejects an empty path argument, which would otherwise resolve to the working directory (an

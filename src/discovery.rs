@@ -326,6 +326,26 @@ fn without_trailing_slashes(path: &str) -> &str {
     }
 }
 
+/// The directory at `depth_limit` that holds `file`, as its display path with a trailing `/`,
+/// or `None` for a file within the limit: depth 1 keeps the files directly in `directory`.
+/// `file` is a display path that [`FileWalker::files_in`] found for `directory`.
+pub(crate) fn directory_at_depth_limit<'file>(
+    directory: &str,
+    file: &'file str,
+    depth_limit: NonZeroUsize,
+) -> Option<&'file str> {
+    // The prefix `display_path` puts before the relative path.
+    let prefix_len = match without_trailing_slashes(directory) {
+        "." | "" => 0,
+        "/" => 1,
+        root => root.len() + 1,
+    };
+    let relative = file.get(prefix_len..)?;
+    let (slash, _) = relative.match_indices('/').nth(depth_limit.get() - 1)?;
+    // Up to and including the `/` after the directory's name.
+    Some(&file[..=prefix_len + slash])
+}
+
 /// Joins a display root and a relative path with `/`, with no `./` prefix for the root `.`.
 /// `None` for a path that isn't valid UTF-8, since outln prints and reopens these paths.
 fn display_path(display_root: &str, relative: &Path) -> Option<String> {
@@ -389,5 +409,22 @@ mod tests {
         );
         assert_eq!(display_path(".", relative).as_deref(), Some("src/a.md"));
         assert_eq!(display_path("/", relative).as_deref(), Some("/src/a.md"));
+    }
+
+    #[test]
+    fn directory_at_depth_limit_cuts_display_paths_after_the_limit() {
+        let relative = Path::new("src/languages/rust.rs");
+        let [one, two, three] = [1, 2, 3].map(|depth| NonZeroUsize::new(depth).unwrap());
+        for (directory, root) in [("docs", "docs/"), ("docs/", "docs/"), (".", ""), ("/", "/")] {
+            let file = display_path(without_trailing_slashes(directory), relative).unwrap();
+            let cut = |depth| directory_at_depth_limit(directory, &file, depth);
+            assert_eq!(
+                cut(one),
+                Some(format!("{root}src/").as_str()),
+                "{directory}"
+            );
+            assert_eq!(cut(two), Some(format!("{root}src/languages/").as_str()));
+            assert_eq!(cut(three), None, "{directory}");
+        }
     }
 }

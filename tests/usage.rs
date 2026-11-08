@@ -70,6 +70,34 @@ fn directory_arguments_print_a_glob_view() {
     assert_eq!(status, ExitStatus::Success);
 }
 
+/// Past 300 files, a glob view without `--depth` suggests it on stderr, so stdout stays only
+/// file summaries; with `--depth 1`, the same tree is one directory summary.
+#[test]
+fn a_long_glob_view_suggests_a_depth_limit_on_stderr() {
+    let dir = ScratchDir::new("usage-long-glob-view").expect("temp dir");
+    for number in 0..301 {
+        dir.write(&format!("docs/part/{number:03}.md"), b"# Part\n")
+            .expect("write");
+    }
+
+    let (out, err, status) = run_in(&dir, &["docs"]).expect("writing to a Vec cannot fail");
+    assert_eq!(
+        out.lines().count(),
+        302,
+        "the glob view line, then 301 files"
+    );
+    assert_eq!(
+        err,
+        "Hint: found 301 files; for an overview, try --depth 1 or a narrower path\n"
+    );
+    assert_eq!(status, ExitStatus::Success);
+
+    let (out, err, _) =
+        run_in(&dir, &["--depth", "1", "docs"]).expect("writing to a Vec cannot fail");
+    assert_eq!(out, "glob view: docs\ndocs/part/ (301 files, 301 lines)\n");
+    assert_eq!(err, "");
+}
+
 /// `src/main.rs` picks the style: green for a terminal, markers for agents and pipes.
 #[test]
 fn debug_mode_highlights_in_green_or_between_markers() {
@@ -324,9 +352,17 @@ fn output_is_the_same_on_any_number_of_threads() {
 
         assert_eq!(one_thread, eight_threads);
         let (_, err, status) = one_thread;
+        // The glob view of 1 102 files also ends with a hint to use `--depth`.
+        let errors: Vec<&str> = err
+            .lines()
+            .filter(|line| !line.starts_with("Hint: "))
+            .collect();
         assert_eq!(
-            err,
-            "File docs/0100-broken.md is not UTF-8 text\nFile docs/0900-broken.md is not UTF-8 text\n"
+            errors,
+            [
+                "File docs/0100-broken.md is not UTF-8 text",
+                "File docs/0900-broken.md is not UTF-8 text"
+            ]
         );
         assert_eq!(status, ExitStatus::Failure);
     }

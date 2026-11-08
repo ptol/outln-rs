@@ -17,6 +17,7 @@ It builds from source, so it needs a recent Rust (see `rust-version` in `Cargo.t
 ```sh
 outln src/app.ts README.md # an outline of each file: line count, header, declarations, line ranges
 outln docs "src/**/*.ts"   # a glob view: one line per file with its line count and header or summary
+outln --depth 1 .          # a glob view of the top level: its files, and one line per directory
 outln --help               # every mode and option
 ```
 
@@ -33,7 +34,7 @@ Cheapest first. Run each step as its own command, because its output picks the t
 2. **Find the section**: `outln <file>...` prints each file's line count, header, and declarations with line ranges like `[L12-L40]`.
 3. **Read**: read only those line ranges (`Read` with `offset`/`limit`); read a file whole when its line count is small.
 
-Read outln's full output, stderr included. To shorten it, narrow the path or glob, or filter with `grep`.
+Read outln's full output, stderr included. To shorten it, add `--depth 1` (files directly in each directory argument, plus one line per subdirectory with its file and line counts), narrow the path or glob, or filter with `grep`.
 ```
 
 ## Develop

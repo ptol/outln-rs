@@ -154,7 +154,7 @@ pub fn run(
         )
     });
     if is_glob_view {
-        glob_view::run(&classified, &walker, out, err)
+        glob_view::run(&classified, &walker, arguments.depth, out, err)
     } else {
         file_mode::run(&classified, context.cwd, context.threads, out, err)
     }

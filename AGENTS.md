@@ -21,7 +21,7 @@ Default sequence, cheapest first. Each step is its own tool call, because its ou
 1. **Find the docs for the task**: run `outln docs` and read every doc whose `readWhen` matches your task. [docs/codestyle.md](docs/codestyle.md) applies to every source change.
 2. **Learn the structure**: read [docs/architecture.md](docs/architecture.md) for modules and data flow.
 3. **Learn the API**: read `tests/usage.rs`, which is executable documentation of the public library API, and the doc examples in `src/lib.rs`.
-4. **Find the file**: `outln <dir>` prints one line per file: its line count, and a summary taken from its header (header comment or frontmatter), or else a data file's first scalar keys or a Markdown file's first heading. Quote a glob (`outln "src/**/*.rs"`): the shell expands an unquoted one into files, and outln prints their full outlines instead.
+4. **Find the file**: `outln <dir>` prints one line per file: its line count, and a summary taken from its header (header comment or frontmatter), or else a data file's first scalar keys or a Markdown file's first heading. On a large tree, `outln --depth 1 <dir>` prints the files directly inside it and one line per subdirectory with its file and line counts. Quote a glob (`outln "src/**/*.rs"`): the shell expands an unquoted one into files, and outln prints their full outlines instead.
 5. **Find the section**: `outln <file>...` prints each file's line count and its declarations with line ranges like `[L1-L10]`; read only those ranges with `Read` `offset`/`limit`, or a short file whole.
 
 `outln` prints its own error for a missing path, so read its full output and stderr. When the output is too long, narrow the path or glob.

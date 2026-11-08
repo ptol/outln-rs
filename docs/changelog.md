@@ -17,6 +17,7 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 - NUL bytes: a valid UTF-8 file with a few NUL bytes (a raw NUL in a JavaScript string) is outlined instead of rejected. A file whose NULs say UTF-16 or binary (invalid UTF-8 with NULs, a NUL in the first two bytes, or more than one NUL per 16 bytes) is reported as `File <path> looks like a binary or UTF-16 file, not UTF-8 text`; invalid UTF-8 without NULs is still `File <path> is not UTF-8 text`.
 - `.jsonc` files (JSON with comments, such as `knip.jsonc`) are outlined by the JSON engine instead of skipped. `.json5` isn't supported: its unquoted keys and single quotes aren't JSON's grammar.
 - Debug mode prints green only when stdout is a terminal and `NO_COLOR` isn't set. Otherwise, as for agents and pipes, each highlighted part of a line is wrapped in `«` and `»` instead of ANSI escape codes: `«export function parse(input: string): Ast» {`. Library callers choose with `Context::highlight_style`.
+- Glob view: `--depth N` lists only N levels of each directory argument (`--depth 1`: the files directly inside), and prints each directory N levels down as one directory summary in its sorted place, `packages/core/ (257 files, 31234 lines)`, instead of its files. Glob patterns set their own depth; `--depth` with `--debug` is a usage error. Without `--depth`, a glob view of more than 300 files ends with a hint on stderr: `Hint: found 989 files; for an overview, try --depth 1 or a narrower path` ([ADR-025](adr.md)).
 
 ## 0.3.0 (2026-11-06)
 

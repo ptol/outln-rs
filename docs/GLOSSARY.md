@@ -95,6 +95,11 @@ _Avoid_: Outline, description
 What a glob view prints for a data file without a header comment: its first top-level keys with scalar values, as their outline lines print them, such as `{name: "outln", version: "0.2.0", private: true, ...}` (for a TOML file whose scalar keys are all in tables, the first table's, as `[package] {name = "outln", ...}`).
 _Avoid_: Preview, metadata
 
+### Directory summary
+
+The single line a glob view prints, in place of file summaries, for a directory at its depth limit that holds supported files: the directory's path with a trailing `/`, how many supported files are below it, and their total line count, such as `packages/core/ (257 files, 31234 lines)`.
+_Avoid_: Folder line, rollup, collapsed directory
+
 ## Positions
 
 ### Byte range
@@ -116,8 +121,13 @@ _Avoid_: Outline mode, single mode
 
 ### Glob view
 
-The mode that prints one file summary per file matched by directory or glob arguments.
+The mode that prints one file summary per file matched by directory or glob arguments, and with a depth limit one directory summary per directory at the limit.
 _Avoid_: Directory mode, glob mode, listing
+
+### Depth limit
+
+How many directory levels below a directory argument a glob view lists file summaries for (`--depth N`; 1 lists the files directly inside); each directory at the limit prints a directory summary instead. A glob pattern sets its own depth.
+_Avoid_: Max depth, level, recursion limit
 
 ### Debug mode
 

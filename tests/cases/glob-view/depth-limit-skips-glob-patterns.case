@@ -1,0 +1,19 @@
+The depth limit applies to directory arguments only: the glob pattern `input/**/*.md` still lists every file it matches, at any depth, while the directory argument `other` is cut after one level.
+== args
+--depth
+1
+input/**/*.md
+other
+== file input/a/b/deep.md
+# Deep
+== file other/top.md
+# Top
+== file other/sub/below.md
+# Below
+== stdout
+glob view: input/**/*.md other
+input/a/b/deep.md (1 line): # Deep
+other/sub/ (1 file, 1 line)
+other/top.md (1 line): # Top
+== stderr
+== exit 0

@@ -31,8 +31,9 @@ New modules go under `src/` as `src/<name>.rs` (with `src/<name>/` for its child
 
 1. `main` builds a `Context` and calls `outln::run(arguments, &context, &mut stdout, &mut stderr)`.
 2. `run` parses the arguments and classifies each path. With `--debug` it runs debug mode; otherwise the glob view if any path is a directory (existing or not) or a glob, else file mode.
-3. Each mode loads files through `source_file::load`, on several threads with `parallel::map_in_order`, asks the file's engine for an `Outline` (file mode, debug mode) or a `FileSummary` (glob view: a header, a data file's field summary, a Markdown file's first heading, or nothing), and renders it with shared code.
-4. Results are printed in input order once all are ready, so output doesn't depend on the thread count. A failing input is written to `err` as an `InputError` and makes the status `ExitStatus::Failure`; the other inputs are still printed. Only a failed write to `out` or `err` ends `run` early, as an `io::Error`.
+3. With a depth limit (`--depth`), the glob view assigns each walked file below the limit to the directory at the limit that holds it, which prints as one directory summary ([ADR-025](adr.md)).
+4. Each mode loads files through `source_file::load`, on several threads with `parallel::map_in_order`, asks the file's engine for an `Outline` (file mode, debug mode) or a `FileSummary` (glob view: a header, a data file's field summary, a Markdown file's first heading, or nothing), and renders it with shared code.
+5. Results are printed in input order once all are ready, so output doesn't depend on the thread count. A failing input is written to `err` as an `InputError` and makes the status `ExitStatus::Failure`; the other inputs are still printed. Only a failed write to `out` or `err` ends `run` early, as an `io::Error`.
 
 ## Adding a language engine
 
