@@ -299,6 +299,8 @@ fn run_outln(casefile: &Casefile, index: usize) -> Result<Output, String> {
         version: VERSION,
         global_gitignore: None,
         threads: THREADS,
+        // As when stdout is a pipe, as it is for agents.
+        highlight_style: outln::HighlightStyle::Markers,
     };
     let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
     let status = outln::run(

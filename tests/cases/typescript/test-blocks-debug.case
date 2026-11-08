@@ -8,9 +8,9 @@ describe("math", () => {
 });
 test.each([[1, 2]])("adds %i", (a, b) => {});
 == stdout
-\x1b[32mdescribe("math"\x1b[0m, () => {
+«describe("math"», () => {
   it("adds", () => {});
 });
-\x1b[32mtest.each([[1, 2]])("adds %i"\x1b[0m, (a, b) => {});
+«test.each([[1, 2]])("adds %i"», (a, b) => {});
 == stderr
 == exit 0

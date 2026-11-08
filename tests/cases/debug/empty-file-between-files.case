@@ -8,9 +8,9 @@ docs
 == file docs/c.md
 # C
 == stdout
-\x1b[32m# A\x1b[0m
+«# A»
 
 
-\x1b[32m# C\x1b[0m
+«# C»
 == stderr
 == exit 0

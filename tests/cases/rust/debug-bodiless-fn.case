@@ -5,6 +5,6 @@ input/rust-declaration-semi.e2e.rs
 == file input/rust-declaration-semi.e2e.rs
 fn declared() -> i32;
 == stdout
-\x1b[32mfn declared() -> i32\x1b[0m;
+«fn declared() -> i32»;
 == stderr
 == exit 0

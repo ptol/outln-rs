@@ -5,6 +5,6 @@ input/a.json
 == file input/a.json
 {"key": {"nested": 1}, "other": 2}
 == stdout
-{\x1b[32m"key"\x1b[0m: {"nested": 1}, \x1b[32m"other"\x1b[0m: 2}
+{«"key"»: {"nested": 1}, «"other"»: 2}
 == stderr
 == exit 0

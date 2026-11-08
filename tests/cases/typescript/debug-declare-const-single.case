@@ -5,6 +5,6 @@ input/declare-const-single.ts
 == file input/declare-const-single.ts
 declare const singleValue: number;
 == stdout
-\x1b[32mdeclare const singleValue\x1b[0m: number;
+«declare const singleValue»: number;
 == stderr
 == exit 0

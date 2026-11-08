@@ -15,6 +15,6 @@ ignored.md
 == file input/node_modules/dep/index.md
 # dep
 == stdout
-\x1b[32m# a\x1b[0m
+«# a»
 == stderr
 == exit 0

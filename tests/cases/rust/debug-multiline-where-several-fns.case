@@ -25,19 +25,19 @@ where
 == stdout
 use std::collections::{HashMap, HashSet};
 
-\x1b[32mfn single_line() -> i32\x1b[0m { 42 }
+«fn single_line() -> i32» { 42 }
 
-\x1b[32mpub(crate) fn generic_where<T>(value: T) -> T\x1b[0m
-\x1b[32mwhere\x1b[0m
-\x1b[32m    T: Clone,\x1b[0m
+«pub(crate) fn generic_where<T>(value: T) -> T»
+«where»
+«    T: Clone,»
 {
     value.clone()
 }
 
-\x1b[32mfn multi_param<T, U>(x: T, y: U) -> U\x1b[0m
-\x1b[32mwhere\x1b[0m
-\x1b[32m    T: Display,\x1b[0m
-\x1b[32m    U: Clone,\x1b[0m
+«fn multi_param<T, U>(x: T, y: U) -> U»
+«where»
+«    T: Display,»
+«    U: Clone,»
 {
     y
 }

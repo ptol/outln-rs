@@ -10,10 +10,10 @@ export function run(value: number) {
   return value + 1;
 }
 == stdout
-\x1b[32m// Service bootstrap.\x1b[0m
+«// Service bootstrap.»
 
-\x1b[32mexport const version\x1b[0m = 1;
-\x1b[32mexport function run(value: number)\x1b[0m {
+«export const version» = 1;
+«export function run(value: number)» {
   return value + 1;
 }
 == stderr

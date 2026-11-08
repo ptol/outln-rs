@@ -11,11 +11,11 @@ module StringLiteralModule {
   export const key = 'value';
 }
 == stdout
-\x1b[32mmodule PlainModule\x1b[0m {
+«module PlainModule» {
   export const mode = 'plain';
 }
 
-\x1b[32mmodule StringLiteralModule\x1b[0m {
+«module StringLiteralModule» {
   export const key = 'value';
 }
 == stderr

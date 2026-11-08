@@ -7,8 +7,8 @@ docs
 == file docs/b.md
 # B
 == stdout
-\x1b[32m# A\x1b[0m
+«# A»
 
-\x1b[32m# B\x1b[0m
+«# B»
 == stderr
 == exit 0

@@ -26,7 +26,9 @@ Modes:
                              Respects .gitignore and .git/info/exclude inside git repositories,
                              .ignore files, and git's global excludes file;
                              skips node_modules, dot entries and symlinks.
-  outln --debug <file|dir>   Source text with the extracted outline highlighted.
+  outln --debug <file|dir>   Source text with the extracted outline highlighted: green on a
+                             terminal; between « and » when stdout isn't a terminal or
+                             NO_COLOR is set.
 
 Examples:
   outln docs/guide.md

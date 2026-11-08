@@ -9,7 +9,7 @@ readWhen: 'adding or moving modules, adding a language engine, or changing how d
 
 One Cargo package, `outln`, with a library and a binary:
 
-- `src/main.rs`: the binary, the imperative shell. It reads the process state (arguments, working directory, the global gitignore's path, the available parallelism), opens stdout (buffered) and stderr (which flushes stdout first, so merged streams keep their order), and turns the result into an exit code; a closed pipe exits 0.
+- `src/main.rs`: the binary, the imperative shell. It reads the process state (arguments, working directory, the global gitignore's path, the available parallelism, and whether stdout is a terminal and `NO_COLOR` unset, which picks debug mode's `HighlightStyle`), opens stdout (buffered) and stderr (which flushes stdout first, so merged streams keep their order), and turns the result into an exit code; a closed pipe exits 0.
 - `src/lib.rs`: `run`, `Context` (what `run` needs from the process), and `ExitStatus`. It parses the arguments and picks the mode.
 - `src/cli.rs`: the clap definition and help text; parsing returns help, version, and usage errors as a `clap::Error` that `run` writes to the injected writers.
 - Modes: `src/file_mode.rs`, `src/glob_view.rs`, `src/debug_mode.rs`.

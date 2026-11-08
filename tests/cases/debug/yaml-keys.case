@@ -8,9 +8,9 @@ key: value
 list:
   - nested: 1
 == stdout
-\x1b[32m# The key.\x1b[0m
-\x1b[32mkey\x1b[0m: value
-\x1b[32mlist\x1b[0m:
+«# The key.»
+«key»: value
+«list»:
   - nested: 1
 == stderr
 == exit 0

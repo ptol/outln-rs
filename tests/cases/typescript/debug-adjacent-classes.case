@@ -14,13 +14,13 @@ class Second {
   }
 }
 == stdout
-\x1b[32mclass First\x1b[0m {
-  \x1b[32mgreet(): string\x1b[0m {
+«class First» {
+  «greet(): string» {
     return "hello";
   }
 }
-\x1b[32mclass Second\x1b[0m {
-  \x1b[32mfarewell(): string\x1b[0m {
+«class Second» {
+  «farewell(): string» {
     return "goodbye";
   }
 }

@@ -11,11 +11,11 @@ pub(crate) struct Store {
   id: u64,
 }
 == stdout
-\x1b[32mpub async fn load() -> Result<(), Error>\x1b[0m {
+«pub async fn load() -> Result<(), Error>» {
   Ok(())
 }
 
-\x1b[32mpub(crate) struct Store\x1b[0m {
+«pub(crate) struct Store» {
   id: u64,
 }
 == stderr

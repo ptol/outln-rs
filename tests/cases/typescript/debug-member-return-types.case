@@ -12,11 +12,11 @@ class Calculator {
   }
 }
 == stdout
-\x1b[32mclass Calculator\x1b[0m {
-  \x1b[32madd(a: number, b: number): number\x1b[0m {
+«class Calculator» {
+  «add(a: number, b: number): number» {
     return a + b;
   }
-  \x1b[32mget result(): number\x1b[0m {
+  «get result(): number» {
     return 42;
   }
 }

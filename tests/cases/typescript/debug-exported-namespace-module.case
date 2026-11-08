@@ -13,14 +13,14 @@ export module ExportedModule {
 
 export module 'exported/string-module' {}
 == stdout
-\x1b[32mexport namespace ExportedNamespace\x1b[0m {
+«export namespace ExportedNamespace» {
   export const ready = true;
 }
 
-\x1b[32mexport module ExportedModule\x1b[0m {
+«export module ExportedModule» {
   export const data = 'test';
 }
 
-\x1b[32mexport module 'exported/string-module'\x1b[0m {}
+«export module 'exported/string-module'» {}
 == stderr
 == exit 0

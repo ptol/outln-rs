@@ -7,7 +7,7 @@ export default class MyClass {
   x = 1;
 }
 == stdout
-\x1b[32mexport default class MyClass\x1b[0m {
+«export default class MyClass» {
   x = 1;
 }
 == stderr

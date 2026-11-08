@@ -16,17 +16,17 @@ a:visited {
   .wide { width: 100%; }
 }
 == stdout
-\x1b[32m/* Site. */\x1b[0m
-\x1b[32m@import "base.css"\x1b[0m;
+«/* Site. */»
+«@import "base.css"»;
 
 /* Links. */
-\x1b[32ma,\x1b[0m
-\x1b[32ma:visited\x1b[0m {
+«a,»
+«a:visited» {
   color: blue;
 }
 
-\x1b[32m@media screen\x1b[0m {
-  \x1b[32m.wide\x1b[0m { width: 100%; }
+«@media screen» {
+  «.wide» { width: 100%; }
 }
 == stderr
 == exit 0

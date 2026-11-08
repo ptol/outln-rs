@@ -6,7 +6,7 @@ mod scratch_dir;
 use std::io;
 use std::num::NonZeroUsize;
 
-use outln::{Context, ExitStatus};
+use outln::{Context, ExitStatus, HighlightStyle};
 use scratch_dir::ScratchDir;
 
 /// Runs outln in `dir` on one thread and returns its stdout, stderr, and exit status.
@@ -24,6 +24,7 @@ fn run_on_threads(
         version: "1.2.3",
         global_gitignore: None,
         threads,
+        highlight_style: HighlightStyle::Markers,
     };
     let (mut out, mut err) = (Vec::new(), Vec::new());
     let status = outln::run(arguments, &context, &mut out, &mut err)?;
@@ -69,6 +70,31 @@ fn directory_arguments_print_a_glob_view() {
     assert_eq!(status, ExitStatus::Success);
 }
 
+/// `src/main.rs` picks the style: green for a terminal, markers for agents and pipes.
+#[test]
+fn debug_mode_highlights_in_green_or_between_markers() {
+    let dir = ScratchDir::new("usage-debug-mode").expect("temp dir");
+    dir.write("guide.md", b"# Guide\ntext\n").expect("write");
+
+    for (highlight_style, expected) in [
+        (HighlightStyle::Markers, "«# Guide»\ntext\n"),
+        (HighlightStyle::AnsiGreen, "\x1b[32m# Guide\x1b[0m\ntext\n"),
+    ] {
+        let context = Context {
+            cwd: dir.path(),
+            version: "1.2.3",
+            global_gitignore: None,
+            threads: NonZeroUsize::MIN,
+            highlight_style,
+        };
+        let mut out = Vec::new();
+        outln::run(["--debug", "guide.md"], &context, &mut out, &mut io::sink())
+            .expect("writing to a Vec cannot fail");
+
+        assert_eq!(String::from_utf8_lossy(&out), expected);
+    }
+}
+
 #[test]
 fn a_global_gitignore_hides_matching_files() {
     let dir = ScratchDir::new("usage-global-gitignore").expect("temp dir");
@@ -82,6 +108,7 @@ fn a_global_gitignore_hides_matching_files() {
         version: "1.2.3",
         global_gitignore: Some(&global_gitignore),
         threads: NonZeroUsize::MIN,
+        highlight_style: HighlightStyle::Markers,
     };
     let (mut out, mut err) = (Vec::new(), Vec::new());
 

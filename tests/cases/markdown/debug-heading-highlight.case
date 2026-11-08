@@ -13,12 +13,12 @@ owner: docs
 ## Details
 == stdout
 ---
-\x1b[32mtitle: Guide\x1b[0m
-\x1b[32mowner: docs\x1b[0m
+«title: Guide»
+«owner: docs»
 ---
 
-\x1b[32m# Intro\x1b[0m
+«# Intro»
 
-\x1b[32m## Details\x1b[0m
+«## Details»
 == stderr
 == exit 0

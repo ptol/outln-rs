@@ -7,7 +7,7 @@ declare global {
   var declaredGlobalValue: string;
 }
 == stdout
-\x1b[32mdeclare global\x1b[0m {
+«declare global» {
   var declaredGlobalValue: string;
 }
 == stderr

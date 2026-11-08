@@ -8,8 +8,8 @@ Title
 
 Body.
 == stdout
-\x1b[32mTitle\x1b[0m
-\x1b[32m=====\x1b[0m
+«Title»
+«=====»
 
 Body.
 == stderr

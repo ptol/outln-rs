@@ -104,8 +104,8 @@ _Avoid_: Span, offsets
 
 ### Highlight
 
-The part of a file's source that debug mode marks because it became an outline line, a frontmatter field, or a header comment line.
-_Avoid_: Selection, mark
+The part of a file's source that debug mode marks because it became an outline line, a frontmatter field, or a header comment line. Its highlight style says how it prints: in green on a terminal, else between the markers `«` and `»`, one pair per line it covers.
+_Avoid_: Selection, mark (a marker is only the `«` or `»` around a highlight)
 
 ## Modes
 

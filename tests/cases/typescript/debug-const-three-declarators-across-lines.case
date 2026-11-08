@@ -7,8 +7,8 @@ const a = 1,
   b = 2,
   c = 3;
 == stdout
-\x1b[32mconst a\x1b[0m = 1,
-  \x1b[32mb\x1b[0m = 2,
-  \x1b[32mc\x1b[0m = 3;
+«const a» = 1,
+  «b» = 2,
+  «c» = 3;
 == stderr
 == exit 0

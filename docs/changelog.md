@@ -16,6 +16,7 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 - Path arguments: a file inside a directory outln may not search is reported as `File <path> could not be read: permission denied`, not as missing; an existing file given with a trailing `/` as `File <path>/ is not a directory; remove the trailing /`; a FIFO, socket, or device as `File <path> is not a regular file (a FIFO, socket, or device)`, where a FIFO used to block forever; and an empty argument (`outln ""`) is a usage error (exit 2) instead of a glob view of the working directory.
 - NUL bytes: a valid UTF-8 file with a few NUL bytes (a raw NUL in a JavaScript string) is outlined instead of rejected. A file whose NULs say UTF-16 or binary (invalid UTF-8 with NULs, a NUL in the first two bytes, or more than one NUL per 16 bytes) is reported as `File <path> looks like a binary or UTF-16 file, not UTF-8 text`; invalid UTF-8 without NULs is still `File <path> is not UTF-8 text`.
 - `.jsonc` files (JSON with comments, such as `knip.jsonc`) are outlined by the JSON engine instead of skipped. `.json5` isn't supported: its unquoted keys and single quotes aren't JSON's grammar.
+- Debug mode prints green only when stdout is a terminal and `NO_COLOR` isn't set. Otherwise, as for agents and pipes, each highlighted part of a line is wrapped in `«` and `»` instead of ANSI escape codes: `«export function parse(input: string): Ast» {`. Library callers choose with `Context::highlight_style`.
 
 ## 0.3.0 (2026-11-06)
 

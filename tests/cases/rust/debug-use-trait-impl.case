@@ -15,11 +15,11 @@ impl Repo for Store {
 == stdout
 use std::fmt::Debug;
 
-\x1b[32mtrait Repo\x1b[0m {
+«trait Repo» {
   fn load(&self);
 }
 
-\x1b[32mimpl Repo for Store\x1b[0m {
+«impl Repo for Store» {
   fn load(&self) {}
 }
 == stderr

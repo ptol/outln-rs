@@ -9,10 +9,10 @@ class WithMethod {
   doSomething(): void {}
 }
 == stdout
-\x1b[32mclass Empty\x1b[0m {
+«class Empty» {
 }
-\x1b[32mclass WithMethod\x1b[0m {
-  \x1b[32mdoSomething(): void\x1b[0m {}
+«class WithMethod» {
+  «doSomething(): void» {}
 }
 == stderr
 == exit 0

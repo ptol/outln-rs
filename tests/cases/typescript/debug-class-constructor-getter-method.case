@@ -16,15 +16,15 @@ class Counter {
   }
 }
 == stdout
-\x1b[32mclass Counter\x1b[0m {
+«class Counter» {
   private value: number;
-  \x1b[32mconstructor(initial: number)\x1b[0m {
+  «constructor(initial: number)» {
     this.value = initial;
   }
-  \x1b[32mget count()\x1b[0m {
+  «get count()» {
     return this.value;
   }
-  \x1b[32mincrement(step: number): void\x1b[0m {
+  «increment(step: number): void» {
     this.value += step;
   }
 }

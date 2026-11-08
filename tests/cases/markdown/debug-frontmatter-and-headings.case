@@ -15,14 +15,14 @@ description: Testing debug mode for markdown
 ## Configuration
 == stdout
 ---
-\x1b[32mtitle: Debug Guide\x1b[0m
-\x1b[32mdescription: Testing debug mode for markdown\x1b[0m
+«title: Debug Guide»
+«description: Testing debug mode for markdown»
 ---
 
-\x1b[32m# Getting Started\x1b[0m
+«# Getting Started»
 
-\x1b[32m## Installation\x1b[0m
+«## Installation»
 
-\x1b[32m## Configuration\x1b[0m
+«## Configuration»
 == stderr
 == exit 0

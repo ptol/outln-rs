@@ -9,6 +9,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 
 use super::{ENGINES, LanguageEngine};
+use crate::HighlightStyle;
 use crate::debug_mode::highlight;
 use crate::outline::{
     FileSummary, Header, Outline, highlights, render_file_summary, render_outline,
@@ -201,7 +202,7 @@ fn check_ranges_and_render(engine: &dyn LanguageEngine, text: &str) {
         );
     }
     render_outline("sample", &outline, &source.line_index);
-    highlight(text, highlights(&outline));
+    highlight(text, highlights(&outline), HighlightStyle::Markers);
     render_file_summary("sample", LineCount::of(text), &engine.file_summary(text));
 }
 

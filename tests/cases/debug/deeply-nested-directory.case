@@ -11,12 +11,12 @@ input/deep
 == file input/deep/level1/level2/level3/d.md
 # d
 == stdout
-\x1b[32m# a\x1b[0m
+«# a»
 
-\x1b[32m# b\x1b[0m
+«# b»
 
-\x1b[32m# c\x1b[0m
+«# c»
 
-\x1b[32m# d\x1b[0m
+«# d»
 == stderr
 == exit 0

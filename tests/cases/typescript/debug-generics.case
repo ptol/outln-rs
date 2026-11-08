@@ -8,9 +8,9 @@ export function id<T>(value: T): T {
 }
 export class Box<T> {}
 == stdout
-\x1b[32mexport function id<T>(value: T): T\x1b[0m {
+«export function id<T>(value: T): T» {
   return value;
 }
-\x1b[32mexport class Box<T>\x1b[0m {}
+«export class Box<T>» {}
 == stderr
 == exit 0
