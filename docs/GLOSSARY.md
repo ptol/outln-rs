@@ -16,7 +16,7 @@ _Avoid_: Summary, AST, tree
 
 ### Outline line
 
-One line of an outline naming a single declaration, prefixed with its line range and indented by how deeply the declaration is nested.
+One line of an outline naming a single declaration, or a run of consecutive Rust module declarations without bodies (`mod cli, code_outline, ...`), prefixed with its line range and indented by how deeply the declaration is nested.
 _Avoid_: Entry, row
 
 ### Line range
@@ -107,7 +107,7 @@ _Avoid_: Folder line, rollup, collapsed directory
 
 ### Declaration summary
 
-What a glob view prints for a code file without a header comment: its first distinct top-level declarations, each as its outline line starts up to its parameter list, a repeated one with its count, such as `pub struct Arg, impl Arg ×6, impl Clone for Arg, ...`.
+What a glob view prints for a code file without a header comment: its first distinct top-level declarations, each as its outline line starts up to its parameter list, a repeated one with its count, such as `pub struct Arg, impl Arg ×6, impl Clone for Arg, ...`. Only the file's start is read, so a count is of the declarations there, not in the whole file.
 _Avoid_: Symbol list, table of contents, preview
 
 ## Positions
@@ -119,7 +119,7 @@ _Avoid_: Span, offsets
 
 ### Highlight
 
-The part of a file's source that debug mode marks because it became an outline line, a frontmatter field, or a header comment line. Its highlight style says how it prints: in green on a terminal, else between the markers `«` and `»`, one pair per line it covers.
+The part of a file's source that debug mode marks because it became an outline line, a frontmatter field, or a header comment line. Its highlight style says how it prints: in green on a terminal when `NO_COLOR` is unset or empty, else between the markers `«` and `»`, one pair per line it covers.
 _Avoid_: Selection, mark (a marker is only the `«` or `»` around a highlight)
 
 ## Modes
@@ -138,6 +138,11 @@ _Avoid_: Directory mode, glob mode, listing
 
 How many directory levels below a directory argument a glob view lists file summaries for (`--depth N`; 1 lists the files directly inside); each directory at the limit prints a directory summary instead. A glob pattern sets its own depth.
 _Avoid_: Max depth, level, recursion limit
+
+### Hint
+
+The line a glob view without a depth limit prints on stderr, after more than 300 file summaries, naming a way to list fewer: `Hint: found 989 files; for an overview, try --depth 1 or a narrower path`.
+_Avoid_: Warning (nothing failed), tip, notice
 
 ### Debug mode
 
