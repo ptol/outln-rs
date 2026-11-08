@@ -43,7 +43,7 @@ _Avoid_: Head, prototype
 ### Leading annotation
 
 A doc comment (`///`, `/** */`), attribute (`#[...]`), or decorator (`@x`) above a declaration and belonging to it; the declaration's line range starts at its first leading annotation. A blank line detaches a doc comment but not an attribute or decorator, which the syntax ties to the declaration. Data files and CSS have no doc comments, so the comment lines directly above a key or rule are its leading annotation.
-_Avoid_: Preamble, prefix, trivia
+_Avoid_: Prefix, trivia
 
 ### Class member
 
@@ -68,12 +68,17 @@ _Avoid_: Selector (only part of a rule), ruleset. CSS's own word declaration nam
 ### Header
 
 What a file says about itself at its top: its header comment, or its frontmatter for Markdown.
-_Avoid_: Preamble, file metadata
+_Avoid_: File metadata
 
 ### Header comment
 
 The comment at the top of a source file that says what the file is for, such as a Rust file's `//!` comment; outlines print only its first paragraph.
 _Avoid_: Top comment, file doc, banner
+
+### Preamble
+
+What a file's top holds for tools rather than people to read, which may come before the header comment and is never part of it: a shebang, a directive such as `'use strict'`, `@charset`, or TOML's `#:schema`, a Rust inner attribute (`#![...]`), or a tool directive written as a comment, such as `// @ts-nocheck`.
+_Avoid_: Prologue, prelude (a CSS at-rule's prelude is part of a rule). Preamble names neither the header nor a leading annotation.
 
 ### Frontmatter
 
