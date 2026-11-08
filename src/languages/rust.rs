@@ -1,4 +1,4 @@
-//! Rust language engine: header comments (`//!` and `/*!` preferred over plain comments), top-level declarations with their leading annotations, and the members of `impl` blocks and traits and the items of inline modules one level deeper, parsed with tree-sitter.
+//! Rust language engine: header comments (`//!` and `/*!` preferred over plain comments), top-level declarations with their leading annotations, the members of `impl` blocks and traits and the items of inline modules one level deeper, and runs of `mod name;` on one line, parsed with tree-sitter.
 
 use tree_sitter::Node;
 
@@ -12,13 +12,13 @@ use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
 use crate::signature::{before_semicolon, body_start, signature_head};
 use crate::source_text::{ByteRange, after_whitespace, line_end, quoted_len};
-use crate::syntax_tree::{OneLineRules, child_of_kind, has_child_of_kind};
+use crate::syntax_tree::{OneLineRules, child_of_kind, has_child_of_kind, source};
 
 /// The language engine for Rust.
 ///
-/// The header comment is the first `//!` or `/*!` comment, or else the first plain comment,
-/// among the comments before the first declaration; a shebang and inner attributes (`#![...]`)
-/// may come before or between them.
+/// The header comment is the first `//!` or `/*!` comment, or else the first plain comment that
+/// isn't a one-line label right above code, among the comments before the first declaration; a
+/// shebang and inner attributes (`#![...]`) may come before or between them.
 pub(crate) static RUST: CodeLanguage = CodeLanguage {
     extensions: &["rs"],
     grammar: || tree_sitter_rust::LANGUAGE.into(),
@@ -150,13 +150,77 @@ fn declaration_lines(
         return;
     };
     let signature = level.signature_before(node, signature_end);
+    let module_name = bodiless_module_name(node, range, level.text());
     // Attributes are siblings of the declaration, so its node starts at its first keyword.
-    lines.push(level.outline_line(signature, range, node.start_byte()));
+    let line = level.outline_line(signature, range, node.start_byte());
+    if let Some(name) = module_name
+        && let Some(run) = lines
+            .last_mut()
+            .filter(|previous| continues_module_run(previous, &line, name, level.text()))
+    {
+        run.text.push_str(MODULE_RUN_SEPARATOR);
+        run.text.push_str(name);
+        run.range = ByteRange::new(run.range.start, line.range.end);
+        run.highlight = ByteRange::new(run.highlight.start, line.highlight.end);
+        return;
+    }
+    lines.push(line);
     if matches!(node.kind(), "impl_item" | "trait_item" | "mod_item")
         && let Some(body) = node.child_by_field_name("body")
     {
         level.declarations_inside(body, lines);
     }
+}
+
+/// Between the names of a run of module declarations on one outline line: `mod cli, discovery`.
+const MODULE_RUN_SEPARATOR: &str = ", ";
+
+/// The name of a module declaration without a body or leading annotations (`mod cli;`), which
+/// may join a run of them on one outline line, or `None` for any other node.
+fn bodiless_module_name<'text>(
+    node: Node<'_>,
+    range: ByteRange,
+    text: &'text str,
+) -> Option<&'text str> {
+    let is_bodiless = node.kind() == "mod_item" && node.child_by_field_name("body").is_none();
+    let is_unannotated = range.start == node.start_byte();
+    if !(is_bodiless && is_unannotated) {
+        return None;
+    }
+    node.child_by_field_name("name")
+        .map(|name| source(name, text))
+}
+
+/// Whether `line`, a module declaration without a body named `name`, joins `previous` as the
+/// next module of a run: `previous` prints one or more modules declared the same way (same
+/// visibility, no leading annotations) at the same depth, and ends with its `;` on the line
+/// right above. A list of `mod` lines says nothing one line with their names doesn't, and
+/// `lib.rs` files declare dozens.
+fn continues_module_run(
+    previous: &OutlineLine,
+    line: &OutlineLine,
+    name: &str,
+    text: &str,
+) -> bool {
+    let Some(head) = line.text.strip_suffix(name) else {
+        return false;
+    };
+    let is_module_run = previous.text.strip_prefix(head).is_some_and(|names| {
+        names.split(MODULE_RUN_SEPARATOR).all(|name| {
+            !name.is_empty()
+                && name
+                    .chars()
+                    .all(|c| c.is_alphanumeric() || matches!(c, '_' | '#'))
+        })
+    });
+    let gap = &text[previous.range.end..line.highlight.start];
+    let is_right_above = text[..previous.range.end].ends_with(';')
+        && gap.trim().is_empty()
+        && gap.matches('\n').count() == 1;
+    previous.depth == line.depth
+        && previous.range.start == previous.highlight.start
+        && is_module_run
+        && is_right_above
 }
 
 /// Where a declaration's signature ends, or `None` for a node that isn't a listed declaration
@@ -286,6 +350,50 @@ mod outer { use a::b; pub struct S; impl S { fn m() {} } mod inner { fn deepest(
         );
         let method = &outline.lines[7];
         assert_eq!(method.range.start, text.find("/// Docs.").unwrap());
+    }
+
+    #[test]
+    fn consecutive_bodiless_modules_declared_alike_share_one_outline_line() {
+        let text = "\
+mod a;
+mod b;
+mod r#c;
+
+mod d;
+pub mod e;
+pub mod f;
+#[cfg(test)]
+mod g;
+mod h;
+mod i {}
+mod j;
+";
+        let outline = outline_of(&RUST, text);
+        let lines: Vec<&str> = outline
+            .lines
+            .iter()
+            .map(|line| line.text.as_str())
+            .collect();
+        assert_eq!(
+            lines,
+            [
+                "mod a, b, r#c",
+                "mod d",
+                "pub mod e, f",
+                "mod g",
+                "mod h",
+                "mod i",
+                "mod j"
+            ]
+        );
+        assert_eq!(
+            outline.lines[0].range,
+            ByteRange::new(0, "mod a;\nmod b;\nmod r#c;".len())
+        );
+        assert_eq!(
+            outline.lines[0].highlight.end,
+            "mod a;\nmod b;\nmod r#c".len()
+        );
     }
 
     #[test]

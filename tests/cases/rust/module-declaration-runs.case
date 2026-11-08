@@ -1,0 +1,33 @@
+Consecutive module declarations without a body (`mod cli;`) print on one outline line with their names, its line range spanning them, as a `lib.rs` declaring dozens of modules reads best.
+- Only modules declared alike join: the same visibility, no leading annotations, and each on the line right after the previous one. A blank line, a `#[cfg(test)]` or doc comment, another visibility, or an inline `mod name { … }` starts a new line.
+- `use` declarations aren't joined: a `pub use` prints its whole path, which joined lines would make too long to read.
+== args
+input/lib.rs
+== file input/lib.rs
+//! Library.
+
+mod cli;
+mod discovery;
+mod outline;
+
+pub mod engines;
+pub mod sources;
+/// Test helpers.
+pub mod testing;
+#[cfg(test)]
+mod tests;
+mod inline {}
+pub use outline::Outline;
+pub use sources::Source;
+== stdout
+input/lib.rs (15 lines)
+Library.
+[L3-L5] mod cli, discovery, outline
+[L7-L8] pub mod engines, sources
+[L9-L10] pub mod testing
+[L11-L12] mod tests
+[L13-L13] mod inline
+[L14-L14] pub use outline::Outline
+[L15-L15] pub use sources::Source
+== stderr
+== exit 0
