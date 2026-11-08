@@ -14,6 +14,7 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 - Error messages are all sentence case: `File <path> is not UTF-8 text`, `File <path> could not be read: permission denied` (now with the reason), and `File <path> has an unsupported file type; supported: .md, .ts, ...`, which lists every supported extension. Debug mode says `--debug requires exactly one file or directory path, not 2` or `... not the glob pattern <pattern>`, and reports a missing argument ending in `/` as `Directory <path> does not exist`, as the glob view does.
 - Path arguments: a file inside a directory outln may not search is reported as `File <path> could not be read: permission denied`, not as missing; an existing file given with a trailing `/` as `File <path>/ is not a directory; remove the trailing /`; a FIFO, socket, or device as `File <path> is not a regular file (a FIFO, socket, or device)`, where a FIFO used to block forever; and an empty argument (`outln ""`) is a usage error (exit 2) instead of a glob view of the working directory.
+- NUL bytes: a valid UTF-8 file with a few NUL bytes (a raw NUL in a JavaScript string) is outlined instead of rejected. A file whose NULs say UTF-16 or binary (invalid UTF-8 with NULs, a NUL in the first two bytes, or more than one NUL per 16 bytes) is reported as `File <path> looks like a binary or UTF-16 file, not UTF-8 text`; invalid UTF-8 without NULs is still `File <path> is not UTF-8 text`.
 
 ## 0.3.0 (2026-11-06)
 

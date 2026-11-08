@@ -1,0 +1,16 @@
+A valid UTF-8 file with a raw NUL byte inside a template literal is outlined: a few NULs in text that is valid UTF-8 don't make it binary.
+== args
+input/nul.js
+== file input/nul.js escaped
+// Strings with a raw NUL byte.
+export const separator = `\x00`;
+export function split(text) {
+  return text.split(separator);
+}
+== stdout
+input/nul.js (5 lines)
+Strings with a raw NUL byte.
+[L2-L2] export const separator
+[L3-L5] export function split(text)
+== stderr
+== exit 0

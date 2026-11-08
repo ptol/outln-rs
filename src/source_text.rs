@@ -71,18 +71,37 @@ impl fmt::Display for LineCount {
 
 /// Why a file's bytes could not become source text.
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct NotUtf8Text;
+pub(crate) enum NotUtf8Text {
+    /// Invalid UTF-8 without NUL bytes, such as Latin-1 text.
+    InvalidUtf8,
+    /// NUL bytes where text has none: invalid UTF-8 with NULs, or NULs at the start or in
+    /// numbers no source file holds.
+    LooksBinary,
+}
+
+/// Valid UTF-8 whose NUL bytes are more than one in this many bytes looks binary: UTF-16 text
+/// of mostly ASCII, which is valid UTF-8, has a NUL in every other byte.
+const MAX_BYTES_PER_NUL_IN_BINARY: usize = 16;
 
 /// Turns a file's bytes into normalized text: UTF-8 without a BOM and with LF line endings.
 ///
-/// NUL bytes never occur in UTF-8 source text but do in UTF-16 and binary files, so they are
-/// rejected like invalid UTF-8. Takes the bytes by value so valid text is reused without a copy;
-/// only CRLF line endings make a new string.
+/// A NUL byte is valid UTF-8, and source text may hold one (a JavaScript string written with a
+/// raw NUL), but UTF-16 and binary files hold many: a file is rejected for its NULs only when
+/// it isn't valid UTF-8, or when they say UTF-16 or binary (see [`nuls_look_binary`]). Takes
+/// the bytes by value so valid text is reused without a copy; only CRLF line endings make a new
+/// string.
 pub(crate) fn normalize(bytes: Vec<u8>) -> Result<String, NotUtf8Text> {
-    if contains_byte(&bytes, 0) {
-        return Err(NotUtf8Text);
+    let has_nul = contains_byte(&bytes, 0);
+    if has_nul && nuls_look_binary(&bytes) {
+        return Err(NotUtf8Text::LooksBinary);
     }
-    let mut text = String::from_utf8(bytes).map_err(|_| NotUtf8Text)?;
+    let mut text = String::from_utf8(bytes).map_err(|_| {
+        if has_nul {
+            NotUtf8Text::LooksBinary
+        } else {
+            NotUtf8Text::InvalidUtf8
+        }
+    })?;
     if text.starts_with(UTF8_BOM) {
         // Shifts the rest of the text in place instead of copying it.
         text.drain(..UTF8_BOM.len());
@@ -94,6 +113,15 @@ pub(crate) fn normalize(bytes: Vec<u8>) -> Result<String, NotUtf8Text> {
     } else {
         Ok(text)
     }
+}
+
+/// Whether the NUL bytes of `bytes` say UTF-16 or binary rather than text: a NUL in the first
+/// two bytes, as UTF-16 text starting with an ASCII character (either byte order) and many
+/// binary formats have, or more than one NUL in [`MAX_BYTES_PER_NUL_IN_BINARY`] bytes.
+fn nuls_look_binary(bytes: &[u8]) -> bool {
+    // Only files that hold a NUL get here, so the plain count is fast enough.
+    let nuls: usize = bytes.iter().map(|&byte| usize::from(byte == 0)).sum();
+    bytes.iter().take(2).any(|&byte| byte == 0) || nuls * MAX_BYTES_PER_NUL_IN_BINARY > bytes.len()
 }
 
 /// How many bytes [`contains_byte`] compares per step.
@@ -270,9 +298,23 @@ mod tests {
     }
 
     #[test]
-    fn normalize_rejects_nul_bytes_and_invalid_utf8() {
-        assert_eq!(normalize(b"\xff\xfea\0".to_vec()), Err(NotUtf8Text));
-        assert_eq!(normalize(b"\xff".to_vec()), Err(NotUtf8Text));
+    fn normalize_rejects_invalid_utf8_and_binary_looking_nul_bytes() {
+        assert_eq!(
+            normalize(b"\xff\xfea\0".to_vec()),
+            Err(NotUtf8Text::LooksBinary)
+        );
+        assert_eq!(normalize(b"\xff".to_vec()), Err(NotUtf8Text::InvalidUtf8));
+        // UTF-16 of ASCII text without a byte order mark is valid UTF-8, in either byte order.
+        assert_eq!(normalize(b"a\0b\0".to_vec()), Err(NotUtf8Text::LooksBinary));
+        assert_eq!(normalize(b"\0a\0b".to_vec()), Err(NotUtf8Text::LooksBinary));
+        let mostly_nuls = [b"// x\n".as_slice(), &[0; 8]].concat();
+        assert_eq!(normalize(mostly_nuls), Err(NotUtf8Text::LooksBinary));
+    }
+
+    #[test]
+    fn normalize_keeps_a_few_nul_bytes_in_valid_utf8() {
+        let text = "const nul = `\0`;\nexport const after = 1;\n";
+        assert_eq!(normalize(text.as_bytes().to_vec()).as_deref(), Ok(text));
     }
 
     #[test]

@@ -16,6 +16,8 @@ pub(crate) enum InputError {
     /// Lists the supported extensions, so the reader learns what would have worked.
     UnsupportedFileType(String),
     NotUtf8Text(String),
+    /// Its NUL bytes say UTF-16 or binary (`source_text::normalize`).
+    LooksBinary(String),
     /// `detail` is the I/O error's kind, such as `permission denied`.
     Unreadable {
         path: String,
@@ -55,6 +57,10 @@ impl fmt::Display for InputError {
                 Ok(())
             }
             Self::NotUtf8Text(path) => write!(f, "File {path} is not UTF-8 text"),
+            Self::LooksBinary(path) => write!(
+                f,
+                "File {path} looks like a binary or UTF-16 file, not UTF-8 text"
+            ),
             Self::Unreadable { path, detail } => {
                 write!(f, "File {path} could not be read: {detail}")
             }
