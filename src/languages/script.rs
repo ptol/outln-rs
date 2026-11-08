@@ -16,7 +16,9 @@ use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
 use crate::source_text::{ByteRange, line_end};
-use crate::syntax_tree::{child_of_kind, children, first_syntax_child, has_child_of_kind, source};
+use crate::syntax_tree::{
+    OneLineRules, child_of_kind, children, first_syntax_child, has_child_of_kind, source,
+};
 
 // `.d.ts` declaration files have the extension `ts`.
 pub(crate) static TYPESCRIPT: CodeLanguage = script(&["ts", "mts", "cts"], || {
@@ -49,10 +51,15 @@ const fn script(extensions: &'static [&'static str], grammar: fn() -> Language) 
             attribute_kinds: &["decorator"],
             plain_comments: PlainComments::SteppedOver,
         },
-        // Kept as written, so whitespace inside them is never changed. Template literals need no
-        // entry: their text is in leaf `string_fragment` nodes, and the code in their `${…}` is
-        // ordinary syntax.
-        verbatim_kinds: &["string", "regex"],
+        one_line: OneLineRules {
+            // Kept as written, so whitespace inside them is never changed. Template literals
+            // need no entry: their text is in leaf `string_fragment` nodes, and the code in
+            // their `${…}` is ordinary syntax.
+            verbatim_kinds: &["string", "regex"],
+            // An object type (`{ a: number }`) may separate its members by line breaks alone. An
+            // interface's body has the same members, but no signature prints it.
+            member_lists: &["object_type"],
+        },
         declaration_lines: statement_or_member_lines,
     }
 }

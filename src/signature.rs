@@ -4,7 +4,7 @@ use tree_sitter::Node;
 
 use crate::outline::OutlineLine;
 use crate::source_text::{ByteRange, trim_end};
-use crate::syntax_tree::{child_of_kind, one_line_source_before};
+use crate::syntax_tree::{OneLineRules, child_of_kind, one_line_source_before};
 
 /// A declaration's signature, such as `function parse(input: string): Ast` or `pub struct
 /// Cache<K>`.
@@ -18,17 +18,17 @@ pub(crate) struct Signature {
 
 impl Signature {
     /// The signature made of the node's source up to byte `end`, such as where its body starts:
-    /// its tokens before `end` on one line ([`one_line_source_before`], keeping nodes of the
-    /// `verbatim_kinds` as written), highlighted up to the last of them. `end` is usually where
-    /// the next token starts, so the highlight leaves out the whitespace before it.
+    /// its tokens before `end` on one line ([`one_line_source_before`], by the language's
+    /// `rules`), highlighted up to the last of them. `end` is usually where the next token
+    /// starts, so the highlight leaves out the whitespace before it.
     pub(crate) fn source_before(
         node: Node<'_>,
         end: usize,
         text: &str,
-        verbatim_kinds: &[&str],
+        rules: &OneLineRules,
     ) -> Self {
         Signature {
-            text: one_line_source_before(node, end, text, verbatim_kinds),
+            text: one_line_source_before(node, end, text, rules),
             highlight_end: trim_end(text, ByteRange::new(node.start_byte(), end)).end,
         }
     }

@@ -14,7 +14,7 @@ use crate::leading_annotations::{Annotations, PrecedingNode, leading_annotations
 use crate::outline::{FileSummary, Header, Outline, OutlineLine};
 use crate::signature::Signature;
 use crate::source_text::{ByteRange, SourceText};
-use crate::syntax_tree::{children, one_line_source, parse};
+use crate::syntax_tree::{OneLineRules, children, one_line_source, parse};
 
 /// A code language, as the data its language engine needs.
 pub(crate) struct CodeLanguage {
@@ -30,9 +30,9 @@ pub(crate) struct CodeLanguage {
     pub(crate) preamble_end: fn(&str, usize) -> Option<usize>,
     /// Which nodes before a declaration are its leading annotations.
     pub(crate) annotations: Annotations,
-    /// Literal node kinds kept as written when source is put on one line
-    /// ([`one_line_source`]), such as string literals.
-    pub(crate) verbatim_kinds: &'static [&'static str],
+    /// How source prints on one line ([`one_line_source`]): the literal node kinds kept as
+    /// written, and the member lists that need separators.
+    pub(crate) one_line: OneLineRules,
     /// Appends the outline lines of one node with its line range; nothing for a node that isn't
     /// a declaration. Gets every node that isn't a leading annotation, at every level.
     pub(crate) declaration_lines: DeclarationLines,
@@ -126,16 +126,16 @@ impl<'a> OutlineLevel<'a> {
         self.depth == TOP_LEVEL_DEPTH
     }
 
-    /// The node's source on one line ([`one_line_source`]), keeping the language's verbatim
-    /// kinds as written.
+    /// The node's source on one line ([`one_line_source`]), by the language's
+    /// [`OneLineRules`].
     pub(crate) fn one_line(&self, node: Node<'_>) -> String {
-        one_line_source(node, self.text(), self.language.verbatim_kinds)
+        one_line_source(node, self.text(), &self.language.one_line)
     }
 
     /// The signature made of the node's source up to byte `end`, where its body starts
     /// ([`Signature::source_before`]).
     pub(crate) fn signature_before(&self, node: Node<'_>, end: usize) -> Signature {
-        Signature::source_before(node, end, self.text(), self.language.verbatim_kinds)
+        Signature::source_before(node, end, self.text(), &self.language.one_line)
     }
 
     /// The outline line of a declaration at this level with this signature, line range

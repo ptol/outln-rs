@@ -12,7 +12,7 @@ use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
 use crate::signature::{before_semicolon, body_start};
 use crate::source_text::{ByteRange, after_whitespace, line_end, quoted_len};
-use crate::syntax_tree::{child_of_kind, has_child_of_kind};
+use crate::syntax_tree::{OneLineRules, child_of_kind, has_child_of_kind};
 
 /// The language engine for Rust.
 ///
@@ -44,7 +44,11 @@ pub(crate) static RUST: CodeLanguage = CodeLanguage {
         plain_comments: PlainComments::SteppedOver,
     },
     // Literals kept as written, such as the ABI string of `extern "C"`.
-    verbatim_kinds: &["string_literal", "raw_string_literal", "char_literal"],
+    // Struct fields and enum variants need commas, so no member list lacks separators.
+    one_line: OneLineRules {
+        verbatim_kinds: &["string_literal", "raw_string_literal", "char_literal"],
+        member_lists: &[],
+    },
     declaration_lines,
 };
 

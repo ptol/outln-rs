@@ -9,7 +9,7 @@ use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
 use crate::source_text::{ByteRange, line_end, quoted_len};
-use crate::syntax_tree::{child_of_kind, source};
+use crate::syntax_tree::{OneLineRules, child_of_kind, source};
 
 /// The language engine for CSS.
 ///
@@ -28,7 +28,10 @@ pub(crate) static CSS: CodeLanguage = CodeLanguage {
         plain_comments: PlainComments::Annotate,
     },
     // Preludes are read from the source text, not joined from tokens ([`prelude_signature`]).
-    verbatim_kinds: &[],
+    one_line: OneLineRules {
+        verbatim_kinds: &[],
+        member_lists: &[],
+    },
     declaration_lines: rule_lines,
 };
 
