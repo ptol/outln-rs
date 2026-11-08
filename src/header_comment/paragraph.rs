@@ -64,11 +64,11 @@ fn paragraphs(texts: &[&str]) -> Vec<Paragraph> {
             continue;
         }
         let start = index;
-        let (end, kind) = if let Some(fence) = fence_of(text) {
+        let (end, kind) = if let Some(fence) = Fence::opening(text) {
             // An unclosed fence runs to the comment's end, as in Markdown.
             let close = texts[start + 1..]
                 .iter()
-                .position(|line| line.starts_with(fence))
+                .position(|line| fence.is_closed_by(line))
                 .map_or(texts.len(), |offset| start + 1 + offset + 1);
             (close, ParagraphKind::CodeFence)
         } else {
@@ -90,11 +90,35 @@ fn paragraphs(texts: &[&str]) -> Vec<Paragraph> {
     paragraphs
 }
 
-/// The fence that opens a fenced code block on this line (` ``` ` or `~~~`), or `None`.
-fn fence_of(text: &str) -> Option<&'static str> {
-    ["```", "~~~"]
-        .into_iter()
-        .find(|fence| text.starts_with(fence))
+/// The fence that opens a fenced code block: a run of at least three backticks or tildes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Fence {
+    character: char,
+    length: usize,
+}
+
+/// How many backticks or tildes a fence has at least.
+const MIN_FENCE_LENGTH: usize = 3;
+
+impl Fence {
+    /// The fence at the start of a line (` ``` `, `~~~~`), with any info string after it, or
+    /// `None`.
+    fn opening(text: &str) -> Option<Self> {
+        let character = text
+            .chars()
+            .next()
+            .filter(|&first| matches!(first, '`' | '~'))?;
+        let length = text.len() - text.trim_start_matches(character).len();
+        (length >= MIN_FENCE_LENGTH).then_some(Fence { character, length })
+    }
+
+    /// Whether a line closes the code block this fence opens: a run of the same character at
+    /// least as long as the opening one, with nothing after it, as Markdown's spec
+    /// (`CommonMark`) says, so a ` ``` ` line inside a ` ```` ` block is code.
+    fn is_closed_by(self, text: &str) -> bool {
+        let rest = text.trim_start_matches(self.character);
+        text.len() - rest.len() >= self.length && rest.trim().is_empty()
+    }
 }
 
 /// Whether a line is markup rather than prose: badges only (`[![crates.io](…)](…)`), a link
@@ -110,8 +134,24 @@ fn is_link_definition(text: &str) -> bool {
             .is_some_and(|close| !text[1..close].contains(']'))
 }
 
+/// Whether a line is HTML tags and whitespace only: `<br>` is, `<b>Purpose.</b>` isn't, since
+/// its text prints.
 fn is_html_tags_only(text: &str) -> bool {
-    text.starts_with('<') && text.ends_with('>')
+    let mut rest = text.trim_start();
+    if rest.is_empty() {
+        return false;
+    }
+    while !rest.is_empty() {
+        let Some(after_tag) = rest
+            .strip_prefix('<')
+            .and_then(|tag| tag.split_once('>'))
+            .map(|(_, after)| after)
+        else {
+            return false;
+        };
+        rest = after_tag.trim_start();
+    }
+    true
 }
 
 /// Whether a line holds nothing but Markdown images and links around images, separated by
@@ -277,6 +317,35 @@ mod tests {
         ];
         assert_eq!(header_texts(&comment), Some(owned(&["Docs."])));
         assert_eq!(header_texts(&["```", "code", "```"]), None);
+    }
+
+    #[test]
+    fn a_fence_closes_only_with_its_character_at_its_length_or_longer() {
+        let longer_fence = ["````", "```", "````", "", "Docs."];
+        assert_eq!(header_texts(&longer_fence), Some(owned(&["Docs."])));
+        let tilde_inside = ["```", "~~~", "```", "", "Docs."];
+        assert_eq!(header_texts(&tilde_inside), Some(owned(&["Docs."])));
+        let info_after_close = ["```", "```rust", "```", "", "Docs."];
+        assert_eq!(header_texts(&info_after_close), Some(owned(&["Docs."])));
+        let closed_longer = ["```", "code", "`````", "", "Docs."];
+        assert_eq!(header_texts(&closed_longer), Some(owned(&["Docs."])));
+    }
+
+    #[test]
+    fn a_line_with_text_between_html_tags_is_prose() {
+        assert_eq!(
+            header_texts(&["<b>Purpose.</b>"]),
+            Some(owned(&["<b>Purpose.</b>"]))
+        );
+        assert_eq!(
+            header_texts(&[
+                "<p align=\"center\"> <img src=\"logo.svg\"> </p>",
+                "",
+                "Docs."
+            ]),
+            Some(owned(&["Docs."]))
+        );
+        assert_eq!(header_texts(&["<b", "", "Docs."]), Some(owned(&["<b"])));
     }
 
     #[test]

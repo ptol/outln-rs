@@ -303,6 +303,23 @@ mod tests {
     use super::*;
 
     #[test]
+    fn summary_prefix_cuts_large_texts_at_a_line_break() {
+        let max_bytes = 1024;
+        let line = "\"key\": \"value\",\n";
+        let text = line.repeat(max_bytes / line.len() + 2);
+        let (prefix, cut) = summary_prefix(&text, max_bytes);
+        assert_eq!(cut, Cut::Prefix);
+        assert!(prefix.ends_with('\n') && prefix.len() <= max_bytes);
+        let one_line = "é".repeat(max_bytes);
+        let (prefix, _) = summary_prefix(&one_line, max_bytes);
+        assert!(one_line.is_char_boundary(prefix.len()) && !prefix.is_empty());
+        assert_eq!(
+            summary_prefix("a: 1\n", max_bytes),
+            ("a: 1\n", Cut::WholeFile)
+        );
+    }
+
+    #[test]
     fn line_count_counts_a_last_line_without_a_line_break() {
         let cases = [
             ("", "0 lines"),

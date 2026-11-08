@@ -7,7 +7,8 @@ use crate::comment_syntax::{BlockComments, CommentSyntax, LineMarker};
 use crate::syntax_tree::{byte_range, children, source};
 
 /// JSON has no comments, but tree-sitter-json parses `//` and `/* */` ones (as `tsconfig.json`
-/// files use them), so a leading one is the header.
+/// files use them), so a leading one with a prose paragraph that isn't a license notice is the
+/// header, as in the other data files.
 pub(super) const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
     line: Some(LineMarker::Slashes),
     block: Some(BlockComments::Flat),

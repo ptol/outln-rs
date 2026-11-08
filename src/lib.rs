@@ -71,7 +71,7 @@ pub struct Context<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HighlightStyle {
     /// ANSI green, for a person at a terminal. `src/main.rs` picks it when stdout is a terminal
-    /// and `NO_COLOR` isn't set.
+    /// and `NO_COLOR` isn't set to a non-empty value.
     AnsiGreen,
     /// `«` before and `»` after each highlighted part of a line, readable without a terminal:
     /// by agents, in files, and through pipes.
@@ -155,6 +155,12 @@ pub fn run(
     });
     if is_glob_view {
         glob_view::run(&classified, &walker, arguments.depth, out, err)
+    } else if arguments.depth.is_some() {
+        print_clap_message(
+            &cli::depth_limit_without_glob_view(context.version),
+            out,
+            err,
+        )
     } else {
         file_mode::run(&classified, context.cwd, context.threads, out, err)
     }

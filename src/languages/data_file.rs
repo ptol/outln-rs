@@ -5,6 +5,10 @@
 //! range starts and ends, and which keys a field summary shows are the same for all three, so
 //! they live here.
 //!
+//! The header comment is the first comment at the top, after any preamble (a `#:schema` or YAML
+//! directive), whose first prose paragraph isn't a license notice; a license notice or a
+//! comment without prose is passed over, and starts no key's line range either.
+//!
 //! A key's outline line prints a scalar value as written, its first paragraph on one line (a
 //! value written over several lines has its lines joined by spaces), cut at 40 characters, or
 //! 100 for a describing key (`description`, `title`). A field summary shows up to three scalar
@@ -19,13 +23,13 @@ mod yaml;
 use tree_sitter::{Language, Node};
 
 use crate::comment_syntax::CommentSyntax;
-use crate::header_comment::{HeaderChoice, find_header_comment};
+use crate::header_comment::{HeaderChoice, HeaderSearch, find_header_comment};
 use crate::language_engine::LanguageEngine;
 use crate::outline::{
     FieldSummary, FieldsShown, FileSummary, Header, Outline, OutlineLine, is_describing_key,
     summary_fields,
 };
-use crate::source_text::{ByteRange, SourceText, trim_end};
+use crate::source_text::{ByteRange, Cut, SourceText, summary_prefix, trim_end};
 use crate::syntax_tree::{byte_range, parse};
 
 pub(crate) use yaml::{YamlField, YamlValue};
@@ -89,17 +93,16 @@ impl LanguageEngine for DataFile {
         let text = source.text;
         let parsed = (self.parsable_part)(text);
         let tree = parse(parsed, &(self.grammar)());
-        let header = self.header(text);
-        let header_end = header.as_ref().map(Header::end);
+        let HeaderSearch { header, end } = self.header(text);
         let keys = (self.keys)(tree.root_node(), parsed);
         let comments = comment_ranges(tree.root_node());
-        let lines = outline_lines(keys, source, &comments, header_end, self.preamble_end);
+        let lines = outline_lines(keys, source, &comments, end, self.preamble_end);
         Outline { header, lines }
     }
 
     fn file_summary(&self, text: &str) -> FileSummary {
         // A marker-only comment (a lone `#`) prints nothing, so fields summarize the file instead.
-        if let Some(header) = self.header(text).filter(Header::has_text) {
+        if let Some(header) = self.header(text).header.filter(Header::has_text) {
             return FileSummary::Header(header);
         }
         // The header is found line by line, but fields need a parse; parsing only the start of
@@ -133,8 +136,9 @@ pub(crate) fn yaml_fields(text: &str) -> Option<Vec<YamlField>> {
 }
 
 impl DataFile {
-    /// The header comment: the first comment at the top of the file, after any preamble.
-    fn header(&self, text: &str) -> Option<Header> {
+    /// The header comment: the first comment at the top of the file, after any preamble, with a
+    /// prose paragraph that isn't a license notice; and where the comments read for it end.
+    fn header(&self, text: &str) -> HeaderSearch {
         find_header_comment(
             text,
             &self.comment_syntax,
@@ -143,10 +147,11 @@ impl DataFile {
         )
     }
 
-    /// The part of `text` a field summary reads ([`summary_prefix`]), no more than its grammar
-    /// can parse, and whether that is the whole file.
+    /// The part of `text` a field summary reads (its first [`SUMMARY_PREFIX_BYTES`], cut by
+    /// [`summary_prefix`]), no more than its grammar can parse, and whether that is the whole
+    /// file.
     fn summary_prefix<'text>(&self, text: &'text str) -> (&'text str, Cut) {
-        let (prefix, cut) = summary_prefix(text);
+        let (prefix, cut) = summary_prefix(text, SUMMARY_PREFIX_BYTES);
         let parsed = (self.parsable_part)(prefix);
         if parsed.len() < prefix.len() {
             (parsed, Cut::Prefix)
@@ -330,27 +335,6 @@ struct SummarySource {
 /// glob view parses every data file, so a lockfile of several megabytes isn't parsed whole.
 const SUMMARY_PREFIX_BYTES: usize = 64 * 1024;
 
-/// Whether a field summary read the whole file or only its start.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Cut {
-    WholeFile,
-    Prefix,
-}
-
-/// The part of `text` a field summary reads: all of it, or its first
-/// [`SUMMARY_PREFIX_BYTES`] up to the last line break among them (or a character boundary,
-/// for a file on one line).
-fn summary_prefix(text: &str) -> (&str, Cut) {
-    if text.len() <= SUMMARY_PREFIX_BYTES {
-        return (text, Cut::WholeFile);
-    }
-    let limit = text.floor_char_boundary(SUMMARY_PREFIX_BYTES);
-    let end = text[..limit]
-        .rfind('\n')
-        .map_or(limit, |newline| newline + 1);
-    (&text[..end], Cut::Prefix)
-}
-
 /// The field summary of a file's scalar keys, picked and ordered by [`summary_fields`]
 /// (`description` and `title` first), or, in a file without scalar keys, of its keys' names
 /// (`{compilerOptions, include}`); `None` without any key.
@@ -465,7 +449,8 @@ fn outline_lines(
 /// The walk stops at the key before (`previous_start`), at preamble (a `#:schema` directive),
 /// and at a comment indented deeper than the key, which belongs to the value above it (a YAML
 /// comment inside a nested mapping). Comments that reach up to the header comment (which ends
-/// at `header_end`) are the rest of it, so the range then starts at the key.
+/// at `header_end`, with any license notice passed over for it) are the rest of it, so the
+/// range then starts at the key.
 fn range_start(
     key: &Key,
     previous_start: usize,
@@ -585,6 +570,31 @@ mod tests {
     }
 
     #[test]
+    fn indicators_inside_a_quoted_yaml_scalar_on_its_line_are_not_nesting() {
+        let dashes = "- ".repeat(250);
+        for value in [format!("\"{dashes}\""), format!("'it''s {dashes}'")] {
+            let text = format!("x: {value}\ny: 1\n");
+            assert_eq!(yaml::parsable_part(&text), text);
+        }
+        // Each of these may nest too deep for the scanner once a syntax error makes it read
+        // every indicator (a quoted scalar continued on the next line, or after a plain scalar
+        // continued from the line before, where a `: ` ends that scalar), so the line with the
+        // dashes is left out.
+        for deep in [
+            format!("x: 'a' {dashes}"),
+            format!("x: \"a\n{dashes}\""),
+            format!("a\n\"b: {dashes}\""),
+        ] {
+            let text = format!("first: 1\n{deep}\n");
+            let parsed = yaml::parsable_part(&text);
+            assert!(
+                parsed.starts_with("first: 1\n") && !parsed.contains(&dashes),
+                "{deep:?}"
+            );
+        }
+    }
+
+    #[test]
     fn a_yaml_key_ending_in_a_comment_line_keeps_its_key_inside_its_range() {
         for text in ["? :\n", "? a\n# comment\n: 1\n", "? a\n  # comment\n"] {
             for line in outline_of(&YAML, text).lines {
@@ -655,19 +665,6 @@ mod tests {
             value_text("name", &format!("\"\"\"{long}\"\"\"")),
             format!("\"\"\"{}…\"\"\"", "x".repeat(MAX_VALUE_CHARS - 3))
         );
-    }
-
-    #[test]
-    fn summary_prefix_cuts_large_files_at_a_line_break() {
-        let line = "\"key\": \"value\",\n";
-        let text = line.repeat(SUMMARY_PREFIX_BYTES / line.len() + 2);
-        let (prefix, cut) = summary_prefix(&text);
-        assert_eq!(cut, Cut::Prefix);
-        assert!(prefix.ends_with('\n') && prefix.len() <= SUMMARY_PREFIX_BYTES);
-        let one_line = "é".repeat(SUMMARY_PREFIX_BYTES);
-        let (prefix, _) = summary_prefix(&one_line);
-        assert!(one_line.is_char_boundary(prefix.len()));
-        assert_eq!(summary_prefix("a: 1\n"), ("a: 1\n", Cut::WholeFile));
     }
 
     #[test]

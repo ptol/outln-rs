@@ -25,15 +25,6 @@ impl Header {
     pub(crate) fn has_text(&self) -> bool {
         !header_lines(self).is_empty()
     }
-
-    /// The byte offset where the header's last line ends in the source.
-    pub(crate) fn end(&self) -> usize {
-        let last_range = match self {
-            Header::Frontmatter(fields) => fields.last().map(|field| field.range),
-            Header::Comment(lines) => lines.last().map(|line| line.range),
-        };
-        last_range.map_or(0, |range| range.end)
-    }
 }
 
 /// One non-blank source line of a header comment.
@@ -81,7 +72,8 @@ const INDENT_PER_DEPTH: &str = "  ";
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum FileSummary {
     Header(Header),
-    /// A data file without a header comment summarizes its first fields instead.
+    /// A data file without a header comment summarizes its first scalar fields instead, or its
+    /// keys' names when it has no scalar keys.
     Fields(FieldSummary),
     /// A code file without a header comment summarizes its first top-level declarations
     /// instead.
@@ -89,18 +81,20 @@ pub(crate) enum FileSummary {
     /// A Markdown file without frontmatter fields is summarized by its first heading, as its outline
     /// line prints it (`# Guide`).
     FirstHeading(String),
-    /// No header, fields, or heading to summarize.
+    /// No header, fields, declarations, or heading to summarize.
     Empty,
 }
 
-/// A data file's first top-level keys with scalar values, as `{name: "outln", ...}`, which a
-/// glob view prints for a data file without a header comment.
+/// A data file's first top-level keys with scalar values, as `{name: "outln", ...}`, or in a
+/// file without scalar keys its keys' names, as `{compilerOptions, include}`, which a glob view
+/// prints for a data file without a header comment.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct FieldSummary {
     /// The TOML table the fields come from, such as `[package]`, when they aren't top-level
     /// keys of the file.
     pub(crate) table: Option<String>,
-    /// Each field as its outline line prints it: `name: "outln"`, or `name = "outln"` in TOML.
+    /// Each field as its outline line prints it: `name: "outln"`, `name = "outln"` in TOML, or
+    /// a key's name alone.
     pub(crate) fields: Vec<String>,
     pub(crate) shown: FieldsShown,
 }
@@ -122,9 +116,23 @@ const MAX_SUMMARY_FIELDS: usize = 3;
 /// order.
 const DESCRIBING_KEYS: [&str; 2] = ["description", "title"];
 
-/// Whether a field's key is one of the [`DESCRIBING_KEYS`].
+/// Whether a field's key, as printed, is one of the [`DESCRIBING_KEYS`], quoted or not
+/// (`"description"` in YAML or TOML).
 pub(crate) fn is_describing_key(key: &str) -> bool {
-    DESCRIBING_KEYS.contains(&key)
+    describing_rank(key) < DESCRIBING_KEYS.len()
+}
+
+/// Where a key, as printed, comes in [`DESCRIBING_KEYS`], or the number of describing keys for
+/// any other key. A key may be written in quotes, which a data file's outline line keeps.
+fn describing_rank(key: &str) -> usize {
+    let unquoted = ['"', '\'']
+        .into_iter()
+        .find_map(|quote| key.strip_prefix(quote)?.strip_suffix(quote))
+        .unwrap_or(key);
+    DESCRIBING_KEYS
+        .iter()
+        .position(|describing| *describing == unquoted)
+        .unwrap_or(DESCRIBING_KEYS.len())
 }
 
 /// The fields a file summary shows: the [`DESCRIBING_KEYS`] first, then the others in source
@@ -136,12 +144,7 @@ pub(crate) fn summary_fields<T>(
 ) -> (Vec<T>, FieldsShown) {
     let mut fields: Vec<T> = fields.into_iter().collect();
     // A stable sort, so fields of the same rank keep their source order.
-    fields.sort_by_key(|field| {
-        DESCRIBING_KEYS
-            .iter()
-            .position(|describing| *describing == key(field))
-            .unwrap_or(DESCRIBING_KEYS.len())
-    });
+    fields.sort_by_key(|field| describing_rank(key(field)));
     let shown = if fields.len() > MAX_SUMMARY_FIELDS {
         fields.truncate(MAX_SUMMARY_FIELDS);
         FieldsShown::First
@@ -220,7 +223,8 @@ fn shortened(text: &str) -> String {
     }
 }
 
-/// Printed in a glob view for a file without a header.
+/// Printed in a glob view for a file with nothing to summarize: no header, field summary,
+/// declaration summary, or first heading.
 const NO_HEADER: &str = "(no header available)";
 
 /// Printed after the shown fields of a [`FieldSummary`], or the declarations of a
@@ -375,6 +379,18 @@ mod tests {
             render_file_summary("guide.md", LineCount::of("---\n"), &summary),
             "guide.md (1 line): title: \"Guide\", draft: true"
         );
+    }
+
+    #[test]
+    fn a_quoted_describing_key_is_still_one() {
+        for key in ["description", "\"description\"", "'title'"] {
+            assert!(is_describing_key(key), "{key}");
+        }
+        for key in ["\"description", "\"title'", "descriptions", "\"\""] {
+            assert!(!is_describing_key(key), "{key}");
+        }
+        let (fields, _) = summary_fields(["a", "\"title\"", "'description'"], |key| key);
+        assert_eq!(fields, ["'description'", "\"title\"", "a"]);
     }
 
     #[test]

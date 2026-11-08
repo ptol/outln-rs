@@ -13,7 +13,9 @@ use crate::syntax_tree::{OneLineRules, child_of_kind, source};
 
 /// The language engine for CSS.
 ///
-/// The header comment is the first `/* */` comment, which only an `@charset` rule may precede.
+/// The header comment is the first `/* */` comment with a prose paragraph that isn't a license
+/// notice; before the comments only an `@charset` rule and tool directives written as comments
+/// (`/* stylelint-disable */`) may come.
 pub(crate) static CSS: CodeLanguage = CodeLanguage {
     extensions: &["css"],
     grammar: || tree_sitter_css::LANGUAGE.into(),

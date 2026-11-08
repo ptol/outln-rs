@@ -71,15 +71,17 @@ pub(crate) fn before_semicolon(node: Node<'_>) -> usize {
 /// `export const shape` for `export const shape = (input: Shape): void`. Type parameters right
 /// before the parameter list go too. A line without a parameter list is kept whole, and so is a
 /// test block, whose parentheses hold its title (`describe('parser')`).
+///
+/// The parameter list is the first `(` outside type parameters, whose bounds may hold
+/// parentheses of their own: `fn f<F: Fn()>(f: F)` and
+/// `function f<T extends (x: number) => void>(a: T)` both cut before `(`.
 pub(crate) fn signature_head(text: &str) -> &str {
     // Rust's `pub(crate)` and `pub(in path)` are visibilities, not parameter lists.
     let search_from = text
         .strip_prefix("pub(")
         .and_then(|rest| rest.find(')'))
         .map_or(0, |close| "pub(".len() + close + 1);
-    let Some(open) = text[search_from..]
-        .find('(')
-        .map(|index| search_from + index)
+    let Some(open) = parameter_list_start(&text[search_from..]).map(|index| search_from + index)
     else {
         return text;
     };
@@ -90,25 +92,47 @@ pub(crate) fn signature_head(text: &str) -> &str {
     head.strip_suffix('=').map_or(head, str::trim_end)
 }
 
+/// Where the first `(` outside `<…>` groups is in `text`, or `None`.
+fn parameter_list_start(text: &str) -> Option<usize> {
+    with_angle_depth(text)
+        .find(|&(_, character, depth)| character == '(' && depth == 0)
+        .map(|(index, _, _)| index)
+}
+
 /// `head` without the `<…>` group it ends with, if any: `fn parse<T>` becomes `fn parse`.
 fn without_trailing_type_parameters(head: &str) -> &str {
-    if !head.ends_with('>') {
+    if !head.ends_with('>') || head.ends_with("->") || head.ends_with("=>") {
         return head;
     }
+    let mut group_start = None;
+    let mut depth_at_end = 0;
+    for (index, character, depth) in with_angle_depth(head) {
+        if character == '<' && depth == 1 {
+            group_start = Some(index);
+        }
+        depth_at_end = depth;
+    }
+    match group_start {
+        Some(start) if depth_at_end == 0 => head[..start].trim_end(),
+        Some(_) | None => head,
+    }
+}
+
+/// Each character of `text` with its byte offset and how many `<…>` groups are open after it.
+/// The `>` of `->` and `=>` (a Rust `Fn() -> T` bound, a TypeScript function type) closes no
+/// group.
+fn with_angle_depth(text: &str) -> impl Iterator<Item = (usize, char, usize)> {
     let mut depth = 0_usize;
-    for (index, character) in head.char_indices().rev() {
+    let mut previous = None;
+    text.char_indices().map(move |(index, character)| {
         match character {
-            '>' => depth += 1,
-            '<' => {
-                depth -= 1;
-                if depth == 0 {
-                    return head[..index].trim_end();
-                }
-            }
+            '<' => depth += 1,
+            '>' if !matches!(previous, Some('-' | '=')) => depth = depth.saturating_sub(1),
             _ => {}
         }
-    }
-    head
+        previous = Some(character);
+        (index, character, depth)
+    })
 }
 
 #[cfg(test)]
@@ -138,6 +162,16 @@ mod tests {
             ("describe('parser')", "describe('parser')"),
             ("pub struct Pair<T>(T, T)", "pub struct Pair"),
             ("pub(in crate::a) struct S", "pub(in crate::a) struct S"),
+            ("fn f<F: Fn()>(f: F)", "fn f"),
+            ("fn f<F: Fn(u8) -> u8>(f: F) -> u8", "fn f"),
+            (
+                "function f<T extends (x: number) => void>(a: T)",
+                "function f",
+            ),
+            (
+                "impl<F: Fn()> Handler for Wrapper<F>",
+                "impl<F: Fn()> Handler for Wrapper<F>",
+            ),
         ];
         for (text, head) in cases {
             assert_eq!(signature_head(text), head, "{text}");

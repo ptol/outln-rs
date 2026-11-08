@@ -1,0 +1,22 @@
+A header line with text between HTML tags (`<b>Purpose.</b>`) is prose, and the header prints it, tags included; only a line of nothing but tags (`<p align="center">`) is markup that the header skips.
+== args
+input/d.rs
+input/e.rs
+== file input/d.rs
+//! <b>Purpose.</b>
+fn f() {}
+== file input/e.rs
+//! <p align="center"><img src="logo.svg"></p>
+//!
+//! Draws the logo.
+fn g() {}
+== stdout
+input/d.rs (2 lines)
+<b>Purpose.</b>
+[L2-L2] fn f()
+
+input/e.rs (4 lines)
+Draws the logo.
+[L4-L4] fn g()
+== stderr
+== exit 0

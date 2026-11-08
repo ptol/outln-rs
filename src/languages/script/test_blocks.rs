@@ -14,22 +14,22 @@ const TEST_FUNCTIONS: [&str; 4] = ["describe", "it", "test", "suite"];
 /// Properties that select or skip test blocks: `describe.only`, `it.skip`, `test.each`.
 const TEST_MODIFIERS: [&str; 3] = ["only", "skip", "each"];
 
-/// The outline lines of a test block: its own line, then the test blocks in its callback's body
-/// one level deeper (the `it` calls in a `describe`), down to the deepest level outlines list.
-/// Nothing for any other call.
+/// Appends the outline lines of a test block: its own line, then the test blocks in its
+/// callback's body one level deeper (the `it` calls in a `describe`), down to the deepest level
+/// outlines list. Nothing for any other call.
 pub(super) fn test_block_lines(
     statement: Statement<'_>,
     call: Node<'_>,
     level: &OutlineLevel<'_>,
-) -> Vec<OutlineLine> {
+    lines: &mut Vec<OutlineLine>,
+) {
     let Some(line) = test_block_line(statement, call, level) else {
-        return Vec::new();
+        return;
     };
-    let mut lines = vec![line];
+    lines.push(line);
     if let Some(body) = callback_body(call) {
-        level.declarations_inside(body, &mut lines);
+        level.declarations_inside(body, lines);
     }
-    lines
 }
 
 /// The body of a test block's callback: its last argument when that is a function with a block

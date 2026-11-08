@@ -71,7 +71,8 @@ fn directory_arguments_print_a_glob_view() {
 }
 
 /// Past 300 files, a glob view without `--depth` suggests it on stderr, so stdout stays only
-/// file summaries; with `--depth 1`, the same tree is one directory summary.
+/// file summaries; with `--depth 1`, the same tree is one directory summary, while a glob
+/// pattern, which `--depth` doesn't limit, still gets a hint.
 #[test]
 fn a_long_glob_view_suggests_a_depth_limit_on_stderr() {
     let dir = ScratchDir::new("usage-long-glob-view").expect("temp dir");
@@ -96,6 +97,14 @@ fn a_long_glob_view_suggests_a_depth_limit_on_stderr() {
         run_in(&dir, &["--depth", "1", "docs"]).expect("writing to a Vec cannot fail");
     assert_eq!(out, "glob view: docs\ndocs/part/ (301 files, 301 lines)\n");
     assert_eq!(err, "");
+
+    // A depth limit doesn't apply to a glob pattern, so the hint still follows.
+    let (_, err, _) =
+        run_in(&dir, &["--depth", "1", "docs/**/*.md"]).expect("writing to a Vec cannot fail");
+    assert_eq!(
+        err,
+        "Hint: found 301 files; a narrower path or pattern lists fewer\n"
+    );
 }
 
 /// `src/main.rs` picks the style: green for a terminal, markers for agents and pipes.
@@ -240,11 +249,14 @@ fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
 
     let dir = ScratchDir::new("usage-unsearchable").expect("temp dir");
     dir.write("secret/b.rs", b"//! b\n").expect("write");
+    dir.write("secret/[id].rs", b"//! id\n").expect("write");
     let secret = dir.path().join("secret");
     fs::set_permissions(&secret, Permissions::from_mode(0o000)).expect("chmod");
     let searchable_anyway = fs::metadata(secret.join("b.rs")).is_ok();
 
     let result = run_in(&dir, &["secret/b.rs"]);
+    // Glob characters don't make it a glob pattern that silently matches nothing.
+    let bracket_result = run_in(&dir, &["secret/[id].rs"]);
     fs::set_permissions(&secret, Permissions::from_mode(0o755)).expect("chmod back");
     if searchable_anyway {
         skip_because_permissions_are_ignored("a_file_in_an_unsearchable_directory");
@@ -259,6 +271,12 @@ fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
         "File secret/b.rs could not be read: permission denied\n"
     );
     assert_eq!(status, ExitStatus::Failure);
+    let (_, bracket_err, bracket_status) = bracket_result.expect("writing to a Vec cannot fail");
+    assert_eq!(
+        bracket_err,
+        "File secret/[id].rs could not be read: permission denied\n"
+    );
+    assert_eq!(bracket_status, ExitStatus::Failure);
 }
 
 /// A FIFO named like a source file would block a read until something writes to it, so outln

@@ -141,7 +141,7 @@ _Avoid_: Max depth, level, recursion limit
 
 ### Hint
 
-The line a glob view without a depth limit prints on stderr, after more than 300 file summaries, naming a way to list fewer: `Hint: found 989 files; for an overview, try --depth 1 or a narrower path`.
+The line a glob view prints on stderr after more than 300 file summaries, unless a depth limit cut a directory argument, naming a way to list fewer: `Hint: found 989 files; for an overview, try --depth 1 or a narrower path`.
 _Avoid_: Warning (nothing failed), tip, notice
 
 ### Debug mode

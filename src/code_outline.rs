@@ -8,7 +8,7 @@
 use tree_sitter::{Language, Node};
 
 use crate::comment_syntax::CommentSyntax;
-use crate::header_comment::{HeaderChoice, find_header_comment};
+use crate::header_comment::{HeaderChoice, HeaderSearch, find_header_comment};
 use crate::language_engine::LanguageEngine;
 use crate::leading_annotations::{Annotations, PrecedingNode, leading_annotations_start};
 use crate::outline::{
@@ -50,8 +50,9 @@ pub(crate) type DeclarationLines =
     fn(&OutlineLevel<'_>, Node<'_>, ByteRange, &mut Vec<OutlineLine>);
 
 impl CodeLanguage {
-    /// The header comment of `text`, found line by line without parsing.
-    pub(crate) fn header(&self, text: &str) -> Option<Header> {
+    /// The header comment of `text`, and where the comments read for it end, found line by
+    /// line without parsing.
+    fn header_search(&self, text: &str) -> HeaderSearch {
         find_header_comment(
             text,
             &self.comment_syntax,
@@ -60,15 +61,43 @@ impl CodeLanguage {
         )
     }
 
+    /// The header comment of `text`.
+    #[cfg(test)]
+    pub(crate) fn header(&self, text: &str) -> Option<Header> {
+        self.header_search(text).header
+    }
+
     /// The declaration summary of `text`'s top-level declarations, or `None` without any.
-    fn declaration_summary(&self, text: &str) -> Option<DeclarationSummary> {
-        let outline = self.outline(&SourceText::new(text));
-        let top_level = outline
-            .lines
-            .iter()
-            .filter(|line| line.depth == TOP_LEVEL_DEPTH)
-            .map(|line| (self.summary_text)(&line.text));
-        DeclarationSummary::of(top_level)
+    /// `header_end` is where the comments read for its header end, from the header search the
+    /// caller already made.
+    fn declaration_summary(
+        &self,
+        text: &str,
+        header_end: Option<usize>,
+    ) -> Option<DeclarationSummary> {
+        let lines = self.declaration_lines(&SourceText::new(text), header_end, TOP_LEVEL_DEPTH);
+        DeclarationSummary::of(lines.iter().map(|line| (self.summary_text)(&line.text)))
+    }
+
+    /// The outline lines of `source`'s declarations, parsed whole, down to depth `deepest`
+    /// (`TOP_LEVEL_DEPTH` lists only the top-level ones). `header_end` is where the comments
+    /// read for the header end ([`HeaderSearch::end`]).
+    fn declaration_lines(
+        &self,
+        source: &SourceText<'_>,
+        header_end: Option<usize>,
+        deepest: usize,
+    ) -> Vec<OutlineLine> {
+        let tree = parse(source.text, &(self.grammar)());
+        let top_level = OutlineLevel {
+            source,
+            language: self,
+            depth: TOP_LEVEL_DEPTH,
+            deepest,
+        };
+        let mut lines = Vec::new();
+        top_level.list(&children(tree.root_node()), header_end, &mut lines);
+        lines
     }
 
     /// What `node`, before a declaration, is to the walk over its leading annotations.
@@ -83,27 +112,20 @@ impl LanguageEngine for CodeLanguage {
     }
 
     fn outline(&self, source: &SourceText<'_>) -> Outline {
-        let header = self.header(source.text);
-        let tree = parse(source.text, &(self.grammar)());
-        let top_level = OutlineLevel {
-            source,
-            language: self,
-            depth: TOP_LEVEL_DEPTH,
-        };
-        let mut lines = Vec::new();
-        let header_end = header.as_ref().map(Header::end);
-        top_level.list(&children(tree.root_node()), header_end, &mut lines);
+        let HeaderSearch { header, end } = self.header_search(source.text);
+        let lines = self.declaration_lines(source, end, DEEPEST_DEPTH);
         Outline { header, lines }
     }
 
     /// The header, found line by line; only a file without one is parsed, for its declaration
     /// summary, and only its start ([`declaration_summary_prefix`]), so the glob view stays fast.
     fn file_summary(&self, text: &str) -> FileSummary {
-        if let Some(header) = self.header(text).filter(Header::has_text) {
+        let HeaderSearch { header, end } = self.header_search(text);
+        if let Some(header) = header.filter(Header::has_text) {
             return FileSummary::Header(header);
         }
         let (prefix, cut) = declaration_summary_prefix(text);
-        let Some(mut summary) = self.declaration_summary(prefix) else {
+        let Some(mut summary) = self.declaration_summary(prefix, end) else {
             return FileSummary::Empty;
         };
         // More declarations may follow what was read.
@@ -169,6 +191,9 @@ pub(crate) struct OutlineLevel<'a> {
     source: &'a SourceText<'a>,
     language: &'a CodeLanguage,
     depth: usize,
+    /// The deepest level listed: [`DEEPEST_DEPTH`] for an outline, [`TOP_LEVEL_DEPTH`] for a
+    /// declaration summary, which prints only top-level declarations.
+    deepest: usize,
 }
 
 impl<'a> OutlineLevel<'a> {
@@ -212,9 +237,9 @@ impl<'a> OutlineLevel<'a> {
     /// Appends the outline lines of the declarations among `parent`'s children one level
     /// deeper, each with its own line range: a class's members, the rules in an at-rule's
     /// block. The language's `declaration_lines` gets each of them at the deeper level. Nothing
-    /// below [`DEEPEST_DEPTH`] is listed.
+    /// below the deepest level listed ([`DEEPEST_DEPTH`] in an outline) is.
     pub(crate) fn declarations_inside(&self, parent: Node<'_>, lines: &mut Vec<OutlineLine>) {
-        if self.depth >= DEEPEST_DEPTH {
+        if self.depth >= self.deepest {
             return;
         }
         let deeper = OutlineLevel {
@@ -227,8 +252,8 @@ impl<'a> OutlineLevel<'a> {
 
     /// Appends the outline lines of each of `siblings` that isn't a leading annotation, with its
     /// line range: from its first leading annotation ([`leading_annotations_start`]) to its end.
-    /// `header_end` is where the file's header comment ends, for the top level of a file with
-    /// one.
+    /// `header_end` is where the comments read for the file's header end
+    /// ([`HeaderSearch::end`]), for the top level of a file with any.
     fn list(&self, siblings: &[Node<'_>], header_end: Option<usize>, lines: &mut Vec<OutlineLine>) {
         let classify = |node: Node<'_>| self.language.classify(node, self.text());
         for (index, &node) in siblings.iter().enumerate() {

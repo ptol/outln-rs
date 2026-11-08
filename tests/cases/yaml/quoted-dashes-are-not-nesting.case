@@ -1,0 +1,13 @@
+Indicators inside a quoted scalar that closes on its line are no nesting: the nesting guard, which reads only the lines before one that might nest deeper than tree-sitter-yaml's scanner can hold, skips them, so a value of 201 `- ` in quotes doesn't hide the keys after it.
+The value prints cut at 40 characters, with its quote closed after the `…`.
+== args
+input/a.yaml
+== file input/a.yaml
+x: "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
+y: 1
+== stdout
+input/a.yaml (2 lines)
+[L1-L1] x: "- - - - - - - - - - - - - - - - - - - -…"
+[L2-L2] y: 1
+== stderr
+== exit 0

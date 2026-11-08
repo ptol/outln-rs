@@ -1,0 +1,23 @@
+A license notice is never a header, and it says nothing about the rule below it either: CSS takes the comment directly above a rule as its leading annotation, but not a comment the header search passed over.
+`only-license.css` has no header, and `.a` starts at its own line; in `license-then-header.css` the header comes after the license, and `.b` starts at the comment directly above it.
+== args
+input/only-license.css
+input/license-then-header.css
+== file input/only-license.css
+/* Copyright 2024 Acme */
+.a { color: red }
+== file input/license-then-header.css
+/* Copyright 2024 Acme */
+/* Theme colors. */
+
+/* The brand color. */
+.b { color: blue }
+== stdout
+input/only-license.css (2 lines)
+[L2-L2] .a
+
+input/license-then-header.css (5 lines)
+Theme colors.
+[L4-L5] .b
+== stderr
+== exit 0
