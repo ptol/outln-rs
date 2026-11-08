@@ -1,0 +1,12 @@
+An empty path argument (as an unset shell variable in `outln "$dir"` makes) is a usage error with exit 2, rather than a glob view of the working directory.
+== args
+input/a.md
+
+== file input/a.md
+# a
+== stdout
+== stderr
+error: invalid value '' for '<PATH>...': a path can't be empty; use . for the working directory
+
+For more information, try '--help'.
+== exit 2

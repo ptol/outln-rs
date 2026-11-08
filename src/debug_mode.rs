@@ -30,12 +30,10 @@ pub(crate) fn run(
             writeln!(err, "{}", InputError::DebugGlob(path.clone()))?;
             return Ok(ExitStatus::Failure);
         }
-        ArgumentKind::MissingFile => {
-            writeln!(err, "{}", InputError::FileMissing(path.clone()))?;
-            return Ok(ExitStatus::Failure);
-        }
-        ArgumentKind::MissingDirectory => {
-            writeln!(err, "{}", InputError::DirectoryMissing(path.clone()))?;
+        ArgumentKind::MissingFile | ArgumentKind::MissingDirectory | ArgumentKind::Unusable(_) => {
+            if let Some(error) = kind.error(path) {
+                writeln!(err, "{error}")?;
+            }
             return Ok(ExitStatus::Failure);
         }
         ArgumentKind::File => (vec![path.clone()], ExitStatus::Success),

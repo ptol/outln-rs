@@ -44,8 +44,18 @@ pub(crate) struct Arguments {
     version: Option<bool>,
 
     /// Files to outline, or directories and glob patterns for a glob view.
-    #[arg(required = true, value_name = "PATH")]
+    #[arg(required = true, value_name = "PATH", value_parser = non_empty_path)]
     pub(crate) paths: Vec<String>,
+}
+
+/// Rejects an empty path argument, which would otherwise resolve to the working directory (an
+/// unset shell variable, `outln "$dir"`, makes one).
+fn non_empty_path(argument: &str) -> Result<String, &'static str> {
+    if argument.is_empty() {
+        Err("a path can't be empty; use . for the working directory")
+    } else {
+        Ok(argument.to_owned())
+    }
 }
 
 /// Parses the arguments. Help, version, and usage errors come back as a `clap::Error`, which the

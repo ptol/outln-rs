@@ -177,6 +177,62 @@ fn an_unreadable_file_is_reported_while_the_others_still_print() {
     assert_eq!(status, ExitStatus::Failure);
 }
 
+#[cfg(unix)]
+#[test]
+fn a_file_in_an_unsearchable_directory_is_reported_as_unreadable() {
+    use std::fs::{self, Permissions};
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = ScratchDir::new("usage-unsearchable").expect("temp dir");
+    dir.write("secret/b.rs", b"//! b\n").expect("write");
+    let secret = dir.path().join("secret");
+    fs::set_permissions(&secret, Permissions::from_mode(0o000)).expect("chmod");
+    let searchable_anyway = fs::metadata(secret.join("b.rs")).is_ok();
+
+    let result = run_in(&dir, &["secret/b.rs"]);
+    fs::set_permissions(&secret, Permissions::from_mode(0o755)).expect("chmod back");
+    if searchable_anyway {
+        skip_because_permissions_are_ignored("a_file_in_an_unsearchable_directory");
+        return;
+    }
+    let (out, err, status) = result.expect("writing to a Vec cannot fail");
+
+    // The file may exist, so it isn't reported as missing.
+    assert_eq!(out, "");
+    assert_eq!(
+        err,
+        "File secret/b.rs could not be read: permission denied\n"
+    );
+    assert_eq!(status, ExitStatus::Failure);
+}
+
+/// A FIFO named like a source file would block a read until something writes to it, so outln
+/// reports such arguments without opening them. A socket stands in for the FIFO here: std can
+/// create one, and both are files that aren't regular.
+#[cfg(unix)]
+#[test]
+fn an_argument_that_is_not_a_regular_file_is_reported_without_reading_it() {
+    use std::os::unix::net::UnixListener;
+
+    let dir = ScratchDir::new("usage-socket").expect("temp dir");
+    dir.write("ok.md", b"# Ok\n").expect("write");
+    let _listener = UnixListener::bind(dir.path().join("live.md")).expect("bind a socket");
+
+    for arguments in [
+        &["live.md", "ok.md"][..],
+        &["--debug", "live.md"],
+        &[".", "live.md"],
+    ] {
+        let (_, err, status) = run_in(&dir, arguments).expect("writing to a Vec cannot fail");
+
+        assert_eq!(
+            err, "File live.md is not a regular file (a FIFO, socket, or device)\n",
+            "{arguments:?}"
+        );
+        assert_eq!(status, ExitStatus::Failure, "{arguments:?}");
+    }
+}
+
 /// Root (or a process with `CAP_DAC_OVERRIDE`) reads files whatever their permissions, so a
 /// permission test can't fail there; it says so instead of passing without checking anything.
 #[cfg(unix)]

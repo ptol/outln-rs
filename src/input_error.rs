@@ -5,10 +5,14 @@ use std::fmt;
 use crate::language_engine::supported_extensions;
 
 /// A failure tied to one input; the other inputs are still processed and printed.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum InputError {
     FileMissing(String),
     DirectoryMissing(String),
+    /// A FIFO, socket, or device given as an argument.
+    NotRegularFile(String),
+    /// A file argument with a trailing `/`.
+    FileNotDirectory(String),
     /// Lists the supported extensions, so the reader learns what would have worked.
     UnsupportedFileType(String),
     NotUtf8Text(String),
@@ -35,6 +39,13 @@ impl fmt::Display for InputError {
         match self {
             Self::FileMissing(path) => write!(f, "File {path} does not exist"),
             Self::DirectoryMissing(path) => write!(f, "Directory {path} does not exist"),
+            Self::NotRegularFile(path) => write!(
+                f,
+                "File {path} is not a regular file (a FIFO, socket, or device)"
+            ),
+            Self::FileNotDirectory(path) => {
+                write!(f, "File {path} is not a directory; remove the trailing /")
+            }
             Self::UnsupportedFileType(path) => {
                 write!(f, "File {path} has an unsupported file type; supported: ")?;
                 for (index, extension) in supported_extensions().enumerate() {

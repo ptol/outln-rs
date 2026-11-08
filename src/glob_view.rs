@@ -82,8 +82,8 @@ fn discover(
                 directory_errors.push(InputError::DirectoryMissing(argument.clone()));
                 continue;
             }
-            ArgumentKind::MissingFile => {
-                file_errors.push(InputError::FileMissing(argument.clone()));
+            ArgumentKind::MissingFile | ArgumentKind::Unusable(_) => {
+                file_errors.extend(kind.error(argument));
                 continue;
             }
             ArgumentKind::File if engine_for(argument).is_none() => {

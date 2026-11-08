@@ -1,5 +1,6 @@
 //! Finds the files behind path arguments: classifies each argument, walks directories, and expands glob patterns.
 
+use std::fs;
 use std::io;
 use std::num::NonZeroUsize;
 use std::path::{Component, Path};
@@ -27,31 +28,80 @@ const MAX_WALK_THREADS: usize = 8;
 const SEQUENTIAL_WALK_ENTRIES: usize = 1024;
 
 /// What a path argument names, decided once per argument.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) enum ArgumentKind {
     Directory,
     /// Missing, but ends in `/`.
     MissingDirectory,
     Glob,
+    /// A regular file.
     File,
     MissingFile,
+    /// Exists, or can't be told apart from missing, but can't be outlined or walked: a FIFO or
+    /// device, a file with a trailing `/`, or a path below a directory that can't be searched.
+    Unusable(InputError),
+}
+
+impl ArgumentKind {
+    /// What to report for an argument that names nothing usable; `None` for a directory, glob,
+    /// or file.
+    pub(crate) fn error(&self, argument: &str) -> Option<InputError> {
+        match self {
+            Self::Directory | Self::Glob | Self::File => None,
+            Self::MissingDirectory => Some(InputError::DirectoryMissing(argument.to_owned())),
+            Self::MissingFile => Some(InputError::FileMissing(argument.to_owned())),
+            Self::Unusable(error) => Some(error.clone()),
+        }
+    }
 }
 
 /// Classifies an argument. An existing path is always literal, even when it contains glob
 /// characters such as `[id]`; a missing one is a glob if it uses glob syntax, else a missing
 /// directory if it ends in `/`, else a missing file.
+///
+/// Reads the path's metadata once, rather than asking `Path::is_dir` and `Path::exists`, which
+/// answer `false` for every error and so report a file in an unsearchable directory as missing.
 pub(crate) fn classify(cwd: &Path, argument: &str) -> ArgumentKind {
-    let path = cwd.join(argument);
-    if path.is_dir() {
-        ArgumentKind::Directory
-    } else if path.exists() {
-        ArgumentKind::File
-    } else if has_glob_magic(argument) {
-        ArgumentKind::Glob
-    } else if argument.ends_with('/') {
+    match fs::metadata(cwd.join(argument)) {
+        Ok(metadata) if metadata.is_dir() => ArgumentKind::Directory,
+        Ok(metadata) if metadata.is_file() => ArgumentKind::File,
+        // Reading a FIFO would wait for a writer forever, and a device may never end.
+        Ok(_) => ArgumentKind::Unusable(InputError::NotRegularFile(argument.to_owned())),
+        Err(_) if has_glob_magic(argument) => ArgumentKind::Glob,
+        Err(error) => classify_failed_lookup(cwd, argument, error.kind()),
+    }
+}
+
+/// Classifies a literal argument whose metadata couldn't be read.
+fn classify_failed_lookup(cwd: &Path, argument: &str, error: io::ErrorKind) -> ArgumentKind {
+    let names_directory = argument.ends_with('/');
+    // `file.rs/x` fails as "not a directory" too, and names nothing.
+    let is_missing = matches!(
+        error,
+        io::ErrorKind::NotFound | io::ErrorKind::NotADirectory
+    );
+    if error == io::ErrorKind::NotADirectory
+        && names_directory
+        && cwd.join(without_trailing_slashes(argument)).is_file()
+    {
+        // `file.rs/`: the lookup fails only because of the trailing `/`.
+        ArgumentKind::Unusable(InputError::FileNotDirectory(argument.to_owned()))
+    } else if is_missing && names_directory {
         ArgumentKind::MissingDirectory
-    } else {
+    } else if is_missing {
         ArgumentKind::MissingFile
+    } else if names_directory {
+        // Most often permission denied on a directory above the path, which hides whether the
+        // path exists.
+        ArgumentKind::Unusable(InputError::DirectoryUnreadable {
+            directory: argument.to_owned(),
+            detail: error.to_string(),
+        })
+    } else {
+        ArgumentKind::Unusable(InputError::Unreadable {
+            path: argument.to_owned(),
+            detail: error.to_string(),
+        })
     }
 }
 
