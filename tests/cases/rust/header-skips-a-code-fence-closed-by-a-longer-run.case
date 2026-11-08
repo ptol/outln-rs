@@ -1,0 +1,16 @@
+A fenced code block in a header comment closes only at a fence of its own character at least as long as the one that opened it, as in CommonMark: the ` ``` ` line inside a ` ```` ` block is code, so the header is the paragraph after the block.
+== args
+input/e.rs
+== file input/e.rs
+//! ````
+//! ```
+//! ````
+//!
+//! Purpose.
+fn f() {}
+== stdout
+input/e.rs (6 lines)
+Purpose.
+[L6-L6] fn f()
+== stderr
+== exit 0
