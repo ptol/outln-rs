@@ -4,7 +4,7 @@ input/-dash.md
 == file input/-dash.md
 # dash
 == stdout
-input/-dash.md
+input/-dash.md (1 line)
 [L1-L1] # dash
 == stderr
 == exit 0

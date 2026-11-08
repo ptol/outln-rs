@@ -27,7 +27,7 @@ name = "one"
 [[bin]]
 name = "two"
 == stdout
-input/Cargo.toml
+input/Cargo.toml (22 lines)
 Build settings for the demo crate.
 [L3-L3] edition = "2024"
 [L4-L4] description = "A very long description that goes on pa…

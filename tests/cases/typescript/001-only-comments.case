@@ -5,7 +5,7 @@ input/comments.ts
 /* Multi-line
    comment */
 == stdout
-input/comments.ts
+input/comments.ts (3 lines)
 This is a comment
 == stderr
 == exit 0

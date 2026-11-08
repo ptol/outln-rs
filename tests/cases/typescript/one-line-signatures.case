@@ -15,7 +15,7 @@ export function join<
   return parts.join(separator);
 }
 == stdout
-input/wrapped.ts
+input/wrapped.ts (11 lines)
 [L1-L11] export function join<T extends string>(parts: T[], separator = "  ", options: { trim: boolean }): string
 == stderr
 == exit 0

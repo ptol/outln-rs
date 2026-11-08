@@ -6,7 +6,7 @@ input/block-comment-before-regular-comment.rs
 // Regular comment after block comment must stay excluded.
 struct Item {}
 == stdout
-input/block-comment-before-regular-comment.rs
+input/block-comment-before-regular-comment.rs (3 lines)
 Block comments are not eligible file headers.
 [L3-L3] struct Item
 == stderr

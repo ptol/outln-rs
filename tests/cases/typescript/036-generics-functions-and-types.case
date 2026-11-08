@@ -23,7 +23,7 @@ export type Pair<A, B> = [A, B];
 type Plain = string;
 class NotGeneric {}
 == stdout
-input/generics.ts
+input/generics.ts (21 lines)
 [L1-L3] export function add<T extends number>(a: T, b: T): T
 [L4-L4] export function over<T>(a: T): T
 [L5-L7] export function over(a: unknown): unknown

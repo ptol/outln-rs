@@ -9,7 +9,7 @@ input/notes.ts
  */
 export const notes = 1;
 == stdout
-input/notes.ts
+input/notes.ts (6 lines)
 First paragraph.
 [L6-L6] export const notes
 == stderr

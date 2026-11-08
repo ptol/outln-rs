@@ -7,7 +7,7 @@ input/not-header-comments.rs
 /// Item docs are also excluded.
 struct Item {}
 == stdout
-input/not-header-comments.rs
+input/not-header-comments.rs (4 lines)
 Module docs are not file header output.
 [L3-L4] struct Item
 == stderr

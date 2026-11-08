@@ -12,7 +12,7 @@ export default {
 };
 const double = ((x: number) => x * 2);
 == stdout
-input/wrapped.ts
+input/wrapped.ts (9 lines)
 [L1-L1] export default App
 [L2-L2] export default App
 [L3-L3] export default class Store

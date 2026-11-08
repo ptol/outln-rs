@@ -105,7 +105,7 @@ export const run = async (task) => task;
 export default makeQueue();
 describe("queue", () => {});
 == stdout
-input/a.ts
+input/a.ts (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue
@@ -116,7 +116,7 @@ Shared module.
 [L10-L10] export default makeQueue()
 [L11-L11] describe("queue")
 
-input/a.mts
+input/a.mts (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue
@@ -127,7 +127,7 @@ Shared module.
 [L10-L10] export default makeQueue()
 [L11-L11] describe("queue")
 
-input/a.cts
+input/a.cts (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue
@@ -138,7 +138,7 @@ Shared module.
 [L10-L10] export default makeQueue()
 [L11-L11] describe("queue")
 
-input/a.tsx
+input/a.tsx (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue
@@ -149,7 +149,7 @@ Shared module.
 [L10-L10] export default makeQueue()
 [L11-L11] describe("queue")
 
-input/a.js
+input/a.js (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue
@@ -160,7 +160,7 @@ Shared module.
 [L10-L10] export default makeQueue()
 [L11-L11] describe("queue")
 
-input/a.mjs
+input/a.mjs (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue
@@ -171,7 +171,7 @@ Shared module.
 [L10-L10] export default makeQueue()
 [L11-L11] describe("queue")
 
-input/a.cjs
+input/a.cjs (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue
@@ -182,7 +182,7 @@ Shared module.
 [L10-L10] export default makeQueue()
 [L11-L11] describe("queue")
 
-input/a.jsx
+input/a.jsx (11 lines)
 Shared module.
 [L2-L2] export async function* stream(source)
 [L3-L8] export class Queue

@@ -24,7 +24,7 @@ empty:
 ? complex
 : value
 == stdout
-input/ci.yml
+input/ci.yml (20 lines)
 [L1-L1] name: CI
 [L2-L4] on
 [L5-L8] jobs

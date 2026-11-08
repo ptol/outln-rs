@@ -11,7 +11,7 @@ export declare class Store<T> {
 declare const enum Flags { A, B }
 export declare namespace Api {}
 == stdout
-input/types.d.ts
+input/types.d.ts (7 lines)
 [L1-L1] export declare function render(view: View): string
 [L2-L2] export declare const version
 [L2-L2] export declare const build

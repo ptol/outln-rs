@@ -38,7 +38,7 @@ export function format(value: string): string {
   return value.trim();
 }
 == stdout
-input/api.d.ts
+input/api.d.ts (19 lines)
 API type definitions.
 [L4-L4] import FS
 [L6-L6] declare function makeRequest(url: string): Promise<Response>
@@ -48,7 +48,7 @@ API type definitions.
 [L12-L14] declare module 'external'
 [L15-L19] declare global
 
-input/utils.ts
+input/utils.ts (15 lines)
 Utility functions.
 [L4-L6] namespace Internal
 [L7-L9] module Shared

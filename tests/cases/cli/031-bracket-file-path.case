@@ -6,7 +6,7 @@ description: Product detail page.
 ---
 # Page
 == stdout
-input/app/[id]/page.md
+input/app/[id]/page.md (4 lines)
 description: "Product detail page."
 [L4-L4] # Page
 == stderr

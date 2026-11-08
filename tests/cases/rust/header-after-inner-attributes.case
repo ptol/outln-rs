@@ -11,7 +11,7 @@ input/lib.rs
 
 pub fn run() {}
 == stdout
-input/lib.rs
+input/lib.rs (8 lines)
 Library entry point.
 [L8-L8] pub fn run()
 == stderr

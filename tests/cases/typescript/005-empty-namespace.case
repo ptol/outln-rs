@@ -6,7 +6,7 @@ module AlsoEmpty {}
 declare module 'EmptyModule' {}
 declare global {}
 == stdout
-input/empty-namespace.ts
+input/empty-namespace.ts (4 lines)
 [L1-L1] namespace Empty
 [L2-L2] module AlsoEmpty
 [L3-L3] declare module 'EmptyModule'

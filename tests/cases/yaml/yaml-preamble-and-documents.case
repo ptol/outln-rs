@@ -12,7 +12,7 @@ replicas: 2
 ---
 other: 1
 == stdout
-input/a.yaml
+input/a.yaml (8 lines)
 Deployment settings.
 [L6-L6] replicas: 2
 == stderr

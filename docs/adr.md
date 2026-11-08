@@ -399,7 +399,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-019: Print each file's line count in the glob view, and no preamble
 
-**Status**: Accepted (2026-11-06); amends ADR-016 (the glob view's preamble)
+**Status**: Accepted (2026-11-06); amends ADR-016 (the glob view's preamble); amended by ADR-020 (file mode prints the line count too)
 
 ### Decision
 
@@ -418,6 +418,26 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - Every glob view line is longer by about ten characters.
 - An agent whose instructions name only the glob view isn't told about file mode by the output.
+
+## ADR-020: Print the line count in file mode too
+
+**Status**: Accepted (2026-11-08); amends ADR-019 (file mode prints the line count too)
+
+### Decision
+
+- File mode prints the file's line count after its path, as the glob view does: `src/cli.rs (120 lines)`. One function, `outline::path_and_line_count`, prints it for both modes. File mode takes the count from the `LineIndex` it already builds for line ranges, so the count and the ranges come from one scan of the text.
+- The count stays `(N lines)`, not a line range such as `[L1-L120]`.
+
+### Rationale
+
+- The last line range only roughly shows where a file ends: code after the last declaration, or a long file with few declarations, makes it misleading, and a file without declarations shows nothing.
+- An agent choosing between reading a file whole and reading its line ranges needs the size in file mode as much as in the glob view.
+- Not a line range: a line range is a declaration's span, a place to read, while the count is a size; the `L1-` would repeat on every file, and an empty file has no range to print.
+
+### Consequences
+
+- Every outline's first line is longer by about ten characters.
+- Two functions count lines: `LineCount::of` for the glob view, which builds no `LineIndex`, and `LineIndex::line_count`; a unit test keeps them equal.
 
 ## Dependencies
 

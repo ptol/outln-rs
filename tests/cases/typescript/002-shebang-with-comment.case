@@ -5,7 +5,7 @@ input/shebang-with-comment.ts
 // CLI entrypoint wiring.
 export function main(): void {}
 == stdout
-input/shebang-with-comment.ts
+input/shebang-with-comment.ts (3 lines)
 CLI entrypoint wiring.
 [L3-L3] export function main(): void
 == stderr

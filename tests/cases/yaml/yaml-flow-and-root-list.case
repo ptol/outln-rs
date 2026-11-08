@@ -9,11 +9,11 @@ input/list.yaml
 - a: 1
 - b: 2
 == stdout
-input/flow.yaml
+input/flow.yaml (2 lines)
 [L1-L1] a: 1
 [L1-L1] b
 [L2-L2] c
 
-input/list.yaml
+input/list.yaml (2 lines)
 == stderr
 == exit 0

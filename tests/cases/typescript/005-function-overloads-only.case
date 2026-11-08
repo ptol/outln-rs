@@ -4,7 +4,7 @@ input/overloads-only.ts
 declare function fetch(url: string): Promise<Response>;
 declare function fetch(url: URL): Promise<Response>;
 == stdout
-input/overloads-only.ts
+input/overloads-only.ts (2 lines)
 [L1-L1] declare function fetch(url: string): Promise<Response>
 [L2-L2] declare function fetch(url: URL): Promise<Response>
 == stderr

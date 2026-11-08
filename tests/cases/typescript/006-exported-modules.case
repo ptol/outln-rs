@@ -9,7 +9,7 @@ export module Legacy {
 }
 export module 'legacy/path' {}
 == stdout
-input/exported-modules.ts
+input/exported-modules.ts (7 lines)
 [L1-L3] export namespace API
 [L4-L6] export module Legacy
 [L7-L7] export module 'legacy/path'

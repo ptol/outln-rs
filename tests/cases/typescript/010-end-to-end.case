@@ -49,14 +49,14 @@ abstract class EventEmitter {
   }
 }
 == stdout
-input/services/user-service.ts
+input/services/user-service.ts (15 lines)
 Service for managing user accounts.
 [L4-L15] export class UserService
   [L6-L8] constructor(database: Database)
   [L9-L11] findById(id: string): Promise<User | null>
   [L12-L14] get count(): number
 
-input/models/counter.ts
+input/models/counter.ts (18 lines)
 Simple counter class for counting things.
 [L4-L18] export class Counter
   [L6-L8] increment(): void
@@ -64,7 +64,7 @@ Simple counter class for counting things.
   [L12-L14] get current(): number
   [L15-L17] set current(val: number)
 
-input/utils/event-emitter.ts
+input/utils/event-emitter.ts (10 lines)
 Minimal event emitter implementation.
 [L4-L10] abstract class EventEmitter
   [L6-L6] emit(event: string, data: unknown): boolean

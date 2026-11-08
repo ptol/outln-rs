@@ -9,7 +9,7 @@
 //! == file input/guide.md
 //! # Guide
 //! == stdout
-//! input/guide.md
+//! input/guide.md (1 line)
 //! [L1-L1] # Guide
 //! == stderr
 //! == exit 0

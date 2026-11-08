@@ -8,7 +8,7 @@ const lost = 1;
 }
 export class After {}
 == stdout
-input/broken.ts
+input/broken.ts (5 lines)
 [L1-L1] export function before(): void
 [L5-L5] export class After
 == stderr

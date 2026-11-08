@@ -3,7 +3,7 @@ input/ambient-single-const.ts
 == file input/ambient-single-const.ts
 declare const API_KEY: string;
 == stdout
-input/ambient-single-const.ts
+input/ambient-single-const.ts (1 line)
 [L1-L1] declare const API_KEY
 == stderr
 == exit 0

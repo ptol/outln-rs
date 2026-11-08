@@ -4,7 +4,7 @@ description: 'Agent workflow for outln: setup, code navigation, conventions, lin
 
 # outln
 
-`outln` prints compact structural outlines of source files (a header, then top-level declarations with line ranges) so coding agents can choose what to read. It is written in Rust and so far supports Markdown, TypeScript, JavaScript, Rust, and CSS files, and TOML, YAML, and JSON data files. [docs/overview.md](docs/overview.md) has the goals and current status.
+`outln` prints compact structural outlines of source files (the path and line count, a header, then top-level declarations with line ranges) so coding agents can choose what to read. It is written in Rust and so far supports Markdown, TypeScript, JavaScript, Rust, and CSS files, and TOML, YAML, and JSON data files. [docs/overview.md](docs/overview.md) has the goals and current status.
 
 The maintainer is learning Rust. In your final summary, briefly explain each non-obvious Rust concept your change relies on (an ownership or borrowing choice, a lifetime, a trait, a macro, why a crate was added), a sentence or two each. Prefer simple, readable idioms over clever ones.
 
@@ -20,7 +20,7 @@ Default sequence, cheapest first. Each step is its own tool call, because its ou
 2. **Learn the structure**: read [docs/architecture.md](docs/architecture.md) for modules and data flow.
 3. **Learn the API**: read `tests/usage.rs`, which is executable documentation of the public library API, and the doc examples in `src/lib.rs`.
 4. **Find the file**: `outln <dir>` prints one line per file: its line count, and a summary taken from its header (header comment or frontmatter), or else a data file's first scalar keys or a Markdown file's first heading.
-5. **Find the section**: `outln <file>...` prints declarations with line ranges like `[L1-L10]`; read only those ranges with `Read` `offset`/`limit`.
+5. **Find the section**: `outln <file>...` prints each file's line count and its declarations with line ranges like `[L1-L10]`; read only those ranges with `Read` `offset`/`limit`, or a short file whole.
 
 The `outln` on `PATH` is this crate's latest crates.io release ([ADR-014](docs/adr.md)), which can lag the code here; run the working copy with `just run <args>`. Releases up to 0.2.0 reject `.toml`, `.yaml`, `.json`, and `.css` files; use `just run` for those until the next release.
 

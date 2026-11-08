@@ -93,13 +93,27 @@ pub(crate) fn normalize(bytes: Vec<u8>) -> Result<String, NotUtf8Text> {
 /// The byte offset where each line of a text starts, for converting byte offsets to lines.
 pub(crate) struct LineIndex {
     line_starts: Vec<usize>,
+    line_count: LineCount,
 }
 
 impl LineIndex {
     pub(crate) fn new(text: &str) -> Self {
         let newline_ends = text.match_indices('\n').map(|(offset, _)| offset + 1);
-        let line_starts = std::iter::once(0).chain(newline_ends).collect();
-        Self { line_starts }
+        let line_starts: Vec<usize> = std::iter::once(0).chain(newline_ends).collect();
+        // The last line start is past the final line break, or at 0 in an empty text: a line
+        // only when text follows it, as `LineCount::of` counts.
+        let ends_without_a_line = text.is_empty() || text.ends_with('\n');
+        let line_count = LineCount(line_starts.len() - usize::from(ends_without_a_line));
+        Self {
+            line_starts,
+            line_count,
+        }
+    }
+
+    /// How many lines the text has, counted as [`LineCount::of`] counts them, without another
+    /// pass over the text.
+    pub(crate) fn line_count(&self) -> LineCount {
+        self.line_count
     }
 
     /// The 1-based line containing `offset`; a newline belongs to the line it ends.
@@ -161,6 +175,11 @@ mod tests {
         ];
         for (text, printed) in cases {
             assert_eq!(LineCount::of(text).to_string(), printed, "{text:?}");
+            assert_eq!(
+                LineIndex::new(text).line_count().to_string(),
+                printed,
+                "{text:?}"
+            );
         }
     }
 

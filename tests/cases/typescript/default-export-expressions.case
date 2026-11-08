@@ -21,21 +21,21 @@ export default create();
 == file input/name.ts
 export default App;
 == stdout
-input/config.ts
+input/config.ts (3 lines)
 [L1-L3] export default defineConfig(…)
 
-input/empty.ts
+input/empty.ts (1 line)
 [L1-L1] export default {}
 
-input/arrow.ts
+input/arrow.ts (1 line)
 [L1-L1] export default async (request: Request): Promise<Response>
 
-input/other.ts
+input/other.ts (3 lines)
 [L1-L1] export default […]
 [L2-L2] export default …
 [L3-L3] export default create()
 
-input/name.ts
+input/name.ts (1 line)
 [L1-L1] export default App
 == stderr
 == exit 0

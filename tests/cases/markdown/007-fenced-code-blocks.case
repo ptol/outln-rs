@@ -7,7 +7,7 @@ input/fenced.md
 ```
 ## Real
 == stdout
-input/fenced.md
+input/fenced.md (5 lines)
 [L1-L5] # Top
 [L5-L5] ## Real
 == stderr

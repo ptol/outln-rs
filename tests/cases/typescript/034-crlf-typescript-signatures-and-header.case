@@ -19,7 +19,7 @@ export class Box {\r
   }\r
 }\r
 == stdout
-input/crlf.ts
+input/crlf.ts (16 lines)
 CRLF header.
 [L4-L9] export function add(a: number, b: number): number
 [L10-L16] export class Box

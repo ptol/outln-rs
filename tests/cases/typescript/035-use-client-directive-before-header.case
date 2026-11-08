@@ -10,7 +10,7 @@ export default function Page() {
   return null;
 }
 == stdout
-input/page.tsx
+input/page.tsx (8 lines)
 Client-side product page.
 [L6-L8] export default function Page()
 == stderr

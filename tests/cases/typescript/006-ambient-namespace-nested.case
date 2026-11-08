@@ -6,7 +6,7 @@ declare namespace App {
   export const config: any;
 }
 == stdout
-input/ambient-namespace-nested.ts
+input/ambient-namespace-nested.ts (4 lines)
 [L1-L4] declare namespace App
 == stderr
 == exit 0

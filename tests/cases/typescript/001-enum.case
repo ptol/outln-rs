@@ -12,7 +12,7 @@ export enum Status {
   Inactive = 'inactive'
 }
 == stdout
-input/enum.ts
+input/enum.ts (10 lines)
 [L1-L5] enum Color
 [L7-L10] export enum Status
 == stderr

@@ -10,10 +10,10 @@ export enum B {
   One = 1
 }
 == stdout
-input/a.ts
+input/a.ts (3 lines)
 [L1-L3] interface A
 
-input/b.ts
+input/b.ts (3 lines)
 [L1-L3] export enum B
 == stderr
 == exit 0

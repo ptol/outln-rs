@@ -6,7 +6,7 @@ input/api.md
 
 ## C# ##
 == stdout
-input/api.md
+input/api.md (3 lines)
 [L1-L3] # The `run` *function*
 [L3-L3] ## C#
 == stderr

@@ -16,7 +16,7 @@ pub fn parse(path: &str) -> Config {
     todo!()
 }
 == stdout
-input/config.rs
+input/config.rs (12 lines)
 Parses config files.
 [L10-L12] pub fn parse(path: &str) -> Config
 == stderr

@@ -28,21 +28,21 @@ setting: value
 == file input/regular.md
 # config
 == stdout
-input/doc-with-frontmatter.md
+input/doc-with-frontmatter.md (8 lines)
 title: "API Documentation"
 version: 2
 [L6-L8] # Introduction
 [L8-L8] ## Getting Started
 
-input/doc-headings-only.md
+input/doc-headings-only.md (3 lines)
 [L1-L3] # Overview
 [L3-L3] ## Details
 
-input/doc-with-code.md
+input/doc-with-code.md (8 lines)
 [L1-L8] # Configuration
 [L8-L8] ## Options
 
-input/regular.md
+input/regular.md (1 line)
 [L1-L1] # config
 == stderr
 == exit 0

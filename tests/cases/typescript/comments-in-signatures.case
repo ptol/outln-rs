@@ -11,7 +11,7 @@ export function greet(message = `hello
 world`) {}
 function label(x = `${/* id */ y}  ${z}`) {}
 == stdout
-input/commented.ts
+input/commented.ts (8 lines)
 [L1-L3] function count(a: number): void
 [L4-L5] function wrap(x, y)
 [L6-L7] export function greet(message = `hello\nworld`)

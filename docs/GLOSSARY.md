@@ -11,7 +11,7 @@ outln turns source files into outlines that coding agents read before opening th
 
 ### Outline
 
-The compact structural summary of one source file: its path, its header, then one outline line per declaration.
+The compact structural summary of one source file: its path and line count, its header, then one outline line per declaration.
 _Avoid_: Summary, AST, tree
 
 ### Outline line
@@ -23,6 +23,11 @@ _Avoid_: Entry, row
 
 The first and last line a declaration spans, from its first leading annotation, 1-based and inclusive, written `[L<first>-L<last>]`.
 _Avoid_: Span, location
+
+### Line count
+
+How many lines a file has, printed after its path in an outline and a file summary as `(1 line)` or `(120 lines)`: one per line break, plus one for a last line without one, so an empty file has `0 lines`.
+_Avoid_: Size, length, LOC
 
 ### Declaration
 

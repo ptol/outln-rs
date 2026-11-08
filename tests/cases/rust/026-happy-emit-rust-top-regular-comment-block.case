@@ -9,7 +9,7 @@ input/with-header.rs
 
 fn main() {}
 == stdout
-input/with-header.rs
+input/with-header.rs (6 lines)
 Service bootstrap for CLI scripts.
 Loads config and starts runner.
 [L6-L6] fn main()

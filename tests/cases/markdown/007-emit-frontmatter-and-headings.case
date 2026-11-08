@@ -12,7 +12,7 @@ owner: 'docs-team'
 
 ### Notes
 == stdout
-input/sample.md
+input/sample.md (10 lines)
 title: "Sample doc"
 owner: "docs-team"
 [L6-L10] # Overview

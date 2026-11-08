@@ -4,7 +4,7 @@ input/bom-with-comment.ts
 ﻿// File with BOM.
 export const x = 1;\
 == stdout
-input/bom-with-comment.ts
+input/bom-with-comment.ts (2 lines)
 File with BOM.
 [L2-L2] export const x
 == stderr

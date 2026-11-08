@@ -5,7 +5,7 @@ input/comment-only-blank-break.rs
 
 // This line is not contiguous and must be excluded.
 == stdout
-input/comment-only-blank-break.rs
+input/comment-only-blank-break.rs (3 lines)
 First line is part of header.
 == stderr
 == exit 0

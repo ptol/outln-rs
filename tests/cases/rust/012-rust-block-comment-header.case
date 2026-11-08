@@ -7,7 +7,7 @@ input/block-comment.rs
 
 fn main() {}
 == stdout
-input/block-comment.rs
+input/block-comment.rs (3 lines)
 This is a block comment
 [L3-L3] fn main()
 == stderr

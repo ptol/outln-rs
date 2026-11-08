@@ -8,7 +8,7 @@ pub struct User;
 /** A role. */
 pub enum Role {}
 == stdout
-input/types.rs
+input/types.rs (5 lines)
 [L1-L2] pub struct User
 [L4-L5] pub enum Role
 == stderr

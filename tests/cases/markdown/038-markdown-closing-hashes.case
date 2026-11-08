@@ -7,7 +7,7 @@ input/doc.md
 #### Trailing hashes###
 ## ##
 == stdout
-input/doc.md
+input/doc.md (5 lines)
 [L1-L5] # Title
 [L2-L4] ## Closed heading
 [L3-L4] ### C# is kept

@@ -4,7 +4,7 @@ input/multi-vars.ts
 const alpha = 1, beta = 2;
 export const gamma = 3, delta = 4;
 == stdout
-input/multi-vars.ts
+input/multi-vars.ts (2 lines)
 [L1-L1] const alpha
 [L1-L1] const beta
 [L2-L2] export const gamma

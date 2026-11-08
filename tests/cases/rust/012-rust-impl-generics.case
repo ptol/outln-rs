@@ -11,7 +11,7 @@ impl<T> Container<T> { fn new(v: T) -> Self { Self { value: v } } }
 impl<T: Display> Printable for Container<T> { fn print(&self) {} }
 impl String { fn len(&self) -> usize { 0 } }
 == stdout
-input/impls.rs
+input/impls.rs (8 lines)
 Impl blocks
 [L3-L3] struct Container<T>
 [L4-L4] trait Printable

@@ -60,7 +60,7 @@ fn main() {
     rt.block_on(run());
 }
 == stdout
-input/models/types.rs
+input/models/types.rs (25 lines)
 Core domain types for the application.
 Defines entities and value objects.
 [L6-L6] pub type UserId = u64
@@ -69,14 +69,14 @@ Defines entities and value objects.
 [L19-L21] pub trait Authenticable
 [L23-L25] impl Authenticable for User
 
-input/utils/helpers.rs
+input/utils/helpers.rs (12 lines)
 Utility functions for common operations.
 [L3-L3] pub const MAX_SIZE: usize
 [L4-L4] pub static VERSION: &str
 [L6-L8] pub fn format_name(name: &str) -> String
 [L10-L12] macro_rules! log_debug
 
-input/main.rs
+input/main.rs (15 lines)
 Main entry point for the Rust application.
 Handles CLI arguments and orchestrates execution.
 [L4-L4] mod storage

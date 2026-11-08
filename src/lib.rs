@@ -14,7 +14,7 @@
 //! let status = outln::run(["guide.md"], &context, &mut out, &mut err).unwrap();
 //!
 //! assert_eq!(status, outln::ExitStatus::Success);
-//! assert_eq!(String::from_utf8(out).unwrap(), "guide.md\n[L1-L3] # Guide\n[L3-L3] ## Install\n");
+//! assert_eq!(String::from_utf8(out).unwrap(), "guide.md (3 lines)\n[L1-L3] # Guide\n[L3-L3] ## Install\n");
 //! std::fs::remove_dir_all(&dir).unwrap();
 //! ```
 

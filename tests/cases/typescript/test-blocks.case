@@ -24,7 +24,7 @@ test.each("not a table form");
 expect("value").toBe("value");
 beforeEach(() => {});
 == stdout
-input/parser.test.ts
+input/parser.test.ts (19 lines)
 [L3-L6] describe("parser")
 [L7-L7] it.only('focused')
 [L8-L8] describe.skip(`skipped`)

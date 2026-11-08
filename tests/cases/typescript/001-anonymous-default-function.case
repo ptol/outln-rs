@@ -5,7 +5,7 @@ export default function () {
   return 42;
 }
 == stdout
-input/anon.ts
+input/anon.ts (3 lines)
 [L1-L3] export default function()
 == stderr
 == exit 0

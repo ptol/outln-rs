@@ -3,7 +3,7 @@ input/comment-only.ts
 == file input/comment-only.ts
 // Just a comment, no declarations.
 == stdout
-input/comment-only.ts
+input/comment-only.ts (1 line)
 Just a comment, no declarations.
 == stderr
 == exit 0

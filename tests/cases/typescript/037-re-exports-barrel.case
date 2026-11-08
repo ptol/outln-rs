@@ -14,7 +14,7 @@ export type { T } from './t';
 export default plus;
 export const local = 1;
 == stdout
-input/index.ts
+input/index.ts (12 lines)
 Public API barrel.
 [L2-L2] export { add as plus }
 [L3-L3] export * from './b'

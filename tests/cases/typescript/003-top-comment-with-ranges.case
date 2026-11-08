@@ -6,7 +6,7 @@ export function parse(input: string): string {
   return input.trim();
 }
 == stdout
-input/commented.ts
+input/commented.ts (4 lines)
 CLI entrypoint helpers.
 [L2-L4] export function parse(input: string): string
 == stderr

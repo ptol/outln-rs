@@ -6,7 +6,7 @@ export class Service {
   run(): void {}
 }
 == stdout
-input/decorated.ts
+input/decorated.ts (4 lines)
 [L1-L4] export class Service
   [L3-L3] run(): void
 == stderr

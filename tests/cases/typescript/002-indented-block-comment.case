@@ -4,7 +4,7 @@ input/indented-block.ts
   /* Indented block comment */
 const x = 1;\
 == stdout
-input/indented-block.ts
+input/indented-block.ts (2 lines)
 Indented block comment
 [L2-L2] const x
 == stderr

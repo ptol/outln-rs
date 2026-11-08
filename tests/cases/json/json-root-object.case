@@ -15,7 +15,7 @@ input/tsconfig.json
   "count": 3
 }
 == stdout
-input/tsconfig.json
+input/tsconfig.json (11 lines)
 TypeScript settings for the demo.
 [L3-L6] compilerOptions
 [L7-L7] include

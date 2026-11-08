@@ -27,7 +27,7 @@ mod tests {
     fn works() {}
 }
 == stdout
-input/lib.rs
+input/lib.rs (21 lines)
 Library.
 [L3-L8] pub struct Config
 [L10-L10] const LIMIT: usize

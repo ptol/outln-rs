@@ -27,7 +27,7 @@ export module Internal {
 }
 export module 'dynamic/path' {}
 == stdout
-input/ambient-declarations.ts
+input/ambient-declarations.ts (12 lines)
 Ambient type definitions for external libraries.
 [L4-L7] declare namespace ExternalLib
 [L8-L8] declare var globalCounter
@@ -36,7 +36,7 @@ Ambient type definitions for external libraries.
 [L11-L11] declare interface Config
 [L12-L12] declare type Callback
 
-input/exported-blocks.ts
+input/exported-blocks.ts (11 lines)
 Exported namespace and module blocks.
 [L4-L7] export namespace PublicAPI
 [L8-L10] export module Internal

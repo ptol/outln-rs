@@ -14,7 +14,7 @@ class PlainClass {
   value = 1;
 }
 == stdout
-input/mixed.ts
+input/mixed.ts (12 lines)
 [L1-L3] export interface Config
 [L5-L8] export enum Kind
 [L10-L12] class PlainClass

@@ -9,7 +9,7 @@ abstract class Example {
   abstract run(task: string): number;
 }
 == stdout
-input/member-variants.ts
+input/member-variants.ts (7 lines)
 [L1-L7] abstract class Example
   [L3-L3] load(id: string): Promise<Example>
   [L4-L4] #touch(): void

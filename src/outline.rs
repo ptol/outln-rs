@@ -83,7 +83,7 @@ pub(crate) struct OutlineLine {
 /// The indentation of one nesting level of outline lines.
 const INDENT_PER_DEPTH: &str = "  ";
 
-/// What a glob view prints for one file after its path.
+/// What a glob view prints for one file after its path and line count.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum FileSummary {
     Header(Header),
@@ -129,9 +129,11 @@ const NO_HEADER: &str = "(no header available)";
 /// Printed after the shown fields of a [`FieldSummary`] when more may follow.
 const MORE_FIELDS: &str = "...";
 
-/// Renders a file mode outline: the path, the header, then one outline line per declaration.
+/// Renders a file mode outline: the path and line count (`src/cli.rs (120 lines)`), the header,
+/// then one outline line per declaration.
 pub(crate) fn render_outline(path: &str, outline: &Outline, line_index: &LineIndex) -> String {
-    let mut text = format!("{path}\n");
+    let mut text = path_and_line_count(path, line_index.line_count());
+    text.push('\n');
     if let Some(header) = &outline.header {
         for line in header_lines(header) {
             text.push_str(&line);
@@ -167,10 +169,16 @@ pub(crate) fn render_file_summary(
         FileSummary::FirstHeading(heading) => Some(heading.clone()),
         FileSummary::Empty => None,
     };
-    format!(
-        "{path} ({line_count}): {}",
-        printed.as_deref().unwrap_or(NO_HEADER)
-    )
+    let mut line = path_and_line_count(path, line_count);
+    line.push_str(": ");
+    line.push_str(printed.as_deref().unwrap_or(NO_HEADER));
+    line
+}
+
+/// A file's path and line count, as `src/cli.rs (120 lines)`: the start of both its outline and
+/// its file summary, so file mode and glob view print a file's size the same way.
+fn path_and_line_count(path: &str, line_count: LineCount) -> String {
+    format!("{path} ({line_count})")
 }
 
 /// A field summary as `[table] {a: 1, b: 2, ...}`.

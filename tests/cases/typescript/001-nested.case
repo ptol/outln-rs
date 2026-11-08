@@ -11,7 +11,7 @@ class Box {
 
 const top = 1;
 == stdout
-input/nested.ts
+input/nested.ts (9 lines)
 [L1-L3] function outer(): void
 [L5-L7] class Box
   [L6-L6] method(): void

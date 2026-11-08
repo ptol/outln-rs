@@ -19,17 +19,17 @@ export const version = '1.0.0';
 const cache = {};
 module.exports = cache;
 == stdout
-input/basic.js
+input/basic.js (4 lines)
 js summary
 [L2-L4] function plain(value)
 
-input/view.jsx
+input/view.jsx (3 lines)
 [L1-L3] export function View()
 
-input/module.mjs
+input/module.mjs (1 line)
 [L1-L1] export const version
 
-input/common.cjs
+input/common.cjs (3 lines)
 cjs summary
 [L2-L2] const cache
 == stderr

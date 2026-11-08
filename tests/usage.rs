@@ -34,7 +34,7 @@ fn file_arguments_print_an_outline_per_file() {
 
     assert_eq!(
         out,
-        "guide.md\ntitle: \"Guide\"\n[L4-L6] # Guide\n[L6-L6] ## Install\n"
+        "guide.md (6 lines)\ntitle: \"Guide\"\n[L4-L6] # Guide\n[L6-L6] ## Install\n"
     );
     assert_eq!(err, "");
     assert_eq!(status, ExitStatus::Success);
@@ -145,7 +145,7 @@ fn a_failing_file_is_reported_while_the_others_still_print() {
     let (out, err, status) =
         run_in(&dir, &["missing.md", "ok.md"]).expect("writing to a Vec cannot fail");
 
-    assert_eq!(out, "ok.md\n[L1-L1] # Ok\n");
+    assert_eq!(out, "ok.md (1 line)\n[L1-L1] # Ok\n");
     assert_eq!(err, "File missing.md does not exist\n");
     assert_eq!(status, ExitStatus::Failure);
     assert_eq!(status.code(), 1);

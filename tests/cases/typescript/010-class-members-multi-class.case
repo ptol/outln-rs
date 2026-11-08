@@ -11,7 +11,7 @@ class B {
   constructor() {}
 }
 == stdout
-input/multi-class.ts
+input/multi-class.ts (9 lines)
 [L1-L3] export class A
   [L2-L2] run(): void
 [L5-L5] const value

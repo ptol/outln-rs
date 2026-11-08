@@ -6,7 +6,7 @@ input/preamble.ts
 // CLI wiring.
 export function main(): void {}
 == stdout
-input/preamble.ts
+input/preamble.ts (4 lines)
 CLI wiring.
 [L4-L4] export function main(): void
 == stderr

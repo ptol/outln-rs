@@ -24,7 +24,7 @@ extern "C" { fn c_log(code: i32); }
 macro_rules! make_id { ($x:expr) => { $x as UserId }; }
 async fn load_user(id: UserId) -> Result<Account, ()> { Ok(Account { id }) }
 == stdout
-input/sample.rs
+input/sample.rs (20 lines)
 Core account domain types.
 Shared by CLI and API.
 [L4-L4] mod storage

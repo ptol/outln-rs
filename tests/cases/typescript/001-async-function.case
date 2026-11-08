@@ -9,7 +9,7 @@ export async function saveData(data: string): Promise<void> {
   console.log(data);
 }
 == stdout
-input/async.ts
+input/async.ts (7 lines)
 [L1-L3] async function fetchData(): Promise<string>
 [L5-L7] export async function saveData(data: string): Promise<void>
 == stderr

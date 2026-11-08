@@ -4,7 +4,7 @@ input/single-line.ts
 // Simple comment.
 const x = 1;
 == stdout
-input/single-line.ts
+input/single-line.ts (2 lines)
 Simple comment.
 [L2-L2] const x
 == stderr

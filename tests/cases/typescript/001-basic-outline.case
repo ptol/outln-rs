@@ -15,7 +15,7 @@ function formatName(name: string): string {
 
 const ready = true;
 == stdout
-input/basic.ts
+input/basic.ts (13 lines)
 [L1-L3] interface Person
 [L5-L5] type Status
 [L7-L7] class Counter

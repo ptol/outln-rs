@@ -16,7 +16,7 @@ const handler: Handler = (request) => respond(request);
 const memoized = memo((props: Props) => props);
 export const VERSION = "1.0";
 == stdout
-input/handlers.ts
+input/handlers.ts (11 lines)
 [L1-L3] export const parse = (input: string): Ast
 [L4-L4] const add = (a: number, b: number)
 [L5-L5] export const load = async <T,>(id: string): Promise<T>

@@ -6,7 +6,7 @@ input/legacy.js
 // Kept for compatibility.
 function helper() {}
 == stdout
-input/legacy.js
+input/legacy.js (4 lines)
 Legacy helpers.
 Kept for compatibility.
 [L4-L4] function helper()

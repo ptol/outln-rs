@@ -4,7 +4,7 @@ description: 'What outln is, how to install, build, and run it, what to paste in
 
 # outln
 
-A CLI that prints compact structural outlines of source files (a header, then top-level declarations with line ranges) for coding agents. So far it outlines Markdown, TypeScript, JavaScript, Rust, and CSS files, and TOML, YAML, and JSON data files.
+A CLI that prints compact structural outlines of source files (the path and line count, a header, then top-level declarations with line ranges) for coding agents. So far it outlines Markdown, TypeScript, JavaScript, Rust, and CSS files, and TOML, YAML, and JSON data files.
 
 ## Install
 
@@ -15,7 +15,7 @@ cargo install outln --locked
 It builds from source, so it needs a recent Rust (see `rust-version` in `Cargo.toml`) and a C compiler for the tree-sitter grammars. `--locked` builds with the dependency versions this release was tested with.
 
 ```sh
-outln src/app.ts README.md # an outline of each file: header, declarations, line ranges
+outln src/app.ts README.md # an outline of each file: line count, header, declarations, line ranges
 outln docs "src/**/*.ts"   # a glob view: one line per file with its line count and header or summary
 outln --help               # every mode and option
 ```
@@ -30,7 +30,7 @@ An agent runs outln only when its instructions say to, and outln's output doesn'
 Cheapest first. Run each step as its own command, because its output picks the target of the next one:
 
 1. **Find the file**: `outln <dir>` (or a glob such as `outln "src/**/*.ts"`) prints one line per file: its path, its line count, and its header comment or frontmatter.
-2. **Find the section**: `outln <file>...` prints each file's header and its declarations with line ranges like `[L12-L40]`.
+2. **Find the section**: `outln <file>...` prints each file's line count, header, and declarations with line ranges like `[L12-L40]`.
 3. **Read**: read only those line ranges (`Read` with `offset`/`limit`); read a file whole when its line count is small.
 
 Read outln's full output, stderr included. To shorten it, narrow the path or glob, or filter with `grep`.

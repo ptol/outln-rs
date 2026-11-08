@@ -15,7 +15,7 @@ export default function () {
 
 export default class App {}
 == stdout
-input/exports.ts
+input/exports.ts (13 lines)
 [L1-L3] export interface Config
 [L5-L7] export function buildConfig(env: string): Config
 [L9-L11] export default function()

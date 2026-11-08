@@ -7,7 +7,7 @@ input/doc-comment-before-regular-comment.rs
 // Regular comment should not be treated as file header in this case.
 fn main() {}
 == stdout
-input/doc-comment-before-regular-comment.rs
+input/doc-comment-before-regular-comment.rs (3 lines)
 Module docs stay excluded.
 [L3-L3] fn main()
 == stderr

@@ -6,7 +6,7 @@ input/resources.js
 using handle = open("a");
 await using connection = connect();
 == stdout
-input/resources.js
+input/resources.js (2 lines)
 [L1-L1] using handle
 [L2-L2] await using connection
 == stderr

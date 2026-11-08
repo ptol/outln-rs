@@ -20,7 +20,7 @@ export class Calculator {
   }
 }
 == stdout
-input/full-feature.ts
+input/full-feature.ts (18 lines)
 Math utilities with overloaded functions.
 [L4-L4] export function add(a: string, b: string): string
 [L5-L5] export function add(a: number, b: number): number

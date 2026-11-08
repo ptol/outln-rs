@@ -21,7 +21,7 @@ export class Store {
   load(id: string) {}
 }
 == stdout
-input/service.ts
+input/service.ts (16 lines)
 Session service.
 [L2-L2] export function start()
 [L4-L8] export function stop()

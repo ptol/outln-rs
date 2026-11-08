@@ -21,11 +21,11 @@ export class UserController {
   }
 }
 == stdout
-input/controller.ts
+input/controller.ts (8 lines)
 [L1-L8] export class UserController
   [L3-L7] find(id: string): User
 
-input/controller.js
+input/controller.js (8 lines)
 [L1-L8] export class UserController
   [L3-L7] find(id)
 == stderr

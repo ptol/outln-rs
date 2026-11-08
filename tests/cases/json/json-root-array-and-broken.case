@@ -11,9 +11,9 @@ input/broken.json
   "b": {
     "c": 2
 == stdout
-input/list.json
+input/list.json (1 line)
 
-input/broken.json
+input/broken.json (4 lines)
 [L2-L2] a: 1
 [L3-L4] b
 == stderr

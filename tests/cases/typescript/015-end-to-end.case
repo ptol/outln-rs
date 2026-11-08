@@ -9,7 +9,7 @@ declare global {
 
 declare function helper(a: string, b: number): boolean;
 == stdout
-input/ambient-full.ts
+input/ambient-full.ts (7 lines)
 [L1-L1] declare const API_ENDPOINT
 [L1-L1] declare const API_TIMEOUT
 [L3-L5] declare global

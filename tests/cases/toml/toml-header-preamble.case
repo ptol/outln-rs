@@ -15,11 +15,11 @@ name = "x"
 [tool]
 name = "x"
 == stdout
-input/a.toml
+input/a.toml (6 lines)
 Tool configuration.
 [L5-L6] [tool]
 
-input/b.toml
+input/b.toml (3 lines)
 [L2-L3] [tool]
 == stderr
 == exit 0

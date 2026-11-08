@@ -11,7 +11,7 @@ pub(crate) use crate::engine::{
     Registry,
 };
 == stdout
-input/lib.rs
+input/lib.rs (8 lines)
 Public API.
 [L4-L4] pub use crate::outline::{Outline, OutlineLine}
 [L5-L8] pub(crate) use crate::engine::{ Engine, Registry }

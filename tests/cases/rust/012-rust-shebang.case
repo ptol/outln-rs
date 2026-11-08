@@ -9,7 +9,7 @@ input/shebang.rs
 
 fn main() {}
 == stdout
-input/shebang.rs
+input/shebang.rs (6 lines)
 Header comment after shebang.
 Second line of header.
 [L6-L6] fn main()

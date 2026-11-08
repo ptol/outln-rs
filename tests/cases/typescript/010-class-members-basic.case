@@ -17,7 +17,7 @@ class Counter {
   }
 }
 == stdout
-input/class-members.ts
+input/class-members.ts (15 lines)
 [L1-L15] class Counter
   [L3-L5] constructor(initial: number)
   [L6-L8] increment(step: number): void

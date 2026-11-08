@@ -8,7 +8,7 @@ export interface Session {
   id: string;
 }
 == stdout
-input/with-top-comment.ts
+input/with-top-comment.ts (6 lines)
 Domain model for account sessions.
 [L4-L6] export interface Session
 == stderr

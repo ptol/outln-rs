@@ -6,7 +6,7 @@ input/short.md
 
 text\
 == stdout
-input/short.md
+input/short.md (3 lines)
 [L1-L3] # Title
 == stderr
 == exit 0

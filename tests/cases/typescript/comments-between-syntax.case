@@ -9,7 +9,7 @@ class Cache {
 }
 test(/* slow */ "loads", () => {});
 == stdout
-input/commented.test.ts
+input/commented.test.ts (6 lines)
 [L1-L5] class Cache
   [L2-L4] load()
 [L6-L6] test("loads")

@@ -10,7 +10,7 @@ use crate::utils::helpers::{self, format};
 use super::*;
 use std::fs::File as FsFile;
 == stdout
-input/use.rs
+input/use.rs (7 lines)
 Use declarations
 == stderr
 == exit 0

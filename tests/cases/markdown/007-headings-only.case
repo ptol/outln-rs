@@ -7,7 +7,7 @@ Body text with # inline is not a heading.
 Not a heading: ### inline marker.
 ### Next
 == stdout
-input/headings-only.md
+input/headings-only.md (5 lines)
 [L1-L5] # Intro
 [L3-L5] ## Details
 [L5-L5] ### Next

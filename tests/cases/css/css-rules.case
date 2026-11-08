@@ -58,7 +58,7 @@ input[type="text"] {
   }
 }
 == stdout
-input/theme.css
+input/theme.css (52 lines)
 [L2-L2] @import url("reset.css") screen
 [L3-L3] @layer base, components
 [L5-L7] :root

@@ -25,7 +25,7 @@ outln src
 # Appendix
 ## Empty section
 == stdout
-input/guide.md
+input/guide.md (23 lines)
 [L1-L20] # Guide
 [L5-L11] ## Install
 [L9-L11] ### Linux

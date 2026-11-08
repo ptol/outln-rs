@@ -9,7 +9,7 @@ function read(pathOrFd: string | number): string | Buffer {
   return typeof pathOrFd === 'string' ? '' : Buffer.alloc(0);
 }
 == stdout
-input/import-alias-and-overloads.ts
+input/import-alias-and-overloads.ts (7 lines)
 [L1-L1] import fs
 [L2-L2] import Join
 [L3-L3] function read(path: string): string

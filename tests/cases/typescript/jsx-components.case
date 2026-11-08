@@ -13,12 +13,12 @@ export default function Card({ title }) {
   return <div className="card">{title}</div>;
 }
 == stdout
-input/Button.tsx
+input/Button.tsx (5 lines)
 A button.
 [L2-L4] export function Button({ label }: Props): JSX.Element
 [L5-L5] export const Icon = ()
 
-input/Card.jsx
+input/Card.jsx (3 lines)
 [L1-L3] export default function Card({ title })
 == stderr
 == exit 0

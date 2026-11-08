@@ -7,7 +7,7 @@ title: With BOM
 ---
 # Heading
 == stdout
-input/bom.md
+input/bom.md (4 lines)
 title: "With BOM"
 [L4-L4] # Heading
 == stderr

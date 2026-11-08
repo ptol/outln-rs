@@ -6,7 +6,7 @@ declare interface EmptyInterface {}
 declare type EmptyType = {};
 declare enum EmptyEnum {}
 == stdout
-input/empty-ambient.ts
+input/empty-ambient.ts (4 lines)
 [L1-L1] declare namespace EmptyNS
 [L2-L2] declare interface EmptyInterface
 [L3-L3] declare type EmptyType

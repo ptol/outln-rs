@@ -16,7 +16,7 @@ declare module InternalPkg {
 namespace X {}
 module Y {}
 == stdout
-input/ambient-and-modules.ts
+input/ambient-and-modules.ts (14 lines)
 [L1-L1] declare function ambientFn(x: string): number
 [L2-L2] declare class AmbientThing
 [L3-L3] declare const ambientValue

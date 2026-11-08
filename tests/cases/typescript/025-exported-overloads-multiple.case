@@ -13,7 +13,7 @@ export function format(value: number | bigint, radix = 10): string {
   return value.toString(radix);
 }
 == stdout
-input/exported-overloads-multiple.ts
+input/exported-overloads-multiple.ts (11 lines)
 [L1-L1] export function parse(input: string): number
 [L2-L2] export function parse(input: number): number
 [L3-L5] export function parse(input: string | number): number

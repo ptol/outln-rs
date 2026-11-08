@@ -5,7 +5,7 @@ declare abstract class BaseModel {
   abstract id: number;
 }
 == stdout
-input/abstract-class.ts
+input/abstract-class.ts (3 lines)
 [L1-L3] declare abstract class BaseModel
 == stderr
 == exit 0

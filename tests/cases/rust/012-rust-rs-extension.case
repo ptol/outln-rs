@@ -6,7 +6,7 @@ input/main.rs
 
 fn main() {}
 == stdout
-input/main.rs
+input/main.rs (3 lines)
 Entry point.
 [L3-L3] fn main()
 == stderr

@@ -5,7 +5,7 @@ input/empty.rs
 
 // Another comment
 == stdout
-input/empty.rs
+input/empty.rs (3 lines)
 Just a comment
 == stderr
 == exit 0

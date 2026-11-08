@@ -27,7 +27,7 @@ input/buttons.css
   }
 }
 == stdout
-input/buttons.css
+input/buttons.css (23 lines)
 Button styles.
 [L7-L10] .primary
 [L11-L11] .secondary

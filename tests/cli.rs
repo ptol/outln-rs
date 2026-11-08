@@ -21,7 +21,7 @@ fn prints_an_outline_of_a_file_in_the_working_directory() {
     assert!(output.status.success(), "exit status: {}", output.status);
     assert_eq!(
         String::from_utf8_lossy(&output.stdout),
-        "guide.md\n[L1-L1] # Guide\n"
+        "guide.md (1 line)\n[L1-L1] # Guide\n"
     );
     assert_eq!(String::from_utf8_lossy(&output.stderr), "");
 }

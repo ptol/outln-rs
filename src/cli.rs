@@ -7,7 +7,8 @@ use clap::{ArgAction, CommandFactory, FromArgMatches, Parser};
 /// Printed after the options in `--help`.
 const MODES_AND_EXAMPLES: &str = "\
 Modes:
-  outln <file>...            Full outline for each file (header, declarations, line ranges).
+  outln <file>...            Full outline for each file (line count, header, declarations,
+                             line ranges).
   outln <dir|glob>...        Glob view: one line per file with its line count and its header
                              or summary. Explicit files may be mixed in; they use the same
                              one-line format.

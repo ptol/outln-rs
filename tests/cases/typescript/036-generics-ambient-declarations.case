@@ -6,7 +6,7 @@ declare class Store<K, V> {}
 declare interface Lookup<K> {}
 declare type Maybe<T> = T | null;
 == stdout
-input/ambient.d.ts
+input/ambient.d.ts (4 lines)
 [L1-L1] declare function parse<T>(text: string): T
 [L2-L2] declare class Store<K, V>
 [L3-L3] declare interface Lookup<K>
