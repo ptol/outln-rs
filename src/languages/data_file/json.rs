@@ -19,10 +19,9 @@ pub(super) const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
 /// An object that never closes (a file cut short, or a field summary's prefix) parses as an
 /// `ERROR` node, which flattens the pairs of nested objects into its own children, so then
 /// only the pairs before its first other child (the key whose value broke off) are the
-/// root's.
+/// root's. An object that closes but misses a comma (`"a": 1 "b": 2`, as in a half-edited
+/// file) holds the pairs before the gap in an `ERROR` child, read by the same rule.
 pub(super) fn keys(root: Node<'_>, text: &str) -> Vec<Key> {
-    // tree-sitter marks `ERROR` nodes as extras, like comments, so comments are skipped by kind.
-    let is_syntax = |node: &Node<'_>| node.is_named() && node.kind() != "comment";
     let value = if root.kind() == "ERROR" {
         Some(root)
     } else {
@@ -31,20 +30,35 @@ pub(super) fn keys(root: Node<'_>, text: &str) -> Vec<Key> {
     let pairs: Vec<Node<'_>> = match value {
         Some(object) if object.kind() == "object" => children(object)
             .into_iter()
-            .filter(|child| child.kind() == "pair")
+            .flat_map(|child| match child.kind() {
+                "pair" => vec![child],
+                "ERROR" => leading_pairs(child),
+                _ => Vec::new(),
+            })
             .collect(),
         Some(broken) if broken.kind() == "ERROR" && source(broken, text).starts_with('{') => {
-            children(broken)
-                .into_iter()
-                .filter(is_syntax)
-                .take_while(|child| child.kind() == "pair")
-                .collect()
+            leading_pairs(broken)
         }
         _ => Vec::new(),
     };
     pairs
         .into_iter()
         .filter_map(|pair| key(pair, text))
+        .collect()
+}
+
+/// Whether a node is part of the JSON value rather than a comment. tree-sitter marks `ERROR`
+/// nodes as extras, like comments, so comments are told apart by kind.
+fn is_syntax(node: &Node<'_>) -> bool {
+    node.is_named() && node.kind() != "comment"
+}
+
+/// The pairs an `ERROR` node starts with, before its first child of another kind.
+fn leading_pairs(error: Node<'_>) -> Vec<Node<'_>> {
+    children(error)
+        .into_iter()
+        .filter(is_syntax)
+        .take_while(|child| child.kind() == "pair")
         .collect()
 }
 

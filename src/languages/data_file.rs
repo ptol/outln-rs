@@ -45,6 +45,9 @@ pub(crate) struct DataFile {
     /// The keys a field summary picks its fields from, for a format whose summary doesn't just
     /// take the file's keys; `None` takes them.
     summary_source: Option<fn(Node<'_>, &str) -> SummarySource>,
+    /// The part of a file its grammar parses: all of it, or for a grammar that breaks on some
+    /// input (YAML's aborts the process on deep nesting), the lines before that input.
+    parsable_part: fn(&str) -> &str,
 }
 
 pub(crate) static JSON: DataFile = DataFile {
@@ -56,6 +59,7 @@ pub(crate) static JSON: DataFile = DataFile {
     preamble_end: |_, _| None,
     keys: json::keys,
     summary_source: None,
+    parsable_part: |text| text,
 };
 pub(crate) static TOML: DataFile = DataFile {
     extensions: &["toml"],
@@ -64,6 +68,7 @@ pub(crate) static TOML: DataFile = DataFile {
     preamble_end: toml::preamble_end,
     keys: toml::keys,
     summary_source: Some(toml::summary_source),
+    parsable_part: |text| text,
 };
 pub(crate) static YAML: DataFile = DataFile {
     extensions: &["yaml", "yml"],
@@ -72,6 +77,7 @@ pub(crate) static YAML: DataFile = DataFile {
     preamble_end: yaml::preamble_end,
     keys: yaml::keys,
     summary_source: None,
+    parsable_part: yaml::parsable_part,
 };
 
 impl LanguageEngine for DataFile {
@@ -81,10 +87,11 @@ impl LanguageEngine for DataFile {
 
     fn outline(&self, source: &SourceText<'_>) -> Outline {
         let text = source.text;
-        let tree = parse(text, &(self.grammar)());
+        let parsed = (self.parsable_part)(text);
+        let tree = parse(parsed, &(self.grammar)());
         let header = self.header(text);
         let header_end = header.as_ref().map(Header::end);
-        let keys = (self.keys)(tree.root_node(), text);
+        let keys = (self.keys)(tree.root_node(), parsed);
         let comments = comment_ranges(tree.root_node());
         let lines = outline_lines(keys, source, &comments, header_end, self.preamble_end);
         Outline { header, lines }
@@ -97,7 +104,7 @@ impl LanguageEngine for DataFile {
         }
         // The header is found line by line, but fields need a parse; parsing only the start of
         // the file keeps a glob view over large lockfiles fast.
-        let (prefix, cut) = summary_prefix(text);
+        let (prefix, cut) = self.summary_prefix(text);
         let tree = parse(prefix, &(self.grammar)());
         let source = self.summary_source(tree.root_node(), prefix);
         field_summary(source, prefix, cut).map_or(FileSummary::Empty, FileSummary::Fields)
@@ -113,8 +120,9 @@ impl LanguageEngine for DataFile {
 /// or `None` when it holds no mapping: the YAML engine's own rules decide which pairs are
 /// top-level and how a value is written on one line.
 pub(crate) fn yaml_fields(text: &str) -> Option<Vec<YamlField>> {
-    let tree = parse(text, &(YAML.grammar)());
-    let mut fields = yaml::fields(tree.root_node(), text)?;
+    let parsed = yaml::parsable_part(text);
+    let tree = parse(parsed, &(YAML.grammar)());
+    let mut fields = yaml::fields(tree.root_node(), parsed)?;
     // The grammar puts the comment lines after a value inside it, as for a key's line range.
     let source = SourceText::new(text);
     let comments = comment_ranges(tree.root_node());
@@ -133,6 +141,18 @@ impl DataFile {
             HeaderChoice::FirstComment,
             self.preamble_end,
         )
+    }
+
+    /// The part of `text` a field summary reads ([`summary_prefix`]), no more than its grammar
+    /// can parse, and whether that is the whole file.
+    fn summary_prefix<'text>(&self, text: &'text str) -> (&'text str, Cut) {
+        let (prefix, cut) = summary_prefix(text);
+        let parsed = (self.parsable_part)(prefix);
+        if parsed.len() < prefix.len() {
+            (parsed, Cut::Prefix)
+        } else {
+            (prefix, cut)
+        }
     }
 
     /// The keys a field summary picks its fields from.
@@ -406,7 +426,11 @@ fn outline_lines(
         .enumerate()
         .map(|(index, key)| {
             let next_start = starts.get(index + 1).copied().unwrap_or(source.text.len());
-            let end = content_end(
+            // A key may end in a line break or a comment line (a YAML `? key` written over
+            // several lines), which the highlight leaves out and the line range keeps, so the
+            // trim of a value's trailing comments never cuts into its key.
+            let highlight = trim_end(source.text, key.highlight);
+            let value_end = content_end(
                 source,
                 starts[index],
                 key.node.end.min(next_start),
@@ -414,8 +438,8 @@ fn outline_lines(
             );
             OutlineLine {
                 text: key.text,
-                range: ByteRange::new(starts[index], end),
-                highlight: key.highlight,
+                range: ByteRange::new(starts[index], value_end.max(highlight.end)),
+                highlight,
                 depth: 0,
             }
         })
@@ -523,6 +547,42 @@ mod tests {
         let pairs: Vec<String> = (0..count).map(|index| format!("\"k{index}\": 1")).collect();
         let text = format!("{{{}}}", pairs.join(", "));
         assert_eq!(outline_texts(&JSON, &text).len(), count);
+    }
+
+    /// Nesting this deep would abort the process in tree-sitter-yaml's scanner.
+    #[test]
+    fn yaml_nested_too_deep_for_its_grammar_is_read_up_to_the_deep_lines() {
+        let nested: String = (1..=300)
+            .flat_map(|depth| [" ".repeat(depth), "k:\n".to_owned()])
+            .collect();
+        let text = format!("first: 1\nnested:\n{nested}last: 2\n");
+        assert_eq!(outline_texts(&YAML, &text), ["first: 1", "nested"]);
+        assert_eq!(
+            YAML.file_summary(&text),
+            FileSummary::Fields(FieldSummary {
+                table: None,
+                fields: vec!["first: 1".to_owned()],
+                shown: FieldsShown::First,
+            })
+        );
+        let deep_list = "- ".repeat(300);
+        assert_eq!(
+            yaml_fields(&format!("title: x\n{deep_list}\n")).map(|fields| fields.len()),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn a_yaml_key_ending_in_a_comment_line_keeps_its_key_inside_its_range() {
+        for text in ["? :\n", "? a\n# comment\n: 1\n", "? a\n  # comment\n"] {
+            for line in outline_of(&YAML, text).lines {
+                assert!(
+                    line.range.start <= line.highlight.start
+                        && line.highlight.end <= line.range.end,
+                    "{text:?}: {line:?}"
+                );
+            }
+        }
     }
 
     #[test]

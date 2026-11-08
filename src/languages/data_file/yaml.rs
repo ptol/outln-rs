@@ -3,7 +3,7 @@
 use tree_sitter::Node;
 
 use super::{Key, Pair, Value, first_paragraph};
-use crate::source_text::{ByteRange, line_end};
+use crate::source_text::{ByteRange, line_end, lines_with_offsets};
 use crate::syntax_tree::{byte_range, children, source};
 
 /// The document start marker, which may come before the header comment.
@@ -29,6 +29,78 @@ pub(super) fn preamble_end(text: &str, start: usize) -> Option<usize> {
         .starts_with(char::is_whitespace)
         .then_some(start + DOCUMENT_START.len())
         .or_else(|| after_marker.is_empty().then_some(text.len()))
+}
+
+/// The most block nodes [`parsable_part`] lets a file hold open at once, as it counts them.
+///
+/// tree-sitter-yaml's scanner (0.7.2) keeps a stack of open block nodes (sequences, mappings,
+/// block scalars) and saves it after each token into tree-sitter's 1024-byte state buffer
+/// without checking its size: from 254 open nodes (`- ` written 254 times on one line, or 254
+/// lines each indented one space more) it overflows the buffer and a C assertion aborts the
+/// whole process, which no `catch_unwind` can stop. The count here is at least the scanner's
+/// and often up to twice it, so this leaves a margin; no file written by hand nests this deep.
+const MAX_OPEN_BLOCK_NODES: usize = 200;
+
+/// The part of `text` the YAML grammar can parse without aborting the process: all of it, or
+/// the lines before the first one that might hold more than [`MAX_OPEN_BLOCK_NODES`] open block
+/// nodes.
+///
+/// The count over-approximates the scanner's stack: each line that isn't blank or a comment
+/// closes the nodes opened right of its indentation, then opens one where its content starts and
+/// one at each `-`, `?`, `:`, `|`, or `>` followed by whitespace, before any comment, at most two
+/// per column (a mapping and the sequence written at its column). A line inside a flow
+/// collection (`[`, `{`) that is indented less than its parent may close nodes the scanner keeps
+/// open, so a file built to defeat the count can still nest deeper (docs/techdebt.md).
+pub(super) fn parsable_part(text: &str) -> &str {
+    let mut open_columns: Vec<usize> = Vec::new();
+    for (start, line) in lines_with_offsets(text) {
+        open_block_nodes(line, &mut open_columns);
+        if open_columns.len() > MAX_OPEN_BLOCK_NODES {
+            return &text[..start];
+        }
+    }
+    text
+}
+
+/// Updates the columns of the open block nodes for one line, as [`parsable_part`] counts them.
+fn open_block_nodes(line: &str, open_columns: &mut Vec<usize>) {
+    let content = line.trim_start_matches(' ');
+    if content.is_empty() || content.starts_with('#') {
+        return;
+    }
+    let indent = line.len() - content.len();
+    while open_columns.last().is_some_and(|&column| column > indent) {
+        open_columns.pop();
+    }
+    open_at(indent, open_columns);
+    // Columns count characters, as the scanner's do.
+    let mut characters = content.chars().peekable();
+    let mut column = indent;
+    let mut after_whitespace = false;
+    while let Some(character) = characters.next() {
+        if character == '#' && after_whitespace {
+            return;
+        }
+        let ends_indicator = characters.peek().is_none_or(|next| next.is_whitespace());
+        if matches!(character, '-' | '?' | ':' | '|' | '>') && ends_indicator {
+            open_at(column, open_columns);
+        }
+        after_whitespace = character.is_whitespace();
+        column += 1;
+    }
+}
+
+/// Opens a block node at `column`, unless two are open there already. Columns only grow up the
+/// stack, so the nodes at `column` are on top.
+fn open_at(column: usize, open_columns: &mut Vec<usize>) {
+    let open_here = open_columns
+        .iter()
+        .rev()
+        .take_while(|&&open| open == column)
+        .count();
+    if open_here < 2 {
+        open_columns.push(column);
+    }
 }
 
 /// The keys of the root mapping ([`root_pairs`]).
