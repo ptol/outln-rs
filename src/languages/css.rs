@@ -2,79 +2,54 @@
 
 use tree_sitter::Node;
 
-use crate::code_outline::{code_outline, with_line_ranges};
-use crate::header_comment::{CommentSyntax, find_header_comment};
-use crate::language_engine::LanguageEngine;
-use crate::leading_annotations::PrecedingNode;
-use crate::outline::{FileSummary, Header, Outline, OutlineLine};
+use crate::code_outline::{CodeLanguage, OutlineLevel};
+use crate::comment_syntax::{BLOCK_COMMENT_OPEN, BlockComments, CommentSyntax, block_comment_end};
+use crate::header_comment::HeaderChoice;
+use crate::leading_annotations::{Annotations, PlainComments};
+use crate::outline::OutlineLine;
 use crate::signature::Signature;
-use crate::source_text::{ByteRange, line_around};
-use crate::syntax_tree::{child_of_kind, children, source};
+use crate::source_text::{ByteRange, line_end, quoted_len};
+use crate::syntax_tree::{child_of_kind, source};
 
 /// The language engine for CSS.
-pub(crate) struct Css;
+///
+/// The header comment is the first `/* */` comment, which only an `@charset` rule may precede.
+pub(crate) static CSS: CodeLanguage = CodeLanguage {
+    extensions: &["css"],
+    grammar: || tree_sitter_css::LANGUAGE.into(),
+    comment_syntax: CommentSyntax::BLOCK,
+    header_choice: HeaderChoice::FirstComment,
+    preamble_end,
+    // CSS has no doc comments, so any comment directly above a rule documents it, as a data
+    // file's comments document its keys; a blank line detaches it.
+    annotations: Annotations {
+        comment_kinds: &["comment"],
+        attribute_kinds: &[],
+        plain_comments: PlainComments::Annotate,
+    },
+    // Preludes are read from the source text, not joined from tokens ([`prelude_signature`]).
+    verbatim_kinds: &[],
+    declaration_lines: rule_lines,
+};
 
-impl LanguageEngine for Css {
-    fn extensions(&self) -> &'static [&'static str] {
-        &["css"]
+/// Where the `@charset` rule ends, if the file starts with one: CSS requires it to be the
+/// file's first bytes, written in lowercase.
+fn preamble_end(text: &str, start: usize) -> Option<usize> {
+    if start != 0 || !text.starts_with(CHARSET) {
+        return None;
     }
-
-    fn outline(&self, text: &str) -> Outline {
-        code_outline(
-            text,
-            &tree_sitter_css::LANGUAGE.into(),
-            header(text),
-            preceding_node,
-            rule_lines,
-        )
-    }
-
-    fn file_summary(&self, text: &str) -> FileSummary {
-        // The header is found line by line, so the glob view never parses a file.
-        FileSummary::from(header(text))
-    }
-}
-
-/// The header comment: the first `/* */` comment, which only an `@charset` rule may precede,
-/// because CSS requires `@charset` to be the file's first bytes, written in lowercase.
-fn header(text: &str) -> Option<Header> {
-    find_header_comment(text, CommentSyntax::Block, |text, start| {
-        if start != 0 || !text.starts_with(CHARSET) {
-            return None;
-        }
-        // The preamble ends after the rule's `;`, so a comment or rule after it on its line is
-        // still seen; an encoding name never contains a `;`. Without one, the line ends it.
-        let line_end = line_around(text, start).end;
-        Some(
-            text[..line_end]
-                .find(';')
-                .map_or(line_end, |semicolon| semicolon + 1),
-        )
-    })
+    // The preamble ends after the rule's `;`, so a comment or rule after it on its line is still
+    // seen; an encoding name never contains a `;`. Without one, the line ends it.
+    let line_end = line_end(text, start);
+    Some(
+        text[..line_end]
+            .find(';')
+            .map_or(line_end, |semicolon| semicolon + 1),
+    )
 }
 
 /// How an `@charset` rule starts.
 const CHARSET: &str = "@charset ";
-
-/// What a node before a rule is to its leading annotations. CSS has no doc comments, so any
-/// comment directly above a rule documents it, as a data file's comments document its keys;
-/// a blank line detaches it.
-fn preceding_node(node: Node<'_>, _text: &str) -> PrecedingNode {
-    if node.kind() == "comment" {
-        PrecedingNode::DocComment
-    } else {
-        PrecedingNode::Other
-    }
-}
-
-const TOP_LEVEL_DEPTH: usize = 0;
-
-/// How deep the rules inside a top-level at-rule's block are nested in an outline.
-const NESTED_DEPTH: usize = 1;
-
-/// The rules inside a top-level at-rule's block can't contain the file's header comment, so the
-/// walk over their leading annotations needs no header boundary.
-const NO_HEADER_END: usize = 0;
 
 /// Node kinds of the rules listed in an outline. `@charset` is left out: it says how the file
 /// is encoded, not what it styles.
@@ -93,21 +68,25 @@ const RULE_KINDS: &[&str] = &[
 /// Node kinds where a rule's prelude ends: its block, its `@keyframes` list, or its final `;`.
 const PRELUDE_END_KINDS: &[&str] = &["block", "keyframe_block_list", ";"];
 
-/// The outline lines of a top-level node with line range `range`: its own, then one per rule in
-/// its block when it lists them ([`lists_nested_rules`]).
-fn rule_lines(node: Node<'_>, range: ByteRange, text: &str) -> Vec<OutlineLine> {
-    let Some(line) = rule_line(node, range, text, TOP_LEVEL_DEPTH) else {
-        return Vec::new();
+/// The outline lines of a rule with line range `range`: its own, then, for a top-level rule
+/// that lists them ([`lists_nested_rules`]), one per rule in its block, one level deeper.
+/// Nothing for a node that isn't a rule.
+fn rule_lines(
+    level: &OutlineLevel<'_>,
+    node: Node<'_>,
+    range: ByteRange,
+    lines: &mut Vec<OutlineLine>,
+) {
+    let Some(line) = rule_line(level, node, range) else {
+        return;
     };
-    let mut lines = vec![line];
-    if let Some(block) = child_of_kind(node, "block").filter(|_| lists_nested_rules(node, text)) {
-        let siblings = children(block);
-        lines.extend(
-            with_line_ranges(&siblings, text, NO_HEADER_END, preceding_node)
-                .filter_map(|(rule, range)| rule_line(rule, range, text, NESTED_DEPTH)),
-        );
+    lines.push(line);
+    if !level.is_top_level() || !lists_nested_rules(node, level.text()) {
+        return;
     }
-    lines
+    if let Some(block) = child_of_kind(node, "block") {
+        level.declarations_inside(block, lines);
+    }
 }
 
 /// Whether the rules in the node's block are listed one level deeper: an at-rule's (`@media`,
@@ -131,7 +110,7 @@ fn lists_nested_rules(node: Node<'_>, text: &str) -> bool {
 /// The outline line of a rule, printing its prelude ([`prelude_signature`]): a style rule's
 /// selectors, or an at-rule's keyword and what follows it up to its block or `;`. `None` for a
 /// node that isn't a rule (a comment, `@charset`, a stray CSS declaration, a syntax error).
-fn rule_line(node: Node<'_>, range: ByteRange, text: &str, depth: usize) -> Option<OutlineLine> {
+fn rule_line(level: &OutlineLevel<'_>, node: Node<'_>, range: ByteRange) -> Option<OutlineLine> {
     if !RULE_KINDS.contains(&node.kind()) {
         return None;
     }
@@ -140,8 +119,9 @@ fn rule_line(node: Node<'_>, range: ByteRange, text: &str, depth: usize) -> Opti
         .children(&mut cursor)
         .find(|child| PRELUDE_END_KINDS.contains(&child.kind()))
         .map_or(node.end_byte(), |child| child.start_byte());
-    let signature = prelude_signature(text, ByteRange::new(node.start_byte(), prelude_end));
-    Some(signature.into_outline_line(range, node.start_byte(), depth))
+    let prelude = ByteRange::new(node.start_byte(), prelude_end);
+    let signature = prelude_signature(level.text(), prelude);
+    Some(level.outline_line(signature, range, node.start_byte()))
 }
 
 /// The prelude at `prelude` in `text`, on one line: comments are left out, and each run of
@@ -166,11 +146,10 @@ fn prelude_signature(text: &str, prelude: ByteRange) -> Signature {
     let mut index = 0;
     while let Some(character) = prelude_source[index..].chars().next() {
         let rest = &prelude_source[index..];
-        if let Some(body) = rest.strip_prefix(COMMENT_OPEN) {
-            // Searched after the `/*`, so `/*/` doesn't close the comment it opens.
-            index += body.find(COMMENT_CLOSE).map_or(rest.len(), |close| {
-                COMMENT_OPEN.len() + close + COMMENT_CLOSE.len()
-            });
+        if rest.starts_with(BLOCK_COMMENT_OPEN) {
+            // A comment that never closes runs to the end of the prelude.
+            index = block_comment_end(prelude_source, index, BlockComments::Flat)
+                .unwrap_or(prelude_source.len());
             gap_has_comment = true;
             gap_is_layout = true;
             continue;
@@ -206,9 +185,6 @@ fn prelude_signature(text: &str, prelude: ByteRange) -> Signature {
     }
 }
 
-const COMMENT_OPEN: &str = "/*";
-const COMMENT_CLOSE: &str = "*/";
-
 /// Whitespace as CSS defines it; other Unicode spaces, such as U+00A0, are name characters.
 fn is_css_whitespace(character: char) -> bool {
     matches!(character, ' ' | '\t' | '\n' | '\r' | '\x0c')
@@ -225,7 +201,8 @@ fn is_name_character(character: char) -> bool {
 /// whether a name character comes right before it, so `url(` starts no URL inside a longer name.
 fn verbatim_token_len(rest: &str, character: char, after_name: bool) -> Option<usize> {
     match character {
-        '"' | '\'' => Some(string_len(rest, character)),
+        // A string that never closes runs to the end of the prelude.
+        '"' | '\'' => Some(quoted_len(rest, character).unwrap_or(rest.len())),
         '\\' => Some(1 + rest[1..].chars().next().map_or(0, char::len_utf8)),
         _ if !after_name => unquoted_url_len(rest),
         _ => None,
@@ -252,38 +229,14 @@ fn unquoted_url_len(rest: &str) -> Option<usize> {
     Some(rest.find(')').map_or(rest.len(), |close| close + 1))
 }
 
-/// The length of the string at the start of `rest`, which opens with `quote`, up to its closing
-/// quote (`\` escapes the next character), or all of `rest` when it never closes.
-fn string_len(rest: &str, quote: char) -> usize {
-    let mut escaped = false;
-    for (offset, character) in rest.char_indices().skip(1) {
-        match character {
-            _ if escaped => escaped = false,
-            '\\' => escaped = true,
-            _ if character == quote => return offset + character.len_utf8(),
-            _ => {}
-        }
-    }
-    rest.len()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn outline_lines(text: &str) -> Vec<(String, ByteRange, usize)> {
-        Css.outline(text)
-            .lines
-            .into_iter()
-            .map(|line| (line.text, line.range, line.depth))
-            .collect()
-    }
+    use crate::language_engine::{outline_of, outline_texts};
+    use crate::outline::Header;
 
     fn texts(text: &str) -> Vec<String> {
-        outline_lines(text)
-            .into_iter()
-            .map(|(text, _, _)| text)
-            .collect()
+        outline_texts(&CSS, text)
     }
 
     #[test]
@@ -362,7 +315,7 @@ mod tests {
     #[test]
     fn the_highlight_ends_at_the_last_printed_character() {
         let text = ".a /* note */ {}\n";
-        let line = &Css.outline(text).lines[0];
+        let line = &outline_of(&CSS, text).lines[0];
         assert_eq!(&text[line.highlight.as_range()], ".a");
     }
 
@@ -370,10 +323,10 @@ mod tests {
     fn rules_inside_a_top_level_at_rule_are_one_level_deeper() {
         let text =
             "@media (max-width: 600px) {\n  .a {}\n  /* B. */\n  .b {}\n}\n.c { &:hover {} }\n";
-        let lines = outline_lines(text);
+        let lines = outline_of(&CSS, text).lines;
         let summary: Vec<(&str, usize)> = lines
             .iter()
-            .map(|(text, _, depth)| (text.as_str(), *depth))
+            .map(|line| (line.text.as_str(), line.depth))
             .collect();
         assert_eq!(
             summary,
@@ -384,7 +337,7 @@ mod tests {
                 (".c", 0)
             ]
         );
-        assert_eq!(lines[2].1.start, text.find("/* B. */").unwrap());
+        assert_eq!(lines[2].range.start, text.find("/* B. */").unwrap());
     }
 
     #[test]
@@ -400,9 +353,9 @@ mod tests {
     #[test]
     fn a_comment_directly_above_a_rule_starts_its_line_range_but_not_across_a_blank_line() {
         let text = "/* Header. */\n\n/* Buttons. */\n.button {}\n/* Far. */\n\n.link {}\n";
-        let lines = outline_lines(text);
-        assert_eq!(lines[0].1.start, text.find("/* Buttons").unwrap());
-        assert_eq!(lines[1].1.start, text.find(".link").unwrap());
+        let lines = outline_of(&CSS, text).lines;
+        assert_eq!(lines[0].range.start, text.find("/* Buttons").unwrap());
+        assert_eq!(lines[1].range.start, text.find(".link").unwrap());
     }
 
     #[test]
@@ -419,13 +372,16 @@ mod tests {
             "@charset \"UTF-8\";\n/* Theme. */\n",
             "@charset \"UTF-8\"; /* Theme. */\n.a {}\n",
         ] {
-            let Some(Header::Comment(lines)) = header(text) else {
+            let Some(Header::Comment(lines)) = CSS.header(text) else {
                 panic!("expected a header comment in {text:?}");
             };
             assert_eq!(lines[0].text, "Theme.");
         }
-        assert_eq!(header(".a {}\n/* Late. */\n"), None);
-        assert_eq!(header("@charset \"UTF-8\"; .a {}\n/* Late. */\n"), None);
-        assert!(header("@charset \"UTF-8\"\n/* Theme; colors. */\n").is_some());
+        assert_eq!(CSS.header(".a {}\n/* Late. */\n"), None);
+        assert_eq!(CSS.header("@charset \"UTF-8\"; .a {}\n/* Late. */\n"), None);
+        assert!(
+            CSS.header("@charset \"UTF-8\"\n/* Theme; colors. */\n")
+                .is_some()
+        );
     }
 }

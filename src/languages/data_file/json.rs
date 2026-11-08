@@ -3,14 +3,15 @@
 use tree_sitter::Node;
 
 use super::{Key, Pair, Value};
-use crate::header_comment::{BlockComments, CommentSyntax, DocMarkers};
+use crate::comment_syntax::{BlockComments, CommentSyntax, LineMarker};
 use crate::syntax_tree::{byte_range, children, source};
 
 /// JSON has no comments, but tree-sitter-json parses `//` and `/* */` ones (as `tsconfig.json`
 /// files use them), so a leading one is the header.
-pub(super) const COMMENT_SYNTAX: CommentSyntax = CommentSyntax::CFamily {
-    doc_markers: DocMarkers::Ignored,
-    block_comments: BlockComments::Flat,
+pub(super) const COMMENT_SYNTAX: CommentSyntax = CommentSyntax {
+    line: Some(LineMarker::Slashes),
+    block: Some(BlockComments::Flat),
+    doc_markers: &[],
 };
 
 /// The pairs of the root object; a file whose root is an array or a scalar has no keys.

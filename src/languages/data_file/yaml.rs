@@ -3,7 +3,7 @@
 use tree_sitter::Node;
 
 use super::{Key, Pair, Value};
-use crate::source_text::line_around;
+use crate::source_text::line_end;
 use crate::syntax_tree::{byte_range, children, source};
 
 /// The document start marker, which may come before the header comment.
@@ -22,7 +22,7 @@ pub(super) fn preamble_end(text: &str, start: usize) -> Option<usize> {
         .strip_prefix('#')
         .is_some_and(|comment| comment.trim_start().starts_with(LANGUAGE_SERVER_MODELINE));
     if rest.starts_with('%') || is_modeline {
-        return Some(line_around(text, start).end);
+        return Some(line_end(text, start));
     }
     let after_marker = rest.strip_prefix(DOCUMENT_START)?;
     after_marker

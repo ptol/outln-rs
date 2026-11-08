@@ -9,7 +9,7 @@ use crate::input_error::InputError;
 use crate::outline::render_outline;
 use crate::per_file::print_each;
 use crate::source_file::load;
-use crate::source_text::LineIndex;
+use crate::source_text::SourceText;
 
 /// Prints the outlines of the file arguments, separated by blank lines. Missing files are
 /// reported first; any failing file makes the status a failure.
@@ -36,11 +36,8 @@ pub(crate) fn run(
 }
 
 fn outline_file(cwd: &Path, path: &str) -> Result<String, InputError> {
-    let source = load(cwd, path)?;
-    let outline = source.engine.outline(&source.text);
-    Ok(render_outline(
-        path,
-        &outline,
-        &LineIndex::new(&source.text),
-    ))
+    let file = load(cwd, path)?;
+    let source = SourceText::new(&file.text);
+    let outline = file.engine.outline(&source);
+    Ok(render_outline(path, &outline, &source.line_index))
 }

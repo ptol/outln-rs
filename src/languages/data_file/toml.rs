@@ -3,7 +3,7 @@
 use tree_sitter::Node;
 
 use super::{Key, Pair, SummarySource, Value};
-use crate::source_text::{ByteRange, line_around};
+use crate::source_text::{ByteRange, line_end};
 use crate::syntax_tree::{byte_range, children, source};
 
 /// Where a directive comment starting at byte `start` ends, such as taplo's `#:schema <url>`,
@@ -11,7 +11,7 @@ use crate::syntax_tree::{byte_range, children, source};
 pub(super) fn preamble_end(text: &str, start: usize) -> Option<usize> {
     text[start..]
         .starts_with("#:")
-        .then(|| line_around(text, start).end)
+        .then(|| line_end(text, start))
 }
 
 /// The keys before the first table, then one key per table header, in source order. Tables
@@ -103,7 +103,7 @@ fn header_range(table: Node<'_>, text: &str) -> ByteRange {
         .into_iter()
         .find(|child| matches!(child.kind(), "]" | "]]"))
         .map_or_else(
-            || line_around(text, table.start_byte()).end,
+            || line_end(text, table.start_byte()),
             |close| close.end_byte(),
         );
     ByteRange::new(table.start_byte(), end)

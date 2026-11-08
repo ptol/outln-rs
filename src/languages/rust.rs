@@ -2,53 +2,50 @@
 
 use tree_sitter::Node;
 
-use crate::code_outline::code_outline;
-use crate::header_comment::{
-    BlockComments, CommentSyntax, DocMarkers, after_whitespace, block_comment_end,
-    find_header_comment,
+use crate::code_outline::{CodeLanguage, OutlineLevel};
+use crate::comment_syntax::{
+    BLOCK_COMMENT_OPEN, BlockComments, CommentSyntax, INNER_DOC_BLOCK, INNER_DOC_LINE, LineMarker,
+    OUTER_DOC_BLOCK, OUTER_DOC_LINE, block_comment_end,
 };
-use crate::language_engine::LanguageEngine;
-use crate::leading_annotations::PrecedingNode;
-use crate::outline::{FileSummary, Header, Outline, OutlineLine};
-use crate::signature::Signature;
-use crate::source_text::{ByteRange, line_around, trim_end};
-use crate::syntax_tree::{child_of_kind, has_child_of_kind, one_line_source_before};
+use crate::header_comment::HeaderChoice;
+use crate::leading_annotations::{Annotations, PlainComments};
+use crate::outline::OutlineLine;
+use crate::signature::{before_semicolon, body_start};
+use crate::source_text::{ByteRange, after_whitespace, line_end, quoted_len};
+use crate::syntax_tree::{child_of_kind, has_child_of_kind};
 
 /// The language engine for Rust.
-pub(crate) struct Rust;
-
-impl LanguageEngine for Rust {
-    fn extensions(&self) -> &'static [&'static str] {
-        &["rs"]
-    }
-
-    fn outline(&self, text: &str) -> Outline {
-        code_outline(
-            text,
-            &tree_sitter_rust::LANGUAGE.into(),
-            header(text),
-            preceding_node,
-            declaration_line,
-        )
-    }
-
-    fn file_summary(&self, text: &str) -> FileSummary {
-        // The header is found line by line, so the glob view never parses a file.
-        FileSummary::from(header(text))
-    }
-}
-
-/// The header comment: the first `//!` or `/*!` comment, or else the first plain comment,
-/// among the comments before the first declaration. A shebang and inner attributes
-/// (`#![...]`) may come before or between them.
-fn header(text: &str) -> Option<Header> {
-    find_header_comment(text, COMMENT_SYNTAX, preamble_end)
-}
-
-/// Rust's doc comments say what they document, and its block comments nest.
-const COMMENT_SYNTAX: CommentSyntax = CommentSyntax::CFamily {
-    doc_markers: DocMarkers::InnerAndOuter,
-    block_comments: BlockComments::Nested,
+///
+/// The header comment is the first `//!` or `/*!` comment, or else the first plain comment,
+/// among the comments before the first declaration; a shebang and inner attributes (`#![...]`)
+/// may come before or between them.
+pub(crate) static RUST: CodeLanguage = CodeLanguage {
+    extensions: &["rs"],
+    grammar: || tree_sitter_rust::LANGUAGE.into(),
+    // Rust's doc comments say what they document, and its block comments nest.
+    comment_syntax: CommentSyntax {
+        line: Some(LineMarker::Slashes),
+        block: Some(BlockComments::Nested),
+        doc_markers: &[
+            INNER_DOC_LINE,
+            OUTER_DOC_LINE,
+            INNER_DOC_BLOCK,
+            OUTER_DOC_BLOCK,
+        ],
+    },
+    header_choice: HeaderChoice::InnerDocElseFirstPlain,
+    preamble_end,
+    // `///` and `/** */` doc comments and `#[...]` attributes belong to the declaration below
+    // them; a `#![...]` attribute (`inner_attribute_item`), like a `//!` comment, belongs to the
+    // enclosing module instead.
+    annotations: Annotations {
+        comment_kinds: &["line_comment", "block_comment"],
+        attribute_kinds: &["attribute_item"],
+        plain_comments: PlainComments::SteppedOver,
+    },
+    // Literals kept as written, such as the ABI string of `extern "C"`.
+    verbatim_kinds: &["string_literal", "raw_string_literal", "char_literal"],
+    declaration_lines,
 };
 
 /// Where the preamble starting at byte `start` ends: a shebang at the start of the file, or an
@@ -62,7 +59,7 @@ fn preamble_end(text: &str, start: usize) -> Option<usize> {
         return attribute_end(text, after_hash_bang);
     }
     // In Rust, `#!` starts a shebang only on the first line and when no `[` follows it.
-    (start == 0).then_some(line_around(text, start).end)
+    (start == 0).then_some(line_end(text, start))
 }
 
 /// Where the attribute whose `[` is at byte `open` ends, after its matching `]`, or `None` if it
@@ -73,9 +70,9 @@ fn attribute_end(text: &str, open: usize) -> Option<usize> {
     let mut index = open;
     while let Some(character) = text[index..].chars().next() {
         let rest = &text[index..];
-        index += if rest.starts_with("//") {
-            line_around(text, index).end - index
-        } else if rest.starts_with("/*") {
+        index += if rest.starts_with(LineMarker::Slashes.text()) {
+            line_end(text, index) - index
+        } else if rest.starts_with(BLOCK_COMMENT_OPEN) {
             block_comment_end(text, index, BlockComments::Nested)? - index
         } else if rest.starts_with('"') || is_raw_string_start(rest) {
             string_literal_len(rest)?
@@ -112,16 +109,7 @@ fn string_literal_len(rest: &str) -> Option<usize> {
         let body_start = 1 + hashes + 1;
         return Some(body_start + rest.get(body_start..)?.find(&closing)? + closing.len());
     }
-    let mut escaped = false;
-    for (offset, character) in rest.char_indices().skip(1) {
-        match character {
-            _ if escaped => escaped = false,
-            '\\' => escaped = true,
-            '"' => return Some(offset + 1),
-            _ => {}
-        }
-    }
-    None
+    quoted_len(rest, '"')
 }
 
 /// The length of the character literal at the start of `rest` (`'['`, `'\''`, `'\u{5d}'`), or
@@ -141,41 +129,20 @@ fn char_literal_len(rest: &str) -> Option<usize> {
         .then_some(1 + literal_len + 1)
 }
 
-/// What a node before a declaration is to its leading annotations: `///` and `/** */` doc
-/// comments and `#[...]` attributes belong to it. A `//!` comment or `#![...]` attribute
-/// belongs to the enclosing module instead, so it ends the walk.
-fn preceding_node(node: Node<'_>, _text: &str) -> PrecedingNode {
-    match node.kind() {
-        "attribute_item" => PrecedingNode::Attribute,
-        "line_comment" | "block_comment" => {
-            if node.child_by_field_name("outer").is_some() {
-                PrecedingNode::DocComment
-            } else if node.child_by_field_name("inner").is_some() {
-                PrecedingNode::Other
-            } else {
-                PrecedingNode::PlainComment
-            }
-        }
-        _ => PrecedingNode::Other,
-    }
-}
-
-/// Literal node kinds kept as written when source is put on one line, such as the ABI string
-/// of `extern "C"`.
-const VERBATIM_KINDS: &[&str] = &["string_literal", "raw_string_literal", "char_literal"];
-
-/// The outline line of a top-level node with line range `range`, or `None` for a node that
-/// isn't a listed declaration.
-fn declaration_line(node: Node<'_>, range: ByteRange, text: &str) -> Option<OutlineLine> {
-    let signature_end = signature_end(node)?;
-    let signature = Signature {
-        text: one_line_source_before(node, signature_end, text, VERBATIM_KINDS),
-        // `signature_end` is where the next token starts, so this leaves out the whitespace
-        // before a body or `=`.
-        highlight_end: trim_end(text, ByteRange::new(node.start_byte(), signature_end)).end,
+/// The outline line of a declaration with line range `range`; nothing for a node that isn't a
+/// listed declaration.
+fn declaration_lines(
+    level: &OutlineLevel<'_>,
+    node: Node<'_>,
+    range: ByteRange,
+    lines: &mut Vec<OutlineLine>,
+) {
+    let Some(signature_end) = signature_end(node) else {
+        return;
     };
+    let signature = level.signature_before(node, signature_end);
     // Attributes are siblings of the declaration, so its node starts at its first keyword.
-    Some(signature.into_outline_line(range, node.start_byte(), 0))
+    lines.push(level.outline_line(signature, range, node.start_byte()));
 }
 
 /// Where a declaration's signature ends, or `None` for a node that isn't a listed declaration
@@ -187,15 +154,10 @@ fn declaration_line(node: Node<'_>, range: ByteRange, text: &str) -> Option<Outl
 /// `;` of anything else (a tuple or unit `struct`, a `type` alias with its type, `mod name;`, a
 /// function without a body, `extern crate`, `pub use`).
 fn signature_end(node: Node<'_>) -> Option<usize> {
-    let body_start = || {
-        node.child_by_field_name("body")
-            .filter(|body| body.kind() != "ordered_field_declaration_list")
-            .map(|body| body.start_byte())
-    };
     match node.kind() {
         "function_item" | "impl_item" | "trait_item" | "enum_item" | "union_item"
         | "struct_item" | "mod_item" | "foreign_mod_item" => {
-            Some(body_start().unwrap_or_else(|| before_semicolon(node)))
+            Some(body_start(node, TUPLE_FIELDS).unwrap_or_else(|| before_semicolon(node)))
         }
         "const_item" | "static_item" => Some(
             child_of_kind(node, "=")
@@ -212,29 +174,18 @@ fn signature_end(node: Node<'_>) -> Option<usize> {
     }
 }
 
-/// Where the node's `;` starts, or the node's end without one; in the declarations that have
-/// one, it is their last token.
-fn before_semicolon(node: Node<'_>) -> usize {
-    child_of_kind(node, ";").map_or(node.end_byte(), |semicolon| semicolon.start_byte())
-}
+/// A tuple struct's fields, which tree-sitter-rust calls its body but which are part of its
+/// signature: `struct Pair<T>(T, T) where T: Copy`.
+const TUPLE_FIELDS: &[&str] = &["ordered_field_declaration_list"];
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn outline_lines(text: &str) -> Vec<(String, ByteRange)> {
-        Rust.outline(text)
-            .lines
-            .into_iter()
-            .map(|line| (line.text, line.range))
-            .collect()
-    }
+    use crate::language_engine::{outline_of, outline_texts};
+    use crate::outline::Header;
 
     fn signatures(text: &str) -> Vec<String> {
-        outline_lines(text)
-            .into_iter()
-            .map(|(text, _)| text)
-            .collect()
+        outline_texts(&RUST, text)
     }
 
     #[test]
@@ -308,25 +259,34 @@ mod tests {
     #[test]
     fn the_line_range_starts_at_the_first_doc_comment_or_attribute_above() {
         let text = "fn a() {}\n/// Docs.\n#[derive(Debug)]\n// Note.\nstruct B;\n";
-        assert_eq!(outline_lines(text)[1].1, ByteRange::new(10, text.len() - 1));
+        assert_eq!(
+            outline_of(&RUST, text).lines[1].range,
+            ByteRange::new(10, text.len() - 1)
+        );
     }
 
     #[test]
     fn attributes_stay_attached_across_blank_lines_but_doc_comments_do_not() {
         let text = "/// Far.\n\n#[cfg(test)]\n\nmod tests {}\n";
-        assert_eq!(outline_lines(text)[0].1.start, text.find("#[").unwrap());
+        assert_eq!(
+            outline_of(&RUST, text).lines[0].range.start,
+            text.find("#[").unwrap()
+        );
     }
 
     #[test]
     fn plain_comments_inner_docs_and_trailing_comments_do_not_start_a_range() {
         let text = "//! Module.\nconst A: u8 = 1; // One.\n// Plain.\nfn b() {}\n";
-        assert_eq!(outline_lines(text)[1].1.start, text.find("fn b").unwrap());
+        assert_eq!(
+            outline_of(&RUST, text).lines[1].range.start,
+            text.find("fn b").unwrap()
+        );
     }
 
     #[test]
     fn the_header_comment_prefers_inner_docs_and_skips_inner_attributes() {
         let text = "// Copyright.\n#![expect(\n    clippy::x,\n    reason = \"a ] in a string\"\n)]\n//! Docs.\nfn main() {}\n";
-        let Some(Header::Comment(lines)) = header(text) else {
+        let Some(Header::Comment(lines)) = RUST.header(text) else {
             panic!("expected a header comment");
         };
         assert_eq!(lines[0].text, "Docs.");
@@ -363,7 +323,7 @@ mod tests {
     #[test]
     fn code_after_an_inner_attribute_on_its_line_ends_the_header_search() {
         assert_eq!(
-            header("#![allow(dead_code)] fn main() {}\n// Late.\n"),
+            RUST.header("#![allow(dead_code)] fn main() {}\n// Late.\n"),
             None
         );
     }
@@ -371,25 +331,34 @@ mod tests {
     #[test]
     fn an_attribute_stays_attached_across_a_plain_comment_and_a_blank_line() {
         let text = "#[cfg(test)]\n// Note.\n\nfn f() {}\n";
-        assert_eq!(outline_lines(text)[0].1.start, 0);
+        assert_eq!(outline_of(&RUST, text).lines[0].range.start, 0);
     }
 
     #[test]
     fn a_doc_comment_right_below_the_inner_doc_header_is_attached() {
         let text = "//! Header.\n/// Docs.\nfn f() {}\n";
-        assert_eq!(outline_lines(text)[0].1.start, text.find("///").unwrap());
+        assert_eq!(
+            outline_of(&RUST, text).lines[0].range.start,
+            text.find("///").unwrap()
+        );
     }
 
     #[test]
     fn a_blank_line_inside_a_plain_comment_does_not_detach_a_doc_comment() {
         // A `//!` header, so the plain block comment isn't the header comment.
         let text = "//! Header.\n/// Docs.\n/*\nnote\n\n*/\nfn f() {}\n";
-        assert_eq!(outline_lines(text)[0].1.start, text.find("///").unwrap());
+        assert_eq!(
+            outline_of(&RUST, text).lines[0].range.start,
+            text.find("///").unwrap()
+        );
     }
 
     #[test]
     fn a_doc_comment_after_another_comment_on_its_line_is_still_attached() {
         let text = "/* Banner. */ /// Docs.\nfn f() {}\n";
-        assert_eq!(outline_lines(text)[0].1.start, text.find("///").unwrap());
+        assert_eq!(
+            outline_of(&RUST, text).lines[0].range.start,
+            text.find("///").unwrap()
+        );
     }
 }

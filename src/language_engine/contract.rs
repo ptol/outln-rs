@@ -1,4 +1,4 @@
-//! The checks every registered language engine must pass: one engine per extension, an engine sample per engine, and output that stays inside the text on any input, half-edited files included.
+//! The checks every registered language engine must pass: one engine per extension, an engine sample per engine that parses without syntax errors, and output that stays inside the text on any input, half-edited files included.
 //!
 //! These run over `ENGINES`, so a new engine is checked as soon as it's registered; its own
 //! behaviour is tested in its module and its casefiles.
@@ -14,7 +14,8 @@ use crate::outline::{
     FileSummary, Header, Outline, highlights, render_file_summary, render_outline,
 };
 use crate::source_file::load;
-use crate::source_text::{ByteRange, LineCount, LineIndex};
+use crate::source_text::{ByteRange, LineCount, SourceText};
+use crate::syntax_tree::parse;
 
 /// The engine samples, relative to the crate root: one per engine, named `sample.<extension>`
 /// after the engine's first extension. `just build-static` outlines them too.
@@ -106,7 +107,7 @@ fn every_engine_sample_has_a_header_and_declarations() {
     for &engine in ENGINES {
         let name = sample_name(engine);
         let text = sample_text(engine);
-        let outline = engine.outline(&text);
+        let outline = engine.outline(&SourceText::new(&text));
         assert!(
             outline.header.as_ref().is_some_and(Header::has_text),
             "{name} needs a header with text"
@@ -115,6 +116,24 @@ fn every_engine_sample_has_a_header_and_declarations() {
         assert!(
             !matches!(engine.file_summary(&text), FileSummary::Empty),
             "{name} needs a file summary"
+        );
+    }
+}
+
+/// A syntax error in a sample would hide its declarations behind error recovery, and it shows a
+/// grammar that doesn't load or doesn't parse the language it's registered for.
+#[test]
+fn every_engine_sample_parses_without_syntax_errors() {
+    for &engine in ENGINES {
+        let Some(grammar) = engine.grammar() else {
+            continue;
+        };
+        let tree = parse(&sample_text(engine), &grammar);
+        assert!(
+            !tree.root_node().has_error(),
+            "{} has a syntax error: {}",
+            sample_name(engine),
+            tree.root_node().to_sexp()
         );
     }
 }
@@ -163,7 +182,8 @@ fn check_output(engine: &dyn LanguageEngine, text: &str) {
 /// Outlines and summarizes `text`, checks every byte range in the outline, then renders it as
 /// file mode, debug mode, and the glob view do.
 fn check_ranges_and_render(engine: &dyn LanguageEngine, text: &str) {
-    let outline = engine.outline(text);
+    let source = SourceText::new(text);
+    let outline = engine.outline(&source);
     for range in output_ranges(&outline) {
         assert!(
             text.get(range.as_range()).is_some(),
@@ -180,7 +200,7 @@ fn check_ranges_and_render(engine: &dyn LanguageEngine, text: &str) {
             line.range
         );
     }
-    render_outline("sample", &outline, &LineIndex::new(text));
+    render_outline("sample", &outline, &source.line_index);
     highlight(text, highlights(&outline));
     render_file_summary("sample", LineCount::of(text), &engine.file_summary(text));
 }

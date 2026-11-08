@@ -1,4 +1,4 @@
-//! Source text: normalizes a file's bytes for language engines, and maps byte ranges to line ranges.
+//! Source text: normalizes a file's bytes for language engines, maps byte ranges to line ranges, and scans text for line ends, whitespace, and quoted strings.
 
 use std::fmt;
 use std::ops::Range;
@@ -144,13 +144,66 @@ pub(crate) fn lines_with_offsets(text: &str) -> impl Iterator<Item = (usize, &st
     })
 }
 
-/// Byte range of the line containing `offset`, without its newline.
-pub(crate) fn line_around(text: &str, offset: usize) -> ByteRange {
-    let start = text[..offset].rfind('\n').map_or(0, |newline| newline + 1);
-    let end = text[offset..]
+/// A file's normalized text with its [`LineIndex`]: what a language engine outlines.
+///
+/// The index is built once per file and shared by the engine and the rendering, so finding the
+/// line around an offset costs a binary search instead of a scan to the line's ends, which made
+/// outlines of long lines with many declarations quadratic in the line's length.
+pub(crate) struct SourceText<'text> {
+    pub(crate) text: &'text str,
+    pub(crate) line_index: LineIndex,
+}
+
+impl<'text> SourceText<'text> {
+    pub(crate) fn new(text: &'text str) -> Self {
+        Self {
+            text,
+            line_index: LineIndex::new(text),
+        }
+    }
+
+    /// Byte range of the line containing `offset`, without its newline.
+    pub(crate) fn line_around(&self, offset: usize) -> ByteRange {
+        let line = self.line_index.line_of(offset);
+        // `line_of` is 1-based and the first line starts at 0, so `line` is at least 1.
+        let start = self.line_index.line_starts[line - 1];
+        let end = self
+            .line_index
+            .line_starts
+            .get(line)
+            .map_or(self.text.len(), |next_start| next_start - 1);
+        ByteRange::new(start, end)
+    }
+}
+
+/// Where the line containing `offset` ends, before its newline, or the end of `text`. Scans
+/// forward only, for code that reads a file line by line without a [`LineIndex`] (header
+/// comments, which the glob view reads for every file).
+pub(crate) fn line_end(text: &str, offset: usize) -> usize {
+    text[offset..]
         .find('\n')
-        .map_or(text.len(), |newline| offset + newline);
-    ByteRange::new(start, end)
+        .map_or(text.len(), |newline| offset + newline)
+}
+
+/// The offset of the first non-whitespace character at or after `offset`, or the end of `text`.
+pub(crate) fn after_whitespace(text: &str, offset: usize) -> usize {
+    text.len() - text[offset..].trim_start().len()
+}
+
+/// The length of the quoted string at the start of `rest`, which opens with the ASCII `quote`,
+/// through its closing quote (`\` escapes the next character), or `None` when it never closes.
+pub(crate) fn quoted_len(rest: &str, quote: char) -> Option<usize> {
+    debug_assert!(quote.is_ascii() && rest.starts_with(quote));
+    let mut escaped = false;
+    for (offset, character) in rest.char_indices().skip(1) {
+        match character {
+            _ if escaped => escaped = false,
+            '\\' => escaped = true,
+            _ if character == quote => return Some(offset + quote.len_utf8()),
+            _ => {}
+        }
+    }
+    None
 }
 
 /// Shrinks a range so it ends at its last non-whitespace character.
@@ -223,9 +276,14 @@ mod tests {
 
     #[test]
     fn line_around_excludes_the_newline() {
-        let text = "ab\ncd\nef";
-        assert_eq!(line_around(text, 4), ByteRange::new(3, 5));
-        assert_eq!(line_around(text, 7), ByteRange::new(6, 8));
+        let source = SourceText::new("ab\ncd\nef\n");
+        assert_eq!(source.line_around(0), ByteRange::new(0, 2));
+        assert_eq!(source.line_around(4), ByteRange::new(3, 5));
+        assert_eq!(source.line_around(5), ByteRange::new(3, 5));
+        assert_eq!(source.line_around(7), ByteRange::new(6, 8));
+        assert_eq!(source.line_around(9), ByteRange::new(9, 9));
+        assert_eq!(line_end(source.text, 4), 5);
+        assert_eq!(line_end(source.text, 9), 9);
     }
 
     #[test]

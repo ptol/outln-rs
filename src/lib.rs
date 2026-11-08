@@ -20,6 +20,7 @@
 
 mod cli;
 mod code_outline;
+mod comment_syntax;
 mod debug_mode;
 mod discovery;
 mod file_mode;

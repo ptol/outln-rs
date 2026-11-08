@@ -152,7 +152,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-008: Parse TypeScript and JavaScript with tree-sitter, on a shared code-engine layer
 
-**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations) and ADR-018 (`CommentSyntax` gains block-only comments)
+**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations), ADR-018 (`CommentSyntax` gains block-only comments), and ADR-021 (the three grammars are three `CodeLanguage` statics instead of one `Script` type)
 
 ### Decision
 
@@ -240,7 +240,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-012: Doc-aware header comments, first paragraphs, and leading annotations
 
-**Status**: Accepted (2026-11-06); amended by ADR-016 (`CommentSyntax` gains `#` comments, preamble is checked before comments, and a data file's key takes the comment lines directly above it) and ADR-018 (every CSS comment directly above a rule is its leading annotation)
+**Status**: Accepted (2026-11-06); amended by ADR-016 (`CommentSyntax` gains `#` comments, preamble is checked before comments, and a data file's key takes the comment lines directly above it), ADR-018 (every CSS comment directly above a rule is its leading annotation), and ADR-021 (`DocMarkers` splits into a `CommentSyntax` doc marker table and a `HeaderChoice`, and an `Annotations` table replaces each engine's node classifier)
 
 ### Decision
 
@@ -438,6 +438,30 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - Every outline's first line is longer by about ten characters.
 - Two functions count lines: `LineCount::of` for the glob view, which builds no `LineIndex`, and `LineIndex::line_count`; a unit test keeps them equal.
+
+## ADR-021: Code-language engines as data
+
+**Status**: Accepted (2026-11-08); amends ADR-008 and ADR-012
+
+### Decision
+
+- A code language is a `static CodeLanguage` (`src/code_outline.rs`), not a type implementing `LanguageEngine`: its extensions, grammar, `CommentSyntax`, `HeaderChoice`, preamble function, `Annotations` table, verbatim kinds, and one `declaration_lines` function. `CodeLanguage` implements `LanguageEngine` once for every code language. TypeScript, TSX, and JavaScript are three statics made by one `const fn`. The data file engine's formats are tables the same way: a `static DataFile` per format (grammar, comment syntax, preamble, and its format module's key functions) instead of a `Format` enum matched in five methods.
+- `declaration_lines` gets each node that isn't a leading annotation, at every level, with an `OutlineLevel`: the source text, the language's signature helpers (`one_line`, `signature_before`), the depth, and `declarations_inside`, which lists a node's declarations one level deeper with their own line ranges. Lines are pushed into the outline's `Vec`.
+- What a comment means and which comment is the header are separate: `comment_syntax::CommentSyntax` holds the line marker, the block comments, and a table of doc markers (prefix to `CommentKind`); `header_comment::HeaderChoice` picks the header (`FirstComment`, `InnerDocElseFirstPlain`). Leading annotations are classified from a per-language `Annotations` table of comment and attribute node kinds, reading doc-ness from the same marker table.
+- `LanguageEngine::outline` takes a `SourceText`, the text with its `LineIndex`, built once per file and shared with the rendering; engines find the line around an offset with a binary search.
+
+### Rationale
+
+- outln will hold about ten code languages. Before, each engine repeated the same wiring (extensions, `outline` calling `code_outline`, `file_summary` from the header, its comment syntax), and every helper threaded the text and the verbatim kinds; a table states only what differs, and the compiler checks that a new language fills every field.
+- `DocMarkers` mixed which markers are doc comments with which comment is the header, and each engine re-derived doc-ness its own way (text checks, tree-sitter fields, every comment). Go's header rule (the comment attached to `package`) or Java's (the first non-doc comment) are new `HeaderChoice` variants, and new doc comment forms are new `DocMarker` entries, with no edit to the shared walk.
+- Nested declarations (class members, CSS rules in an at-rule) each copied the walk that finds line ranges, with depth and "no header" constants per engine; `declarations_inside` tracks both, so listing Rust `impl` and `trait` members is a call in Rust's `declaration_lines`.
+- Scanning back and forth to a line's ends for each declaration made outlines of minified one-line files quadratic (a 1.1 MB TypeScript line of 40k functions took 1.76 s, then 0.19 s).
+
+### Consequences
+
+- An engine that isn't a tree-sitter code language (Markdown, the data file engine) still implements `LanguageEngine` itself.
+- `declaration_lines` is a plain function pointer, so a language's rules can't capture state; anything it needs comes from the `OutlineLevel` or the node.
+- Rust reads doc comments from their markers instead of tree-sitter-rust's `outer` and `inner` fields; both follow rustc's rules, and outlines of 15 000 crates.io files were unchanged.
 
 ## Dependencies
 

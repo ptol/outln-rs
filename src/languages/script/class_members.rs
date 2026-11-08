@@ -2,56 +2,34 @@
 
 use tree_sitter::Node;
 
-use super::preceding_node;
 use super::signatures::{FUNCTION_SIGNATURE_FIELDS, push_fields};
-use crate::leading_annotations::leading_annotations_start;
+use crate::code_outline::OutlineLevel;
 use crate::outline::OutlineLine;
 use crate::signature::Signature;
 use crate::source_text::ByteRange;
-use crate::syntax_tree::{child_of_kind, children, source};
+use crate::syntax_tree::{child_of_kind, source};
 
-/// Class members can't contain the file's header comment, so the walk over their leading
-/// annotations needs no header boundary.
-const NO_HEADER_END: usize = 0;
-
-/// How deep class members are nested in an outline.
-const MEMBER_DEPTH: usize = 1;
-
-/// One outline line per method-like member of a class body, in source order.
+/// The outline line of a method-like member of a class body with line range `range`, one level
+/// deeper than its class, or `None` for a member that isn't listed.
 ///
 /// Fields, static blocks, overload signatures, and members with computed names
 /// (`[Symbol.iterator]()`) or quoted names are skipped. Modifiers such as `static`, `private`,
-/// and `async` are left out of the printed signature.
-pub(super) fn member_lines(class_body: Node<'_>, text: &str) -> Vec<OutlineLine> {
-    let members = children(class_body);
-    members
-        .iter()
-        .enumerate()
-        .filter_map(|(index, member)| {
-            let (signature, highlight_start) = member_signature(*member, text)?;
-            // The JavaScript grammar makes a member's decorators part of it, while the
-            // TypeScript grammar parses them as siblings before it; both give the member a
-            // line range that includes them.
-            let start = leading_annotations_start(
-                &members[..index],
-                member.start_byte(),
-                text,
-                NO_HEADER_END,
-                preceding_node,
-            );
-            Some(signature.into_outline_line(
-                ByteRange::new(start, member.end_byte()),
-                highlight_start,
-                MEMBER_DEPTH,
-            ))
-        })
-        .collect()
+/// and `async` are left out of the printed signature. The JavaScript grammar makes a member's
+/// decorators part of it, while the TypeScript grammar parses them as siblings before it; both
+/// give the member a line range that includes them.
+pub(super) fn member_line(
+    level: &OutlineLevel<'_>,
+    member: Node<'_>,
+    range: ByteRange,
+) -> Option<OutlineLine> {
+    let (signature, highlight_start) = member_signature(member, level)?;
+    Some(level.outline_line(signature, range, highlight_start))
 }
 
 /// The member's signature (`name<T>(parameters): Return`, `get name(): Type`,
 /// `set name(value)`), and where its highlight starts: at `get`/`set` or the name, after any
 /// modifiers. `None` for a member that isn't listed.
-fn member_signature(member: Node<'_>, text: &str) -> Option<(Signature, usize)> {
+fn member_signature(member: Node<'_>, level: &OutlineLevel<'_>) -> Option<(Signature, usize)> {
     if !matches!(
         member.kind(),
         "method_definition" | "abstract_method_signature"
@@ -73,7 +51,7 @@ fn member_signature(member: Node<'_>, text: &str) -> Option<(Signature, usize)> 
         signature.text.push_str(accessor.kind());
         signature.text.push(' ');
     }
-    signature.text.push_str(source(name, text));
+    signature.text.push_str(source(name, level.text()));
     match accessor.map(|accessor| accessor.kind()) {
         // A getter takes no parameters, so its list prints as `()` whatever is inside it.
         Some("get") => {
@@ -81,10 +59,10 @@ fn member_signature(member: Node<'_>, text: &str) -> Option<(Signature, usize)> 
             if let Some(parameters) = member.child_by_field_name("parameters") {
                 signature.highlight_end = parameters.end_byte();
             }
-            push_fields(&mut signature, member, &["return_type"], text);
+            push_fields(&mut signature, member, &["return_type"], level);
         }
-        Some(_) => push_fields(&mut signature, member, &["parameters"], text),
-        None => push_fields(&mut signature, member, &FUNCTION_SIGNATURE_FIELDS, text),
+        Some(_) => push_fields(&mut signature, member, &["parameters"], level),
+        None => push_fields(&mut signature, member, &FUNCTION_SIGNATURE_FIELDS, level),
     }
     let highlight_start = accessor.map_or(name.start_byte(), |accessor| accessor.start_byte());
     Some((signature, highlight_start))

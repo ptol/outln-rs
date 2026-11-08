@@ -9,7 +9,7 @@ use crate::input_error::InputError;
 use crate::outline::highlights;
 use crate::per_file::print_each;
 use crate::source_file::load;
-use crate::source_text::ByteRange;
+use crate::source_text::{ByteRange, SourceText};
 
 const ANSI_GREEN: &str = "\x1b[32m";
 const ANSI_RESET: &str = "\x1b[0m";
@@ -54,9 +54,9 @@ pub(crate) fn run(
 }
 
 fn highlighted_source(cwd: &Path, path: &str) -> Result<String, InputError> {
-    let source = load(cwd, path)?;
-    let outline = source.engine.outline(&source.text);
-    Ok(highlight(&source.text, highlights(&outline)))
+    let file = load(cwd, path)?;
+    let outline = file.engine.outline(&SourceText::new(&file.text));
+    Ok(highlight(&file.text, highlights(&outline)))
 }
 
 /// Wraps every highlighted part of `text` in ANSI green, line by line, so each highlight
