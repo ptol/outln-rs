@@ -9,6 +9,8 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+## 0.4.1 (2026-11-09)
+
 - Publishes 0.4.0's changes (below) to crates.io: 0.4.0 was tagged but never uploaded, because CI couldn't install rustfmt for the pinned toolchain.
 
 ## 0.4.0 (2026-11-09)

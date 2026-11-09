@@ -1,6 +1,6 @@
 [package]
 name = "outln"
-version = "0.4.0"
+version = "0.4.1"
 categories = ["command-line-utilities", "development-tools"]
 edition = "2024"
 # The published crate holds only what builds it; integration tests (`tests/`), casefiles, docs,
