@@ -1,9 +1,9 @@
-# Pins the exact Rust toolchain; rustup installs it automatically on first use.
+# Pins the exact Rust toolchain, the only place it is pinned: `mise install` reads this file
+# (mise.toml's idiomatic_version_file_enable_tools), and plain rustup installs it on first use.
 # Bump deliberately (and fix any new lints in the same change).
 [toolchain]
 channel = "1.99.1"
 components = ["rustfmt", "clippy"]
-# The static build's target (`just build-static`). mise overrides this file (docs/til.md), so
-# the recipe also adds the target itself.
+# The static build's target (`just build-static`).
 targets = ["x86_64-unknown-linux-musl"]
 profile = "minimal"

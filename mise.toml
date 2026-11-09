@@ -9,11 +9,12 @@ cargo-deny = "0.20.2"
 dprint = "0.64.3"
 hk = "2.11.1"
 just = "1.59.0"
-# Must equal rust-toolchain.toml's channel: mise exports RUSTUP_TOOLCHAIN for
-# the active rust, which overrides rust-toolchain.toml (a global `rust = "latest"`
-# would otherwise win inside this repo).
-rust = "1.99.1"
 # Lints the shell scripts in scripts/ (hk.pkl); actionlint also runs it on workflow `run:` steps.
 shellcheck = "0.11.0"
 # The C compiler of the static musl build (`just build-static`, scripts/zig-cc-musl).
 zig = "0.17.1"
+
+[settings]
+# Rust comes from rust-toolchain.toml (channel, components, targets), so it isn't in [tools]: a
+# `rust` pin here would install the toolchain without those components (docs/til.md).
+idiomatic_version_file_enable_tools = ["rust"]

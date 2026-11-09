@@ -54,6 +54,7 @@ Run it without committing: `hk run pre-commit`. Preview what it would run: `hk r
 ## Troubleshooting
 
 - **Wrong Rust version** (`rustc --version` differs from `rust-toolchain.toml`): mise isn't active in this shell. Run `mise install`, or prefix commands with `mise exec --`.
+- **`rustfmt` or `clippy` is not installed for the toolchain**: the toolchain was installed without `rust-toolchain.toml`'s components. Run `rustup component add rustfmt clippy`; [til.md](til.md) explains how mise reads that file.
 - **Hook can't find a tool**: rerun `hk install --mise`.
 - **`cargo_deny` fails**: `just deny` prints the reason. An advisory against a dependency: bump it (`cargo update -p <crate>`); if no fixed version exists, ask the maintainer before adding an `ignore` entry with a `reason` to `deny.toml`. A rejected license or a second version of a crate: ask the maintainer too. Offline, it prints a note and checks against the advisory database fetched last time (and fails if there is none yet); rerun `just deny` once you're back online, since new advisories may be missing.
 - **Stash restore failed after a hook run**: check `git status`, `git diff`, `git diff --cached`, and `git stash list` before changing anything; hk also keeps patch backups (see `hk --help`).

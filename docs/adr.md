@@ -27,11 +27,11 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 
 ## ADR-002: Local-only tooling with strict lints and an auto-fixing pre-commit hook
 
-**Status**: Accepted (2026-11-06); amended by ADR-010 (replaces "No CI for now": a CI workflow publishes releases, and commits stay gated only by the hook) and ADR-026 (CI also checks every branch push and pull request)
+**Status**: Accepted (2026-11-06); amended by ADR-010 (replaces "No CI for now": a CI workflow publishes releases, and commits stay gated only by the hook) and ADR-026 (CI also checks every branch push and pull request); amended 2026-11-09 (Rust is pinned only in `rust-toolchain.toml`, which mise reads: pinning it in `mise.toml` too left CI without rustfmt)
 
 ### Decision
 
-- Rust 1.99.1 pinned in `rust-toolchain.toml` and `mise.toml`; edition 2024.
+- Rust 1.99.1 pinned in `rust-toolchain.toml` alone, which mise reads (`idiomatic_version_file_enable_tools`); edition 2024.
 - clippy `all` and `pedantic`, plus restriction lints for `unwrap`/`expect`/`panic`, printing, wildcard matches, and lint exceptions without a reason; `disallowed-methods` for process streams, environment, and clock outside `src/main.rs`; rustc's `unreachable_pub`; `unsafe` forbidden; warnings fail.
 - hk runs the pre-commit hook: it hides unstaged edits, formats staged files (rustfmt, dprint), re-stages them, then runs clippy and every test when Rust or Cargo files are staged, and the repository conventions test on every commit.
 - just provides the project commands; mise pins the tools.
@@ -46,8 +46,8 @@ Build outln in Rust, in this repo, as a single Cargo package with a library and 
 ### Consequences
 
 - A fresh clone needs `mise install` (the pinned tools, including just), then `just setup` (the hook).
-- Bumping Rust means bumping two files and fixing any new lints.
-- `mise.toml` must pin `rust`, because mise exports `RUSTUP_TOOLCHAIN`, which overrides `rust-toolchain.toml`.
+- Bumping Rust means bumping `rust-toolchain.toml`'s `channel` and fixing any new lints.
+- `mise.toml` must not pin `rust`: mise exports `RUSTUP_TOOLCHAIN`, which hides `rust-toolchain.toml` from rustup, so a mise pin installs the toolchain without that file's components and targets ([til.md](til.md)). The conventions test enforces this.
 
 ## ADR-003: Language engines return data with byte ranges into normalized text
 

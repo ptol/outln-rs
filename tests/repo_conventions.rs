@@ -7,7 +7,8 @@
 //! - Markdown files under `docs/` also have `readWhen`: the tasks that call for reading them.
 //! - Relative inline links (`[text](path)`) outside code point to files that exist;
 //!   reference-style links (`[text][id]`) and links that never close aren't checked.
-//! - Tool versions pinned in more than one file agree.
+//! - Tool versions pinned in more than one file agree, and Rust is pinned only in
+//!   `rust-toolchain.toml`, which mise reads.
 //!
 //! Files come from `git ls-files`, so ignored paths such as `target/` are never checked.
 
@@ -55,16 +56,21 @@ fn pinned_tool_versions_agree() {
     let mise = read("mise.toml");
     let rust_toolchain = read("rust-toolchain.toml");
 
-    let toolchain = toml_string(&rust_toolchain, "toolchain", "channel");
     assert!(
-        toolchain.is_some(),
+        toml_string(&rust_toolchain, "toolchain", "channel").is_some(),
         "rust-toolchain.toml should set `channel` under `[toolchain]`"
     );
     assert_eq!(
-        toml_string(&mise, "tools", "rust"),
-        toolchain,
-        "mise.toml's `rust` must equal rust-toolchain.toml's `channel`: mise exports \
-         RUSTUP_TOOLCHAIN, which overrides the toolchain file (docs/til.md)"
+        toml_value(&mise, "tools", "rust"),
+        None,
+        "mise.toml must not pin `rust`: mise would install it without rust-toolchain.toml's \
+         components and export RUSTUP_TOOLCHAIN, which hides the toolchain file (docs/til.md)"
+    );
+    assert_eq!(
+        toml_value(&mise, "settings", "idiomatic_version_file_enable_tools"),
+        Some(r#"["rust"]"#),
+        "mise.toml's `[settings]` must set `idiomatic_version_file_enable_tools = [\"rust\"]`, \
+         so mise installs Rust from rust-toolchain.toml (docs/til.md)"
     );
 
     let hk = toml_string(&mise, "tools", "hk").expect("mise.toml should pin `hk` under `[tools]`");
@@ -378,9 +384,9 @@ fn is_relative_path(destination: &str) -> bool {
         && !destination.starts_with("mailto:")
 }
 
-/// The string value of `key = "value"` (or `'value'`) inside `[table]` of a TOML file.
-/// Enough for the simple pin files checked here, not a general TOML parser.
-fn toml_string<'a>(toml: &'a str, table: &str, key: &str) -> Option<&'a str> {
+/// The raw value text of `key = value` inside `[table]` of a TOML file, trimmed, with any
+/// trailing comment kept. Enough for the simple pin files checked here, not a general TOML parser.
+fn toml_value<'a>(toml: &'a str, table: &str, key: &str) -> Option<&'a str> {
     let mut current_table = "";
     for line in toml.lines().map(str::trim) {
         if let Some(header) = line
@@ -394,15 +400,20 @@ fn toml_string<'a>(toml: &'a str, table: &str, key: &str) -> Option<&'a str> {
             continue;
         };
         if current_table == table && name.trim() == key {
-            let value = value.trim_start();
-            let quote = value
-                .chars()
-                .next()
-                .filter(|first| matches!(first, '"' | '\''))?;
-            return value[1..].split(quote).next();
+            return Some(value.trim());
         }
     }
     None
+}
+
+/// The string value of `key = "value"` (or `'value'`) inside `[table]` of a TOML file.
+fn toml_string<'a>(toml: &'a str, table: &str, key: &str) -> Option<&'a str> {
+    let value = toml_value(toml, table, key)?;
+    let quote = value
+        .chars()
+        .next()
+        .filter(|first| matches!(first, '"' | '\''))?;
+    value[1..].split(quote).next()
 }
 
 // The checker's own cases: a false positive here would block every commit.
@@ -545,4 +556,15 @@ fn toml_string_reads_quoted_values_in_the_named_table() {
     assert_eq!(toml_string(toml, "tools", "hk"), Some("2.11.1"));
     assert_eq!(toml_string(toml, "tools", "just"), None);
     assert_eq!(toml_string(toml, "tools", "missing"), None);
+}
+
+#[test]
+fn toml_value_reads_unquoted_values_in_the_named_table() {
+    let toml = "[tools]\nrust = { version = \"1.99.1\" }\n[settings]\nenabled = [\"rust\"]\n";
+    assert_eq!(
+        toml_value(toml, "tools", "rust"),
+        Some(r#"{ version = "1.99.1" }"#)
+    );
+    assert_eq!(toml_value(toml, "settings", "enabled"), Some(r#"["rust"]"#));
+    assert_eq!(toml_string(toml, "settings", "enabled"), None);
 }

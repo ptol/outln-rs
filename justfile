@@ -22,7 +22,6 @@ build-static:
     set -euo pipefail
     target=x86_64-unknown-linux-musl
     binary="target/$target/release/outln"
-    rustup --quiet target add "$target"
     CC_x86_64_unknown_linux_musl="$PWD/scripts/zig-cc-musl" cargo build --release --locked --target "$target"
     # Read the headers first, so a missing or failing readelf stops the recipe instead of
     # passing as "no dynamic entries".

@@ -9,6 +9,8 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+- Publishes 0.4.0's changes (below) to crates.io: 0.4.0 was tagged but never uploaded, because CI couldn't install rustfmt for the pinned toolchain.
+
 ## 0.4.0 (2026-11-09)
 
 - Every engine: a lone CR (a file with classic Mac OS line endings) is a line break, as CRLF already was: such a file's line count, line ranges, and header comment count each CR-ended line, and no raw CR is printed.

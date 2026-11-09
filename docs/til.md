@@ -9,7 +9,11 @@ Add an entry when something cost you time and would cost the next agent time too
 
 ## mise overrides rust-toolchain.toml
 
-`rustc --version` showed the global Rust instead of the pinned one: mise exports `RUSTUP_TOOLCHAIN` for its active `rust`, and that environment variable beats `rust-toolchain.toml`. `mise.toml` therefore pins `rust` to the same version.
+`rustc --version` showed the global Rust instead of the pinned one: mise exports `RUSTUP_TOOLCHAIN` for its active `rust`, and that environment variable beats `rust-toolchain.toml`.
+
+Pinning `rust` in `mise.toml` too fixed the version but broke CI: `rustfmt` was missing for the toolchain. mise installed Rust with rustup's own profile, and since `RUSTUP_TOOLCHAIN` hides `rust-toolchain.toml`, rustup never added its `components` or `targets`. A machine that installed them earlier hides the problem; a fresh one (the CI runner) shows it.
+
+So `mise.toml` sets `idiomatic_version_file_enable_tools = ["rust"]` and has no `rust` entry: mise installs Rust from `rust-toolchain.toml` (channel, profile, components, targets), and that file is the toolchain's only pin. Check with `mise tool rust`: its `Config Source` should be `rust-toolchain.toml`.
 
 ## Plain rustfmt formats as edition 2015
 

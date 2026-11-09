@@ -71,6 +71,11 @@ version = "1.99.1"
 backend = "core:rust"
 specifiers = ["1.99.1"]
 
+[tools.rust.options]
+components = "clippy,rustfmt"
+profile = "minimal"
+targets = "x86_64-unknown-linux-musl"
+
 [[tools.shellcheck]]
 version = "0.11.0"
 backend = "aqua:koalaman/shellcheck"
