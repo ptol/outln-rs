@@ -95,3 +95,4 @@ specifiers = ["0.17.1"]
 [tools.zig."platforms.linux-x64"]
 checksum = "sha256:3581863e3cbcfd0fce0efc682ce7e9e93da96668a977791d356a26d2a7e9b17a"
 url = "https://ziglang.org/download/0.17.1/zig-x86_64-linux-0.17.1.tar.xz"
+provenance = "minisign"
