@@ -9,6 +9,8 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+## 0.4.0 (2026-11-09)
+
 - Every engine: a lone CR (a file with classic Mac OS line endings) is a line break, as CRLF already was: such a file's line count, line ranges, and header comment count each CR-ended line, and no raw CR is printed.
 - CSS: a style rule without selectors (`{ color: red }`, in a half-edited file) is no longer listed as a blank outline line.
 - Markdown frontmatter is read as YAML, by the YAML engine's rules ([ADR-023](adr.md)):
