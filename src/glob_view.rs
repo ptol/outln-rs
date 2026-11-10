@@ -175,8 +175,9 @@ fn render_directory_summary(directory: &str, file_count: usize, lines: LineCount
 
 /// The files and directory summaries the arguments name, plus errors for directories and
 /// explicit files that can't be used (directory errors first). The depth limit applies to
-/// directory arguments only: a glob pattern sets its own depth, and a file argument is listed
-/// as given.
+/// directory arguments only: a glob pattern sets its own depth, and a file argument always
+/// gets a file summary. Every listed path is in normal form ([`normalized_path`]), so each
+/// spelling of a file or directory lists once.
 fn discover(
     arguments: &[(String, ArgumentKind)],
     walker: &FileWalker<'_>,
@@ -188,9 +189,12 @@ fn discover(
     for (argument, kind) in arguments {
         match kind {
             ArgumentKind::Directory => {
-                let found = walker.files_in(argument);
+                // Normalized once here, rather than by `directory_at_depth_limit` for each
+                // file found.
+                let directory = normalized_path(argument);
+                let found = walker.files_in(&directory);
                 directory_errors.extend(found.errors);
-                listing.add_walked(argument, found.files, depth_limit);
+                listing.add_walked(&directory, found.files, depth_limit);
             }
             ArgumentKind::Glob => {
                 let found = walker.glob_matches(argument);
@@ -206,8 +210,6 @@ fn discover(
             ArgumentKind::File if engine_for(argument).is_none() => {
                 file_errors.push(InputError::UnsupportedFileType(argument.clone()));
             }
-            // Directories and globs list display paths in normal form too, so each spelling
-            // of a file lists once.
             ArgumentKind::File => {
                 listing.files.insert(normalized_path(argument).into_owned());
             }
@@ -218,8 +220,8 @@ fn discover(
 }
 
 impl Listing {
-    /// Adds the files found under a directory argument: each file below the depth limit to the
-    /// directory at the limit that holds it, the others as files.
+    /// Adds the files found under a directory argument, `directory` in normal form: each file
+    /// below the depth limit to the directory at the limit that holds it, the others as files.
     fn add_walked(
         &mut self,
         directory: &str,

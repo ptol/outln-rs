@@ -378,15 +378,15 @@ fn display_prefix(display_root: &str) -> (&str, &str) {
 
 /// The directory at `depth_limit` that holds `file`, as its display path with a trailing `/`,
 /// or `None` for a file within the limit: depth 1 keeps the files directly in `directory`.
-/// `file` is a display path that [`FileWalker::files_in`] found for `directory`.
+/// `directory` is in normal form ([`normalized_path`]), and `file` a display path that
+/// [`FileWalker::files_in`] found for it.
 pub(crate) fn directory_at_depth_limit<'file>(
     directory: &str,
     file: &'file str,
     depth_limit: NonZeroUsize,
 ) -> Option<&'file str> {
     // The prefix `display_path` puts before the relative path.
-    let directory = normalized_path(directory);
-    let (root, separator) = display_prefix(&directory);
+    let (root, separator) = display_prefix(directory);
     let prefix_len = root.len() + separator.len();
     let relative = file.get(prefix_len..)?;
     let (slash, _) = relative.match_indices('/').nth(depth_limit.get() - 1)?;
@@ -468,8 +468,9 @@ mod tests {
             ("./", ""),
             ("/", "/"),
         ] {
-            let file = display_path(&normalized_path(directory), relative).unwrap();
-            let cut = |depth| directory_at_depth_limit(directory, &file, depth);
+            let directory = normalized_path(directory);
+            let file = display_path(&directory, relative).unwrap();
+            let cut = |depth| directory_at_depth_limit(&directory, &file, depth);
             assert_eq!(
                 cut(one),
                 Some(format!("{root}src/").as_str()),

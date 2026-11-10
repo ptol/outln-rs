@@ -12,7 +12,9 @@ use crate::leading_annotations::{Annotations, PlainComments};
 use crate::outline::OutlineLine;
 use crate::signature::{before_semicolon, body_start, signature_head};
 use crate::source_text::{ByteRange, after_whitespace, line_end, quoted_len};
-use crate::syntax_tree::{OneLineRules, child_of_kind, has_child_of_kind, source};
+use crate::syntax_tree::{
+    OneLineRules, child_of_kind, first_syntax_child, has_child_of_kind, source,
+};
 
 /// The language engine for Rust.
 ///
@@ -141,7 +143,8 @@ fn char_literal_len(rest: &str) -> Option<usize> {
 /// module's items); nothing for a node that isn't a listed declaration.
 ///
 /// Every level lists the same kinds, so a module's items print as top-level ones do, and an
-/// `impl` block's or trait's members are its functions, constants, and types.
+/// `impl` block's or trait's members are its functions, constants, types, and macro calls
+/// spanning several lines.
 fn declaration_lines(
     level: &OutlineLevel<'_>,
     node: Node<'_>,
@@ -263,14 +266,14 @@ fn signature_end(node: Node<'_>) -> Option<usize> {
 
 /// The macro call `node` is: the node itself, or the call an expression statement holds. The
 /// grammar wraps a call ending in `;` (`impl_ops!(…);`) in an `expression_statement` among a
-/// file's or module's items, but not among an `impl` block's or trait's members, where the `;`
-/// is an `empty_statement` of its own.
+/// file's top-level items, but not in the body of an inline `mod`, `impl` block, or trait,
+/// where the `;` is an `empty_statement` of its own.
 fn macro_call(node: Node<'_>) -> Option<Node<'_>> {
     match node.kind() {
         "macro_invocation" => Some(node),
-        "expression_statement" => node
-            .named_child(0)
-            .filter(|expression| expression.kind() == "macro_invocation"),
+        "expression_statement" => {
+            first_syntax_child(node).filter(|expression| expression.kind() == "macro_invocation")
+        }
         _ => None,
     }
 }

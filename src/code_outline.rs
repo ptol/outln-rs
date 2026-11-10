@@ -275,3 +275,29 @@ impl<'a> OutlineLevel<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::languages::rust::RUST;
+    use crate::outline::SummarizedDeclaration;
+
+    #[test]
+    fn a_macro_call_cut_by_the_summary_prefix_is_still_summarized() {
+        // No line inside the call starts at column 0, so the prefix ends inside the call, and
+        // tree-sitter closes it there.
+        let items = "    pub fn item() {}\n".repeat(DECLARATION_SUMMARY_PREFIX_BYTES / 10);
+        let text = format!("cfg_if::cfg_if! {{\n{items}}}\n\npub fn after() {{}}\n");
+        assert!(text.len() > DECLARATION_SUMMARY_PREFIX_BYTES);
+        assert_eq!(
+            RUST.file_summary(&text),
+            FileSummary::Declarations(DeclarationSummary {
+                declarations: vec![SummarizedDeclaration {
+                    text: "cfg_if::cfg_if!".to_owned(),
+                    count: 1,
+                }],
+                shown: DeclarationsShown::First,
+            })
+        );
+    }
+}

@@ -152,11 +152,12 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-008: Parse TypeScript and JavaScript with tree-sitter, on a shared code-engine layer
 
-**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations), ADR-018 (`CommentSyntax` gains block-only comments), and ADR-021 (the three grammars are three `CodeLanguage` statics instead of one `Script` type); amended 2026-11-10 (a variable declarator whose name is a destructuring pattern is listed, the pattern printed as written on one line: `const { a, b }`. These were the only top-level declarations missed over a 1,100-file TypeScript monorepo, 32 of 14,150)
+**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations), ADR-018 (`CommentSyntax` gains block-only comments), and ADR-021 (the three grammars are three `CodeLanguage` statics instead of one `Script` type); amended 2026-11-10 (destructuring declarations are listed)
 
 ### Decision
 
 - One engine type, `Script` (`src/languages/script.rs`), is registered three times in `ENGINES`, once per grammar: `tree-sitter-typescript`'s `typescript` grammar for `.ts`/`.mts`/`.cts`, its `tsx` grammar for `.tsx`, and `tree-sitter-javascript` for `.js`/`.jsx`/`.mjs`/`.cjs`. Every declaration rule is shared; the grammars differ only in syntax one of them lacks.
+- Amended 2026-11-10: a variable declarator whose name is a destructuring pattern is listed, its pattern printed as written on one line after the declaration's keywords (`const { a, b }`), without its value, because these were the only top-level declarations missed over a 1,100-file TypeScript monorepo (32 of 14,150).
 - Shared by every future code engine: `src/syntax_tree.rs` (parsing, node byte ranges, a node's source on one line) and `src/header_comment.rs` (`//` and `/* */` header comments). An engine decides only where its header comment may start.
 - `Header::Comment` holds header comment lines; `OutlineLine::depth` indents class members.
 - The header is found by scanning lines, so `file_summary` never parses.
@@ -541,7 +542,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 - `--depth N` (N ≥ 1) limits how many levels of each directory argument a glob view lists: depth 1 is the files directly inside, like `find -maxdepth 1`. Each directory N levels down that holds supported files prints one directory summary instead of its files: its path with a trailing `/`, its supported files below, and their total line count, sorted where its files would have been.
 - The walk itself is not limited: a directory is walked whole, with its ignore rules, and `glob_view` assigns each file below the limit to its directory at the limit (`discovery::directory_at_depth_limit`). The summarized files are loaded on `Context::threads` threads to count their lines; one that fails to load counts as a file without lines and isn't reported.
-- The limit applies to directory arguments only: a glob pattern already walks only as deep as it can match, and a file argument is listed as given. `--depth` conflicts with `--debug`.
+- The limit applies to directory arguments only: a glob pattern already walks only as deep as it can match, and a file argument always gets a file summary. `--depth` conflicts with `--debug`.
 - A glob view of more than 300 files ends with a hint on stderr, unless a depth limit cut a directory argument into directory summaries: it names `--depth 1` for a directory argument without a limit, and a narrower path or pattern otherwise.
 
 ### Rationale
