@@ -1,7 +1,7 @@
 - The members of a top-level `impl` block or trait (functions, constants, associated types) are listed one level deeper, each with its own line range from its leading annotations, so an agent can read one method of a long `impl` block.
 - An inline module's items are listed one level deeper too, by the same rules as top-level ones (its private `use` isn't listed); an `impl` block inside a module lists its members at depth 2.
 - Nothing below depth 2 is listed: the items of `deeper`, a module inside `inner`, are at depth 2, so the `impl` block among them prints without its member.
-- Macro calls inside an `impl` block aren't members.
+- A macro call on one line inside an `impl` block isn't a member; one spanning several lines would be, as at the top level.
 == args
 input/shapes.rs
 == file input/shapes.rs

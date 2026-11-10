@@ -1,0 +1,24 @@
+A declarator whose name is a destructuring pattern prints the pattern as written, on one line, after the declaration's keywords, and never its value, even a function (`load`, the arrow function). A pattern wrapped over several lines joins onto one line, and a default value inside the pattern is part of the pattern, so it prints. A declaration with several declarators prints one line per declarator.
+== args
+input/destructuring.ts
+== file input/destructuring.ts
+export const { a, b } = load()
+const [first, ...rest] = process.argv
+const plain = 1, { c } = obj
+let {
+  width,
+  height,
+} = size
+var { mode = defaultMode() } = options
+const { handler } = () => 1
+== stdout
+input/destructuring.ts (9 lines)
+[L1-L1] export const { a, b }
+[L2-L2] const [first, ...rest]
+[L3-L3] const plain
+[L3-L3] const { c }
+[L4-L7] let { width, height }
+[L8-L8] var { mode = defaultMode() }
+[L9-L9] const { handler }
+== stderr
+== exit 0

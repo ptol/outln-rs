@@ -1,0 +1,26 @@
+JavaScript, JSX, and TSX list destructuring declarations as TypeScript does: the pattern prints as written after the keywords. In JavaScript that includes a `using` declaration, which the TypeScript grammars parse as an error (ADR-008).
+== args
+input/destructuring.js
+input/destructuring.jsx
+input/destructuring.tsx
+== file input/destructuring.js
+export const { a, b: renamed } = load()
+let [x, , z] = point
+using { handle } = open()
+== file input/destructuring.jsx
+const { title } = props
+== file input/destructuring.tsx
+const [state, setState] = useState(0)
+== stdout
+input/destructuring.js (3 lines)
+[L1-L1] export const { a, b: renamed }
+[L2-L2] let [x, , z]
+[L3-L3] using { handle }
+
+input/destructuring.jsx (1 line)
+[L1-L1] const { title }
+
+input/destructuring.tsx (1 line)
+[L1-L1] const [state, setState]
+== stderr
+== exit 0

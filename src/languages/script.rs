@@ -274,9 +274,11 @@ fn prefixed(prefix: &str, text: String) -> String {
     }
 }
 
-/// Appends one line per declared name of a `const`, `let`, `var`, or `using` declaration, each
+/// Appends one line per declarator of a `const`, `let`, `var`, or `using` declaration, each
 /// with the line range of the whole statement. The first highlight starts at the statement's
-/// first keyword; the others at their name. Destructuring patterns declare no listed name.
+/// first keyword; the others at their name. A declarator prints its name, or its
+/// destructuring pattern as written on one line (`const { a, b }`), never its value, except
+/// a named function's parameters (`const parse = (input: string)`).
 fn variable_lines(
     declaration: Node<'_>,
     statement: Statement<'_>,
@@ -297,31 +299,52 @@ fn variable_lines(
         .filter(|child| child.kind() == "variable_declarator");
     let first_line = lines.len();
     for declarator in declarators {
-        let Some(name) = declarator
-            .child_by_field_name("name")
-            .filter(|name| name.kind() == "identifier")
-        else {
+        let Some(name) = declarator.child_by_field_name("name") else {
             continue;
         };
-        let name_text = source(name, level.text());
-        let function = declarator.child_by_field_name("value").and_then(|value| {
-            signatures::function_value(signatures::without_wrappers(value), level)
-        });
-        let signature = match function {
-            Some(function) => Signature {
-                text: format!("{name_text} = {}", function.text),
-                highlight_end: function.highlight_end,
-            },
-            None => Signature {
-                text: name_text.to_owned(),
-                highlight_end: name.end_byte(),
-            },
+        let Some(signature) = declarator_signature(*declarator, name, level) else {
+            continue;
         };
         let mut line = statement_line(level, statement, &prefix, signature);
         if lines.len() > first_line {
             line.highlight = ByteRange::new(name.start_byte(), line.highlight.end);
         }
         lines.push(line);
+    }
+}
+
+/// The signature of one declarator with name node `name`, after the declaration's keywords:
+/// the name, with the parameters of a function value (`parse = (input: string)`), or a
+/// destructuring pattern on one line (`{ a, b }`, `[first, ...rest]`); `None` for a name of
+/// any other kind, which only a syntax error makes.
+fn declarator_signature(
+    declarator: Node<'_>,
+    name: Node<'_>,
+    level: &OutlineLevel<'_>,
+) -> Option<Signature> {
+    match name.kind() {
+        "identifier" => {
+            let name_text = source(name, level.text());
+            let function = declarator.child_by_field_name("value").and_then(|value| {
+                signatures::function_value(signatures::without_wrappers(value), level)
+            });
+            Some(match function {
+                Some(function) => Signature {
+                    text: format!("{name_text} = {}", function.text),
+                    highlight_end: function.highlight_end,
+                },
+                None => Signature {
+                    text: name_text.to_owned(),
+                    highlight_end: name.end_byte(),
+                },
+            })
+        }
+        // A pattern declares several names, so its value is no one name's function.
+        "object_pattern" | "array_pattern" => Some(Signature {
+            text: level.one_line(name),
+            highlight_end: name.end_byte(),
+        }),
+        _ => None,
     }
 }
 

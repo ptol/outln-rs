@@ -1,0 +1,14 @@
+A directory given as `input` and as `./input` lists each of its files once: the glob view lists display paths in a lexical normal form (no `.` or empty segments), so `./input/a.md` and `input/a.md` are one line, printed as `input/a.md`. The first line keeps the arguments as given.
+== args
+input
+./input
+== file input/a.md
+# A
+== file input/sub/b.md
+# B
+== stdout
+glob view: input ./input
+input/a.md (1 line): # A
+input/sub/b.md (1 line): # B
+== stderr
+== exit 0

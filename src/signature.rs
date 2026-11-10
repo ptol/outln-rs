@@ -74,7 +74,9 @@ pub(crate) fn before_semicolon(node: Node<'_>) -> usize {
 ///
 /// The parameter list is the first `(` outside type parameters, whose bounds may hold
 /// parentheses of their own: `fn f<F: Fn()>(f: F)` and
-/// `function f<T extends (x: number) => void>(a: T)` both cut before `(`.
+/// `function f<T extends (x: number) => void>(a: T)` both cut before `(`. A `(` inside `{…}`
+/// or `[…]` is no parameter list either, but part of a destructuring pattern's default value:
+/// `const { a = make() }` is kept whole.
 pub(crate) fn signature_head(text: &str) -> &str {
     // Rust's `pub(crate)` and `pub(in path)` are visibilities, not parameter lists.
     let search_from = text
@@ -92,10 +94,18 @@ pub(crate) fn signature_head(text: &str) -> &str {
     head.strip_suffix('=').map_or(head, str::trim_end)
 }
 
-/// Where the first `(` outside `<…>` groups is in `text`, or `None`.
+/// Where the first `(` outside `<…>`, `{…}`, and `[…]` groups is in `text`, or `None`.
 fn parameter_list_start(text: &str) -> Option<usize> {
+    let mut pattern_depth = 0_usize;
     with_angle_depth(text)
-        .find(|&(_, character, depth)| character == '(' && depth == 0)
+        .find(|&(_, character, angle_depth)| {
+            match character {
+                '{' | '[' => pattern_depth += 1,
+                '}' | ']' => pattern_depth = pattern_depth.saturating_sub(1),
+                _ => {}
+            }
+            character == '(' && angle_depth == 0 && pattern_depth == 0
+        })
         .map(|(index, _, _)| index)
 }
 
@@ -199,6 +209,8 @@ mod tests {
                 "impl<F: Fn()> Handler for Wrapper<F>",
                 "impl<F: Fn()> Handler for Wrapper<F>",
             ),
+            ("const { a = make() }", "const { a = make() }"),
+            ("const [x = f()]", "const [x = f()]"),
         ];
         for (text, head) in cases {
             assert_eq!(signature_head(text), head, "{text}");

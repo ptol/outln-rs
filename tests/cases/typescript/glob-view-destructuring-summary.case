@@ -1,0 +1,11 @@
+A headerless file's declaration summary prints a destructuring declaration's pattern whole, a default value's call included: its `(` sits inside the pattern, so the summary doesn't take it for a parameter list and cut the line there, as it cuts `export function load` before its parameters.
+== args
+input
+== file input/options.ts
+const { mode = defaultMode(), verbose } = options
+export function load(path: string) {}
+== stdout
+glob view: input
+input/options.ts (2 lines): const { mode = defaultMode(), verbose }, export function load
+== stderr
+== exit 0

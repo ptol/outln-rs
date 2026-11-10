@@ -1,0 +1,41 @@
+A macro call that spans several lines is a declaration, so the items inside `cfg_if!` or `thread_local!` don't leave a hole in the outline: its line prints the macro's path and `!`, and its line range starts at its first leading annotation (the doc comment above `bitflags!`) and takes in a closing `;`. Nothing inside a call is listed, since the grammar gives its arguments as a token tree. The one-line `include!` hides no lines and isn't listed. Inside an inline module, a multi-line call is listed one level deeper, like the module's other items.
+== args
+input/macros.rs
+== file input/macros.rs
+cfg_if::cfg_if! {
+    if #[cfg(unix)] {
+        pub fn unix_only() {}
+    }
+}
+
+/// Flags of a file.
+#[derive(Debug)]
+bitflags! {
+    pub struct Mode: u8 {
+        const READ = 1;
+    }
+}
+
+include!("generated.rs");
+
+impl_ops!(
+    Meters,
+    Feet
+);
+
+mod platform {
+    thread_local! {
+        static COUNTER: Cell<u32> = Cell::new(0);
+    }
+    fn reset() {}
+}
+== stdout
+input/macros.rs (27 lines)
+[L1-L5] cfg_if::cfg_if!
+[L7-L13] bitflags!
+[L17-L20] impl_ops!
+[L22-L27] mod platform
+  [L23-L25] thread_local!
+  [L26-L26] fn reset()
+== stderr
+== exit 0

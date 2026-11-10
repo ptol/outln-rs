@@ -1,0 +1,15 @@
+A file given as `./input/lib.rs`, `input//lib.rs`, and `input/./lib.rs`, which the glob `./input//l*.rs` also matches, gets one file summary, under its normal form `input/lib.rs`: the glob's literal base is normalized too, so its matches start with `input/` like the files'. `input/../input/lib.rs` stays a line of its own, because resolving `..` needs the file system and can change which file a path names (through a symlink), so the normal form keeps it.
+== args
+./input//l*.rs
+./input/lib.rs
+input//lib.rs
+input/./lib.rs
+input/../input/lib.rs
+== file input/lib.rs
+//! Library.
+== stdout
+glob view: ./input//l*.rs ./input/lib.rs input//lib.rs input/./lib.rs input/../input/lib.rs
+input/../input/lib.rs (1 line): Library.
+input/lib.rs (1 line): Library.
+== stderr
+== exit 0

@@ -31,13 +31,13 @@ _Avoid_: Size, length, LOC
 
 ### Declaration
 
-A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, re-export, default export, or Markdown heading, a member, a declaration inside an inline module, a test block, a data file's key, or a CSS rule.
+A part of a file worth listing in an outline: a top-level definition such as a function, type, module, `impl` block, macro definition, Rust macro call spanning several lines, re-export, default export, or Markdown heading, a member, a declaration inside an inline module, a test block, a data file's key, or a CSS rule.
 Code says declaration even where a grammar's node kinds say item (tree-sitter-rust's `function_item`).
 _Avoid_: Symbol, definition, item
 
 ### Signature
 
-The text an outline line prints for a code declaration: its keywords and visibility, name, type parameters, parameters, return type, and `where` clause (for an `impl` block, its trait and type; for a constant, its type; for a CSS rule, its selectors or prelude), on one line and without its body or value.
+The text an outline line prints for a code declaration: its keywords and visibility, name, type parameters, parameters, return type, and `where` clause (for an `impl` block, its trait and type; for a constant, its type; for a macro call, the macro's path and `!`; for a destructuring declaration, its pattern; for a CSS rule, its selectors or prelude), on one line and without its body or value.
 _Avoid_: Head, prototype
 
 ### Leading annotation
@@ -47,7 +47,7 @@ _Avoid_: Prefix, trivia
 
 ### Member
 
-A declaration inside a class, `impl` block, or trait, listed one level under it: a class's method, accessor, or constructor, or an `impl` block's or trait's function, constant, or type.
+A declaration inside a class, `impl` block, or trait, listed one level under it: a class's method, accessor, or constructor, or an `impl` block's or trait's function, constant, type, or macro call spanning several lines.
 _Avoid_: Child, nested declaration, associated item (Rust's own word, fine in Rust-specific code)
 
 ### Test block

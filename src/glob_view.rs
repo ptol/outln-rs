@@ -6,7 +6,7 @@ use std::num::NonZeroUsize;
 use std::path::Path;
 
 use crate::ExitStatus;
-use crate::discovery::{ArgumentKind, FileWalker, directory_at_depth_limit};
+use crate::discovery::{ArgumentKind, FileWalker, directory_at_depth_limit, normalized_path};
 use crate::input_error::InputError;
 use crate::language_engine::engine_for;
 use crate::outline::render_file_summary;
@@ -206,8 +206,10 @@ fn discover(
             ArgumentKind::File if engine_for(argument).is_none() => {
                 file_errors.push(InputError::UnsupportedFileType(argument.clone()));
             }
+            // Directories and globs list display paths in normal form too, so each spelling
+            // of a file lists once.
             ArgumentKind::File => {
-                listing.files.insert(argument.clone());
+                listing.files.insert(normalized_path(argument).into_owned());
             }
         }
     }

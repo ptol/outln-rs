@@ -1,0 +1,18 @@
+With `--depth 1`, a directory given as `input` and as `./input/` prints each directory summary once, counting each file once: `input/sub/` holds two files, not four. Directory summaries use the same normal form as file summaries.
+== args
+--depth
+1
+input
+./input/
+== file input/top.md
+# Top
+== file input/sub/one.md
+# One
+== file input/sub/two.md
+# Two
+== stdout
+glob view: input ./input/
+input/sub/ (2 files, 2 lines)
+input/top.md (1 line): # Top
+== stderr
+== exit 0

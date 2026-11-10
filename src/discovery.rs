@@ -1,5 +1,6 @@
 //! Finds the files behind path arguments: classifies each argument, walks directories, and expands glob patterns.
 
+use std::borrow::Cow;
 use std::fs;
 use std::io;
 use std::num::NonZeroUsize;
@@ -94,7 +95,7 @@ fn classify_failed_lookup(cwd: &Path, argument: &str, error: io::ErrorKind) -> A
     );
     if error == io::ErrorKind::NotADirectory
         && names_directory
-        && cwd.join(without_trailing_slashes(argument)).is_file()
+        && cwd.join(&*normalized_path(argument)).is_file()
     {
         // `file.rs/`: the lookup fails only because of the trailing `/`.
         ArgumentKind::Unusable(InputError::FileNotDirectory(argument.to_owned()))
@@ -162,27 +163,33 @@ pub(crate) struct FileWalker<'a> {
 
 impl FileWalker<'_> {
     /// The supported files under `directory`, as display paths that start with `directory`
-    /// as given (without trailing slashes).
+    /// in normal form ([`normalized_path`]): `./src/` and `src` both list `src/lib.rs`.
     pub(crate) fn files_in(&self, directory: &str) -> FoundFiles {
-        self.walk(without_trailing_slashes(directory), None)
+        self.walk(&normalized_path(directory), None)
     }
 
     /// The supported files matching a glob pattern, found by walking the pattern's literal
-    /// base directory no deeper than the pattern can match.
+    /// base directory no deeper than the pattern can match. Their display paths start with
+    /// that base in normal form ([`normalized_path`]), as [`FileWalker::files_in`]'s do.
     ///
     /// Unreadable directories aren't reported: the walk covers directories the pattern may not
     /// match at all, such as `secret/` for `{docs,src}/*.md`.
     pub(crate) fn glob_matches(&self, pattern: &str) -> FoundFiles {
-        let pattern = pattern.strip_prefix("./").unwrap_or(pattern);
+        let (base, below_base) = split_glob_base(pattern);
+        let base = normalized_path(base);
+        // The walk's display paths start with the base in normal form, so the pattern they're
+        // matched against must too: `./src//*.rs` matches `src/lib.rs`. Only the literal base
+        // is normalized; the glob syntax after it is left as written.
+        let (root, separator) = display_prefix(&base);
+        let pattern = format!("{root}{separator}{below_base}");
         // `*` must not cross `/`, as in shells; `**` crosses directories.
-        let Ok(glob) = GlobBuilder::new(pattern).literal_separator(true).build() else {
+        let Ok(glob) = GlobBuilder::new(&pattern).literal_separator(true).build() else {
             return FoundFiles::default();
         };
-        let (base, below_base) = split_glob_base(pattern);
         let max_depth =
             (!below_base.contains(ANY_DIRECTORIES)).then(|| below_base.split('/').count());
         let matcher = glob.compile_matcher();
-        let mut files = self.walk(base, max_depth).files;
+        let mut files = self.walk(&base, max_depth).files;
         files.retain(|path| matcher.is_match(path));
         FoundFiles {
             files,
@@ -328,13 +335,44 @@ fn split_glob_base(pattern: &str) -> (&str, &str) {
     }
 }
 
-/// Strips trailing slashes, keeping a lone `/`.
-fn without_trailing_slashes(path: &str) -> &str {
-    let trimmed = path.trim_end_matches('/');
-    if trimmed.is_empty() && path.starts_with('/') {
-        "/"
-    } else {
-        trimmed
+/// `path` in lexical normal form, so that spellings of one path list as one: without `.`
+/// segments and empty ones (`//`, a trailing `/`), keeping a leading `/` and every `..`
+/// segment, and `.` when nothing else is left (`./`). Borrowed when `path` is already normal,
+/// as most are.
+///
+/// Resolving `..` or symlinks needs the file system and can change which file a path names
+/// (`link/..` is the parent of the link's target), so `src/../src/lib.rs` stays as it is.
+pub(crate) fn normalized_path(path: &str) -> Cow<'_, str> {
+    let (root, relative) = match path.strip_prefix('/') {
+        Some(relative) => ("/", relative),
+        None => ("", path),
+    };
+    if matches!(path, "." | "/") || relative.split('/').all(is_kept_segment) {
+        return Cow::Borrowed(path);
+    }
+    let segments: Vec<&str> = relative
+        .split('/')
+        .filter(|segment| is_kept_segment(segment))
+        .collect();
+    if root.is_empty() && segments.is_empty() {
+        return Cow::Borrowed(".");
+    }
+    Cow::Owned(format!("{root}{}", segments.join("/")))
+}
+
+/// Whether a path's normal form keeps `segment`: every one but `.` and an empty one.
+fn is_kept_segment(segment: &str) -> bool {
+    !segment.is_empty() && segment != "."
+}
+
+/// What the display path of a file below `display_root`, in normal form, starts with, as the
+/// root and the separator after it: `src` and `/`, `/` alone for the file system root, and
+/// nothing for `.`, so `./src/lib.rs` lists as `src/lib.rs`.
+fn display_prefix(display_root: &str) -> (&str, &str) {
+    match display_root {
+        "." => ("", ""),
+        "/" => ("/", ""),
+        root => (root, "/"),
     }
 }
 
@@ -347,25 +385,20 @@ pub(crate) fn directory_at_depth_limit<'file>(
     depth_limit: NonZeroUsize,
 ) -> Option<&'file str> {
     // The prefix `display_path` puts before the relative path.
-    let prefix_len = match without_trailing_slashes(directory) {
-        "." | "" => 0,
-        "/" => 1,
-        root => root.len() + 1,
-    };
+    let directory = normalized_path(directory);
+    let (root, separator) = display_prefix(&directory);
+    let prefix_len = root.len() + separator.len();
     let relative = file.get(prefix_len..)?;
     let (slash, _) = relative.match_indices('/').nth(depth_limit.get() - 1)?;
     // Up to and including the `/` after the directory's name.
     Some(&file[..=prefix_len + slash])
 }
 
-/// Joins a display root and a relative path with `/`, with no `./` prefix for the root `.`.
+/// Joins a display root in normal form and a relative path with `/` ([`display_prefix`]).
 /// `None` for a path that isn't valid UTF-8, since outln prints and reopens these paths.
 fn display_path(display_root: &str, relative: &Path) -> Option<String> {
-    let mut path = match display_root {
-        "." | "" => String::new(),
-        "/" => "/".to_owned(),
-        root => format!("{root}/"),
-    };
+    let (root, separator) = display_prefix(display_root);
+    let mut path = [root, separator].concat();
     for (index, component) in relative.components().enumerate() {
         let Component::Normal(name) = component else {
             return None;
@@ -413,7 +446,7 @@ mod tests {
     }
 
     #[test]
-    fn display_paths_keep_the_root_as_given() {
+    fn display_paths_start_with_the_root() {
         let relative = Path::new("src/a.md");
         assert_eq!(
             display_path("input", relative).as_deref(),
@@ -427,8 +460,15 @@ mod tests {
     fn directory_at_depth_limit_cuts_display_paths_after_the_limit() {
         let relative = Path::new("src/languages/rust.rs");
         let [one, two, three] = [1, 2, 3].map(|depth| NonZeroUsize::new(depth).unwrap());
-        for (directory, root) in [("docs", "docs/"), ("docs/", "docs/"), (".", ""), ("/", "/")] {
-            let file = display_path(without_trailing_slashes(directory), relative).unwrap();
+        for (directory, root) in [
+            ("docs", "docs/"),
+            ("docs/", "docs/"),
+            ("./docs//", "docs/"),
+            (".", ""),
+            ("./", ""),
+            ("/", "/"),
+        ] {
+            let file = display_path(&normalized_path(directory), relative).unwrap();
             let cut = |depth| directory_at_depth_limit(directory, &file, depth);
             assert_eq!(
                 cut(one),
@@ -438,5 +478,29 @@ mod tests {
             assert_eq!(cut(two), Some(format!("{root}src/languages/").as_str()));
             assert_eq!(cut(three), None, "{directory}");
         }
+    }
+
+    #[test]
+    fn spellings_of_one_path_share_its_normal_form() {
+        let cases = [
+            ("src/lib.rs", "src/lib.rs"),
+            ("./src/lib.rs", "src/lib.rs"),
+            ("src//lib.rs", "src/lib.rs"),
+            ("src/./lib.rs", "src/lib.rs"),
+            ("./src", "src"),
+            ("src/", "src"),
+            (".", "."),
+            ("./", "."),
+            ("", "."),
+            ("/", "/"),
+            ("//", "/"),
+            ("/abs//x.rs", "/abs/x.rs"),
+            ("../docs/til.md", "../docs/til.md"),
+            ("src/../src/lib.rs", "src/../src/lib.rs"),
+        ];
+        for (path, normal) in cases {
+            assert_eq!(normalized_path(path), normal, "{path}");
+        }
+        assert!(matches!(normalized_path("src/lib.rs"), Cow::Borrowed(_)));
     }
 }

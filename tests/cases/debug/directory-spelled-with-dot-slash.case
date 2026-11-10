@@ -1,0 +1,13 @@
+Debug mode walks a directory given as `./input/` as the glob view does: an error about a file in it names the file by its path in normal form, `input/broken.md`, as the glob view's would.
+== args
+--debug
+./input/
+== file input/broken.md escaped
+\xff
+== file input/ok.md
+# Ok
+== stdout
+«# Ok»
+== stderr
+File input/broken.md is not UTF-8 text
+== exit 1

@@ -1,0 +1,26 @@
+Debug mode highlights a multi-line macro call's path and `!`, as it highlights `macro_rules!` up to its name; the arguments and the one-line `include!` stay unhighlighted.
+== args
+--debug
+input/macros.rs
+== file input/macros.rs
+thread_local! {
+    static COUNTER: Cell<u32> = Cell::new(0);
+}
+
+include!("generated.rs");
+
+std::impl_ops!(
+    Meters
+);
+== stdout
+«thread_local!» {
+    static COUNTER: Cell<u32> = Cell::new(0);
+}
+
+include!("generated.rs");
+
+«std::impl_ops!»(
+    Meters
+);
+== stderr
+== exit 0

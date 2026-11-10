@@ -46,6 +46,9 @@ macro_rules! make_id {
     };
 }
 pub use fmt::Write;
+thread_local! {
+    static COUNT: u8 = 0;
+}
 #[cfg(test)]
 mod tests {}
 unsafe extern "C" {

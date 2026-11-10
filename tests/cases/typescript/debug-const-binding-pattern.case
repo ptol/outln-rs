@@ -1,0 +1,10 @@
+In `const a = 1, { b } = obj`, debug mode highlights `const a`, then the destructuring pattern `{ b }` of the second declarator but not its value, which a pattern's outline line never prints.
+== args
+--debug
+input/const-binding-pattern.ts
+== file input/const-binding-pattern.ts
+const a = 1, { b } = obj;
+== stdout
+«const a» = 1, «{ b }» = obj;
+== stderr
+== exit 0

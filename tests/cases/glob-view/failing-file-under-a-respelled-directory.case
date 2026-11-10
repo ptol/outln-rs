@@ -1,0 +1,13 @@
+An error about a file found under a directory names the file by its listed path, in normal form (`input/broken.md` for the argument `./input/`), while the glob view's first line keeps the argument as given.
+== args
+./input/
+== file input/broken.md escaped
+\xff
+== file input/ok.md
+# Ok
+== stdout
+glob view: ./input/
+input/ok.md (1 line): # Ok
+== stderr
+File input/broken.md is not UTF-8 text
+== exit 1

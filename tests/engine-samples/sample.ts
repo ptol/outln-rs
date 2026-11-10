@@ -21,6 +21,7 @@ interface Shape {
   size: number;
 }
 type Id = string | number;
+const { width, height = measure() }: Size = box;
 enum Role {
   Admin,
 }

@@ -9,6 +9,10 @@ Add entries as bullets under `## Unreleased`; `just release` renames it to the v
 
 ## Unreleased
 
+- Rust: a macro call that spans several lines is listed, at every depth, as the macro's path and `!` (`[L1-L5] cfg_if::cfg_if!`), so code wrapped in `cfg_if!`, `thread_local!`, or `bitflags!` no longer leaves a hole in the outline. A call on one line stays unlisted, and nothing inside a call is listed.
+- TypeScript and JavaScript: a destructuring declaration is listed with its pattern as written, on one line and without its value: `export const { a, b }`, `const [first, ...rest]`. A declaration summary keeps a pattern's default value whole (`const { a = make() }`) instead of cutting it at the `(`.
+- Glob view: each file prints once however its path is spelled. Paths are listed in a lexical normal form, without `.` and empty segments: `outln src ./src` lists `src/lib.rs` once instead of twice, and `./src//lib.rs` lists as `src/lib.rs`. `..` segments and symlinks aren't resolved. The `glob view:` line and errors about an argument keep it as given; an error about a listed file names its listed path. File mode is unchanged.
+
 ## 0.4.1 (2026-11-09)
 
 - Publishes 0.4.0's changes (below) to crates.io: 0.4.0 was tagged but never uploaded, because CI couldn't install rustfmt for the pinned toolchain.

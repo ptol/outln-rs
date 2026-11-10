@@ -1,4 +1,4 @@
-//! Rust language engine: header comments (`//!` and `/*!` preferred over plain comments), top-level declarations with their leading annotations, the members of `impl` blocks and traits and the items of inline modules one level deeper, and runs of `mod name;` on one line, parsed with tree-sitter.
+//! Rust language engine: header comments (`//!` and `/*!` preferred over plain comments), top-level declarations with their leading annotations (macro calls among them when they span several lines), the members of `impl` blocks and traits and the items of inline modules one level deeper, and runs of `mod name;` on one line, parsed with tree-sitter.
 
 use tree_sitter::Node;
 
@@ -228,14 +228,18 @@ fn continues_module_run(
 }
 
 /// Where a declaration's signature ends, or `None` for a node that isn't a listed declaration
-/// (a private `use`, a macro invocation, a comment, an attribute, a syntax error).
+/// (a private `use`, a macro call on one line, a comment, an attribute, a syntax error).
 ///
 /// The signature is the source up to the body of a function, `impl`, `trait`, `enum`, `union`,
 /// braced `struct`, inline `mod`, and `extern` block; up to the `=` of a `const` or `static`, so
-/// its type stays and its value goes; up to the name of a `macro_rules!`; and up to the final
-/// `;` of anything else (a tuple or unit `struct`, a `type` alias with its type, `mod name;`, a
-/// function without a body, `extern crate`, `pub use`, a trait's `type Item: Clone;`).
+/// its type stays and its value goes; up to the name of a `macro_rules!`; up to the `!` of a
+/// macro call that spans several lines (`cfg_if::cfg_if!`); and up to the final `;` of anything
+/// else (a tuple or unit `struct`, a `type` alias with its type, `mod name;`, a function
+/// without a body, `extern crate`, `pub use`, a trait's `type Item: Clone;`).
 fn signature_end(node: Node<'_>) -> Option<usize> {
+    if let Some(call) = macro_call(node) {
+        return multi_line_macro_call_end(call);
+    }
     match node.kind() {
         "function_item" | "impl_item" | "trait_item" | "enum_item" | "union_item"
         | "struct_item" | "mod_item" | "foreign_mod_item" => {
@@ -255,6 +259,32 @@ fn signature_end(node: Node<'_>) -> Option<usize> {
         | "extern_crate_declaration" => Some(before_semicolon(node)),
         _ => None,
     }
+}
+
+/// The macro call `node` is: the node itself, or the call an expression statement holds. The
+/// grammar wraps a call ending in `;` (`impl_ops!(…);`) in an `expression_statement` among a
+/// file's or module's items, but not among an `impl` block's or trait's members, where the `;`
+/// is an `empty_statement` of its own.
+fn macro_call(node: Node<'_>) -> Option<Node<'_>> {
+    match node.kind() {
+        "macro_invocation" => Some(node),
+        "expression_statement" => node
+            .named_child(0)
+            .filter(|expression| expression.kind() == "macro_invocation"),
+        _ => None,
+    }
+}
+
+/// Where the signature of a macro call ends, after its `!`, or `None` for a call on one line.
+/// A call spanning several lines is listed because its arguments, often whole items
+/// (`cfg_if!`, `thread_local!`), would otherwise leave a hole in the outline; a call on one
+/// line hides no lines, and files hold many (`include!("generated.rs");`). Whether it spans
+/// several lines is measured on the call itself, without its leading annotations.
+fn multi_line_macro_call_end(call: Node<'_>) -> Option<usize> {
+    if call.start_position().row == call.end_position().row {
+        return None;
+    }
+    child_of_kind(call, "!").map(|bang| bang.end_byte())
 }
 
 /// A tuple struct's fields, which tree-sitter-rust calls its body but which are part of its
@@ -312,6 +342,12 @@ mod tests {
                 "pub use crate::outline::{Outline, OutlineLine}",
             ),
             ("pub(crate) use a::b;", "pub(crate) use a::b"),
+            (
+                "cfg_if::cfg_if! {\n    if #[cfg(unix)] { fn f() {} }\n}",
+                "cfg_if::cfg_if!",
+            ),
+            ("impl_ops!(\n    A,\n    B\n);", "impl_ops!"),
+            ("make_table![\n    1,\n];", "make_table!"),
         ];
         for (source, signature) in cases {
             assert_eq!(signatures(source), [signature], "{source}");
@@ -401,11 +437,47 @@ mod j;
     }
 
     #[test]
-    fn private_uses_and_macro_calls_are_not_listed() {
+    fn private_uses_and_one_line_macro_calls_are_not_listed() {
         assert_eq!(
-            signatures("use std::io;\nthread_local! { static A: u8 = 1; }\n"),
+            signatures("use std::io;\nthread_local! { static A: u8 = 1; }\ninclude!(\"g.rs\");\n"),
             [] as [std::string::String; 0]
         );
+    }
+
+    #[test]
+    fn a_multi_line_macro_call_is_listed_at_every_depth_with_its_semicolon() {
+        let text = "\
+delegate!(
+    a
+);
+impl S {
+    forward! {
+        b
+    }
+    with_semicolon!(
+        c
+    );
+    one_line!();
+}
+";
+        let outline = outline_of(&RUST, text);
+        let lines: Vec<(usize, &str)> = outline
+            .lines
+            .iter()
+            .map(|line| (line.depth, line.text.as_str()))
+            .collect();
+        assert_eq!(
+            lines,
+            [
+                (0, "delegate!"),
+                (0, "impl S"),
+                (1, "forward!"),
+                (1, "with_semicolon!")
+            ]
+        );
+        let call = &outline.lines[0];
+        assert_eq!(call.range, ByteRange::new(0, "delegate!(\n    a\n);".len()));
+        assert_eq!(call.highlight, ByteRange::new(0, "delegate!".len()));
     }
 
     #[test]

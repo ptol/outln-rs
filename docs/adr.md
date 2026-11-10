@@ -152,7 +152,7 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-008: Parse TypeScript and JavaScript with tree-sitter, on a shared code-engine layer
 
-**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations), ADR-018 (`CommentSyntax` gains block-only comments), and ADR-021 (the three grammars are three `CodeLanguage` statics instead of one `Script` type)
+**Status**: Accepted (2026-11-06); amended by ADR-012 (an engine also says what its doc comment markers mean, a header is its comment's first paragraph, and line ranges start at leading annotations), ADR-018 (`CommentSyntax` gains block-only comments), and ADR-021 (the three grammars are three `CodeLanguage` statics instead of one `Script` type); amended 2026-11-10 (a variable declarator whose name is a destructuring pattern is listed, the pattern printed as written on one line: `const { a, b }`. These were the only top-level declarations missed over a 1,100-file TypeScript monorepo, 32 of 14,150)
 
 ### Decision
 
@@ -220,12 +220,13 @@ The Markdown engine finds headings with pulldown-cmark (default features off). F
 
 ## ADR-011: Parse Rust with tree-sitter-rust
 
-**Status**: Accepted (2026-11-06); amended 2026-11-08 (members of `impl` blocks and traits, and inline modules' items, are listed)
+**Status**: Accepted (2026-11-06); amended 2026-11-08 (members of `impl` blocks and traits, and inline modules' items, are listed) and 2026-11-10 (a macro call that spans several lines is listed)
 
 ### Decision
 
 - The `Rust` engine (`src/languages/rust.rs`) parses `.rs` files with `tree-sitter-rust` 0.24.2, the latest release, on the shared code-engine layer of ADR-008.
-- It lists top-level declarations: functions, `struct`, `enum`, `union`, `trait`, `impl`, `mod`, `const`, `static`, `type`, `extern crate`, `extern` blocks, `macro_rules!`, and re-exports (`pub use`, `pub(crate) use`, and other visibilities). Fields, variants, private `use` declarations, and macro calls aren't listed. Consecutive bodiless `mod name;` declarations declared alike share one outline line (`mod cli, discovery`); `use` declarations don't, because joined paths read worse. Amended 2026-11-08: the members of an `impl` block or trait (functions, constants, types) and the items of an inline `mod` (`mod tests { … }`) are listed one level deeper, by the same rules, down to depth 2 (`code_outline::DEEPEST_DEPTH`), because a long `impl` block (clap's `Arg` has six of 600 to 1,300 lines) printed as one line located none of its methods.
+- It lists top-level declarations: functions, `struct`, `enum`, `union`, `trait`, `impl`, `mod`, `const`, `static`, `type`, `extern crate`, `extern` blocks, `macro_rules!`, and re-exports (`pub use`, `pub(crate) use`, and other visibilities). Fields, variants, private `use` declarations, and macro calls on one line aren't listed. Consecutive bodiless `mod name;` declarations declared alike share one outline line (`mod cli, discovery`); `use` declarations don't, because joined paths read worse. Amended 2026-11-08: the members of an `impl` block or trait (functions, constants, types) and the items of an inline `mod` (`mod tests { … }`) are listed one level deeper, by the same rules, down to depth 2 (`code_outline::DEEPEST_DEPTH`), because a long `impl` block (clap's `Arg` has six of 600 to 1,300 lines) printed as one line located none of its methods.
+- Amended 2026-11-10: a macro call that spans several lines is listed at every depth, its signature the macro's path and `!` (`cfg_if::cfg_if!`), because the items inside a call (`cfg_if!`, `thread_local!`, `bitflags!`) otherwise left a hole in the outline: in `portable-atomic` 1.15.0's `src/lib.rs`, nothing was listed between L712 and L2746, inside `cfg_has_atomic_8! { … }`. Nothing inside a call is listed, because the grammar gives its arguments as a token tree, so such a hole now prints as one line naming the macro. A call on one line (`include!("generated.rs");`) stays unlisted: it hides no lines, and files hold many.
 - A signature is the declaration's source up to its body (or a `const`'s `=`, or the final `;`), on one line with `syntax_tree::one_line_source_before`.
 
 ### Rationale

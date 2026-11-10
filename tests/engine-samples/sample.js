@@ -14,7 +14,8 @@ export class Store {
 
 const handler = function (event) {},
   pattern = /[a-z]+/g;
-let { a, b } = load();
+let { a, b } = load(),
+  [head, ...tail] = list;
 module.exports = { handler };
 export default () => {};
 test.each([1, 2])('adds %i', (n) => {});
